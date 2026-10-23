@@ -40,6 +40,8 @@ html, body {
 .hz { font-family: var(--hz); }
 
 #theme { font-size: 18px; color: var(--dim); padding: 0 6px; }
+#lang { font-size: 14px; letter-spacing: 0.08em; color: var(--dim); padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; }
+#lang:hover { color: var(--paper); }
 #theme:hover { color: var(--paper); }
 #legend .plain::before { display: none; }
 

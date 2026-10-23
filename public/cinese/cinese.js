@@ -30,15 +30,53 @@ let theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dar
 try { theme = localStorage.getItem('hanzi-theme') || theme; } catch (e) { /* private mode */ }
 let COLORS = THEMES[theme];
 document.documentElement.dataset.theme = theme;
-const NODE_NAMES = { radicals: 'radicale', phonetic: 'componente fonetica' };
-const POS_NAMES = {
-  名: 'nomi', 动: 'verbi', 形: 'aggettivi', 副: 'avverbi', 量: 'classificatori', 代: 'pronomi',
-  数: 'numerali', 助: 'particelle', 介: 'preposizioni', 连: 'congiunzioni', 叹: 'interiezioni',
-  拟声: 'onomatopee', 前缀: 'prefissi', 后缀: 'suffissi',
+const TEXT = {
+  it: {
+    radicals: 'radicale', phonetic: 'componente fonetica', tone1: '1° tono', tone2: '2° tono', tone3: '3° tono', tone4: '4° tono', tone5: 'neutro',
+    rings: 'anelli: numero di tratti', strokes: '{n} tratti', radical: 'Radicale', radicalN: 'Radicale · {n} tratti', component: 'Componente fonetica',
+    meaning: 'Significato', meanings: 'Significati', readsAs: 'Come si legge la famiglia', nChars: '{n} caratteri · {lv}',
+    composition: 'Composizione', what: "cos'è?", phon: 'Fonetico {p}, semantico {s}', picto: 'Pittogramma', ideo: 'Ideogramma',
+    family: 'Famiglia fonetica di {p}', examples: "Frasi d'esempio", examplesLv: "Frasi d'esempio · {lv}", loading: 'caricamento…',
+    noSentences: 'Nessuna frase in questi livelli.', words: 'Parole · {lv}', noWords: 'Nessuna parola in questi livelli.',
+    measure: 'classificatore', all: 'tutte', char1: 'carattere', charN: 'caratteri', clear: 'Annulla ricerca',
+    practice: 'esercitati', again: 'ricomincia', failed: 'Qualcosa è andato storto nel caricamento.',
+    pos: { 名: 'nomi', 动: 'verbi', 形: 'aggettivi', 副: 'avverbi', 量: 'classificatori', 代: 'pronomi', 数: 'numerali', 助: 'particelle',
+      介: 'preposizioni', 连: 'congiunzioni', 叹: 'interiezioni', 拟声: 'onomatopee', 前缀: 'prefissi', 后缀: 'suffissi' },
+    // page
+    home: '← giulianogambacorta', intro: 'introduzione', vLevels: 'livelli', vRadicals: 'radicali', vPhonetic: 'famiglie fonetiche',
+    cLevel: 'colore: livello', cTone: 'colore: tono', search: '字 o pinyin', strokesBtn: 'tratti', done: 'fine',
+    sources: 'Dati: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), sillabo HSK 2025. Frasi: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
+    lang: 'EN', langName: 'English', theme: 'Tema chiaro / scuro', aView: 'Vista', aLevels: 'Livelli visibili', aDim: 'Dimensioni', aColor: 'Colore',
+    aClose: 'Chiudi', aGrip: 'Riduci o espandi la scheda', title: '汉字 · HSK 1–4 · Giuliano Gambacorta',
+  },
+  en: {
+    radicals: 'radical', phonetic: 'phonetic component', tone1: '1st tone', tone2: '2nd tone', tone3: '3rd tone', tone4: '4th tone', tone5: 'neutral',
+    rings: 'rings: number of strokes', strokes: '{n} strokes', radical: 'Radical', radicalN: 'Radical · {n} strokes', component: 'Phonetic component',
+    meaning: 'Meaning', meanings: 'Meanings', readsAs: 'How the family reads', nChars: '{n} characters · {lv}',
+    composition: 'Composition', what: 'what is it?', phon: 'Phonetic {p}, semantic {s}', picto: 'Pictogram', ideo: 'Ideogram',
+    family: 'Phonetic family of {p}', examples: 'Example sentences', examplesLv: 'Example sentences · {lv}', loading: 'loading…',
+    noSentences: 'No sentences in these levels.', words: 'Words · {lv}', noWords: 'No words in these levels.',
+    measure: 'measure word', all: 'all', char1: 'character', charN: 'characters', clear: 'Clear search',
+    practice: 'practise', again: 'start again', failed: 'Something went wrong while loading.',
+    pos: { 名: 'nouns', 动: 'verbs', 形: 'adjectives', 副: 'adverbs', 量: 'measure words', 代: 'pronouns', 数: 'numerals', 助: 'particles',
+      介: 'prepositions', 连: 'conjunctions', 叹: 'interjections', 拟声: 'onomatopoeia', 前缀: 'prefixes', 后缀: 'suffixes' },
+    home: '← giulianogambacorta', intro: 'introduction', vLevels: 'levels', vRadicals: 'radicals', vPhonetic: 'phonetic families',
+    cLevel: 'colour: level', cTone: 'colour: tone', search: '字 or pinyin', strokesBtn: 'strokes', done: 'done',
+    sources: 'Data: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), HSK syllabus 2025. Sentences: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Strokes: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
+    lang: 'IT', langName: 'Italiano', theme: 'Light / dark theme', aView: 'View', aLevels: 'Shown levels', aDim: 'Dimensions', aColor: 'Colour',
+    aClose: 'Close', aGrip: 'Fold or unfold the card', title: '汉字 · HSK 1–4 · Giuliano Gambacorta',
+  },
 };
+const t = (key, vars) => I18N.t(TEXT, key, vars);
+const NODE_NAMES = { get radicals() { return t('radicals'); }, get phonetic() { return t('phonetic'); } };
+const POS_NAMES = new Proxy({}, { get: (_, k) => TEXT[I18N.lang].pos[k] });
 const posTags = (pos) => (pos || '').replace(/[（）()]/g, '').split('、').filter(Boolean);
 const LEVEL_NAMES = { 1: 'HSK 1', 2: 'HSK 2', 3: 'HSK 3', 4: 'HSK 4' };
-const TONE_NAMES = { 1: '1° tono', 2: '2° tono', 3: '3° tono', 4: '4° tono', 5: 'neutro' };
+const TONE_NAMES = new Proxy({}, {
+  get: (_, k) => t(`tone${k}`),
+  ownKeys: () => ['1', '2', '3', '4', '5'],
+  getOwnPropertyDescriptor: () => ({ enumerable: true, configurable: true }),
+});
 const TONES = { āēīōūǖ: 1, áéíóúǘ: 2, ǎěǐǒǔǚ: 3, àèìòùǜ: 4 };
 const IDS = /[⿰-⿻？]/;
 const GLYPH = 1.1;            // world size of a character
@@ -411,7 +449,7 @@ async function main() {
     $('#legend').innerHTML = Object.entries(names)
       .map(([k, n]) => `<span style="--c:${COLORS[colorMode][k]}">${n}</span>`).join('') +
       (galactic() ? `<span style="--c:${COLORS[view]}">${NODE_NAMES[view]}</span>` : '') +
-      (view === 'radicals' ? `<span class="plain">anelli: numero di tratti</span>` : '');
+      (view === 'radicals' ? `<span class="plain">${t('rings')}</span>` : '');
     mesh.thinInstanceBufferUpdated('tint');
   }
 
@@ -758,7 +796,7 @@ async function main() {
   }
 
   const label = (i) => (isNode(i)
-    ? `<span class="hz">${glyphs[i]}</span> ${NODE_NAMES[nodeView(i)]}${nodeView(i) === 'radicals' ? ` · ${strokesOf(glyphs[i])} tratti` : ''} · ${nodeCount[i - N]}`
+    ? `<span class="hz">${glyphs[i]}</span> ${NODE_NAMES[nodeView(i)]}${nodeView(i) === 'radicals' ? ` · ${t('strokes', { n: strokesOf(glyphs[i]) })}` : ''} · ${nodeCount[i - N]}`
     : `<span class="hz">${glyphs[i]}</span> ${reading[i]}`);
 
   const hoverEl = $('#hover');
@@ -822,7 +860,7 @@ async function main() {
 
   function setPractice(on) {
     card.classList.toggle('practice', on);
-    card.querySelector('[data-writer="quiz"]').textContent = on ? 'ricomincia' : 'esercitati';
+    card.querySelector('[data-writer="quiz"]').textContent = on ? t('again') : t('practice');
     if (on) card.classList.remove('peek');
     card.scrollTop = 0;
     // the card has its new size on the next frame
@@ -858,9 +896,9 @@ async function main() {
     const phonetic = nodeView(node) === 'phonetic';
     const own = index.has(r) ? reading[index.get(r)] : (d.py || '').split(',')[0];
     card.querySelector('.big').textContent = r;
-    card.querySelector('.level').textContent = phonetic ? 'Componente fonetica' : `Radicale · ${strokesOf(r)} tratti`;
+    card.querySelector('.level').textContent = phonetic ? t('component') : t('radicalN', { n: strokesOf(r) });
     card.querySelector('.readings').innerHTML = own ? tonePy(own) : '';
-    card.querySelector('.meanings').innerHTML = `<h2>Significato</h2><p>${d.def || '—'}</p>`;
+    card.querySelector('.meanings').innerHTML = `<h2>${t('meaning')}</h2><p>${d.def || '—'}</p>`;
     if (phonetic) {
       // How the family reads: syllables with their tones, the component's own first.
       const bySyl = new Map();
@@ -869,14 +907,14 @@ async function main() {
         (bySyl.get(syl) || bySyl.set(syl, []).get(syl)).push(i);
       });
       const sylls = [...bySyl.entries()].sort((a, b) => (b[0] === plain(own)) - (a[0] === plain(own)) || b[1].length - a[1].length);
-      card.querySelector('.parts').innerHTML = `<h2>Come si legge la famiglia</h2>` +
+      card.querySelector('.parts').innerHTML = `<h2>${t('readsAs')}</h2>` +
         sylls.map(([syl, l]) => `<div class="ety">${syl} · ${l.length}</div><div class="chips">` +
           l.map((i) => `<button class="chip go" data-go="${chars[i].c}"><span class="hz">${chars[i].c}</span>${tonePy(reading[i])}</button>`).join('') +
           `</div>`).join('');
     } else {
       const byLv = {};
       list.forEach((i) => (byLv[chars[i].level] ||= []).push(i));
-      card.querySelector('.parts').innerHTML = `<h2>${list.length} caratteri · ${levelText()}</h2>` +
+      card.querySelector('.parts').innerHTML = `<h2>${t('nChars', { n: list.length, lv: levelText() })}</h2>` +
         Object.entries(byLv).map(([lv, l]) => `<div class="ety">HSK ${lv}</div><div class="chips">${l.map((i) => chip(chars[i].c)).join('')}</div>`).join('');
     }
     card.querySelector('.family').innerHTML = '';
@@ -892,22 +930,22 @@ async function main() {
     const entries = ced.chars[c] || [];
     const d = dec[c] || {};
     card.querySelector('.big').textContent = c;
-    card.querySelector('.level').textContent = `HSK ${level}${d.n ? ` · ${d.n} tratti` : ''}`;
+    card.querySelector('.level').textContent = `HSK ${level}${d.n ? ` · ${t('strokes', { n: d.n })}` : ''}`;
     card.querySelector('.readings').innerHTML = entries.length
       ? entries.slice(0, 3).map(([py]) => `<span style="color:${COLORS.tone[toneOf(py)]}">${py}</span>`).join('')
       : `<span>${d.py || ''}</span>`;
 
     const [first, ...others] = entries;
-    card.querySelector('.meanings').innerHTML = `<h2>Significati</h2>` +
+    card.querySelector('.meanings').innerHTML = `<h2>${t('meanings')}</h2>` +
       (first ? `<ol>${first[1].map((x) => `<li>${x}</li>`).join('')}</ol>` : `<p class="muted">${d.def || '—'}</p>`) +
       others.filter(([, defs]) => defs.length).map(([py, defs]) => `<div class="other">${py}: ${defs.slice(0, 2).join('; ')}</div>`).join('');
 
     const parts = [...(d.d || '')].filter((x) => !IDS.test(x) && x !== c);
     const e = d.e;
     let ety = '';
-    if (e?.t === 'pictophonetic') ety = `Fonetico <span class="hz">${e.p || '?'}</span>, semantico <span class="hz">${e.s || '?'}</span>${e.h ? ` (${e.h})` : ''}.`;
-    else if (e?.h) ety = `${e.t === 'pictographic' ? 'Pittogramma' : 'Ideogramma'}: ${e.h}.`;
-    card.querySelector('.parts').innerHTML = `<h2>Composizione <a class="why" href="introduzione/#caratteri">cos'è?</a></h2><div class="chips">` +
+    if (e?.t === 'pictophonetic') ety = t('phon', { p: `<span class="hz">${e.p || '?'}</span>`, s: `<span class="hz">${e.s || '?'}</span>` }) + `${e.h ? ` (${e.h})` : ''}.`;
+    else if (e?.h) ety = `${e.t === 'pictographic' ? t('picto') : t('ideo')}: ${e.h}.`;
+    card.querySelector('.parts').innerHTML = `<h2>${t('composition')} <a class="why" href="introduzione/#caratteri">${t('what')}</a></h2><div class="chips">` +
       (d.r ? chip(d.r, ' <small>radicale</small>') : '') +
       parts.filter((x) => x !== d.r).map((x) => chip(x)).join('') + `</div>` +
       (ety ? `<div class="ety">${ety}</div>` : '');
@@ -915,7 +953,7 @@ async function main() {
     const p = familyOf.get(c);
     const fam = p ? families.get(p) : null;
     card.querySelector('.family').innerHTML = fam && fam.length > 1
-      ? `<h2>Famiglia fonetica di <span class="hz">${p}</span></h2><div class="chips">` +
+      ? `<h2>${t('family', { p: `<span class="hz">${p}</span>` })}</h2><div class="chips">` +
         fam.filter((j) => j !== i).map((j) => chip(chars[j].c)).join('') + `</div>`
       : '';
 
@@ -930,16 +968,16 @@ async function main() {
   function renderExamples(i) {
     const { c } = chars[i];
     const el = card.querySelector('.examples');
-    if (!sentences) { el.innerHTML = `<h2>Frasi d'esempio</h2><p class="muted">caricamento…</p>`; return; }
+    if (!sentences) { el.innerHTML = `<h2>${t('examples')}</h2><p class="muted">${t('loading')}</p>`; return; }
     const list = (sentences.c[c] || []).map((k) => sentences.s[k]).filter((x) => levels.has(x[3]));
-    el.innerHTML = `<h2>Frasi d'esempio · ${levelText()}</h2>` + (list.length
+    el.innerHTML = `<h2>${t('examplesLv', { lv: levelText() })}</h2>` + (list.length
       ? list.map(([id, zh, py, lv, it, en]) => `<div class="ex">` +
         `<div class="zh hz">${zh.replaceAll(c, `<mark>${c}</mark>`)}</div>` +
         `<div class="py">${py}</div>` +
-        `<div class="tr">${it || `${en} <small>(en)</small>`}</div>` +
-        `<div class="lv">HSK ${lv} · <a href="https://tatoeba.org/it/sentences/show/${id}" target="_blank" rel="noopener">Tatoeba #${id}</a></div>` +
+        `<div class="tr">${I18N.lang === 'en' ? en || `${it} <small>(it)</small>` : it || `${en} <small>(en)</small>`}</div>` +
+        `<div class="lv">HSK ${lv} · <a href="https://tatoeba.org/${I18N.lang}/sentences/show/${id}" target="_blank" rel="noopener">Tatoeba #${id}</a></div>` +
         `</div>`).join('')
-      : `<p class="muted">Nessuna frase in questi livelli.</p>`);
+      : `<p class="muted">${t('noSentences')}</p>`);
   }
 
   // Words up to the chosen level, filterable by part of speech.
@@ -951,18 +989,18 @@ async function main() {
     const words = all.filter((w) => posFilter === 'all' || posTags(w.pos).includes(posFilter))
       .sort((a, b) => a.level - b.level || a.w.length - b.w.length).slice(0, 30);
     const filters = tags.length > 1
-      ? `<div class="pos">${[['all', 'tutte'], ...tags.map((t) => [t, POS_NAMES[t]])]
-        .map(([t, n]) => `<button data-pos="${t}" class="${t === posFilter ? 'on' : ''}">${t === 'all' ? '' : `<span class="hz">${t}</span> `}${n}</button>`).join('')}</div>`
+      ? `<div class="pos">${[['all', t('all')], ...tags.map((p) => [p, POS_NAMES[p]])]
+        .map(([p, n]) => `<button data-pos="${p}" class="${p === posFilter ? 'on' : ''}">${p === 'all' ? '' : `<span class="hz">${p}</span> `}${n}</button>`).join('')}</div>`
       : '';
-    card.querySelector('.words').innerHTML = `<h2>Parole · ${levelText()}</h2>` + filters + (words.length
+    card.querySelector('.words').innerHTML = `<h2>${t('words', { lv: levelText() })}</h2>` + filters + (words.length
       ? words.map((w) => {
         const info = ced.words[w.w];
         const gl = info?.d?.[0] || '';
-        const cl = info?.cl ? ` · classificatore ${info.cl.map(([h, py]) => `<span class="hz">${h}</span> ${py}`).join(', ')}` : '';
+        const cl = info?.cl ? ` · ${t('measure')} ${info.cl.map(([h, py]) => `<span class="hz">${h}</span> ${py}`).join(', ')}` : '';
         return `<div class="word"><span class="hz">${w.w}</span><span class="py">${w.py}</span><span class="gl">${gl}</span>` +
           `<span class="lv">HSK ${w.level}${w.pos ? ` · ${w.pos}` : ''}${cl}</span></div>`;
       }).join('')
-      : `<p class="muted">Nessuna parola in questi livelli.</p>`);
+      : `<p class="muted">${t('noWords')}</p>`);
   }
 
   function select(i) {
@@ -1073,8 +1111,8 @@ async function main() {
     if (!on) return;
     const list = [...highlight].sort((a, b) => chars[a].level - chars[b].level || tone[a] - tone[b]);
     results.style.top = `${$('#bar').offsetHeight + 4}px`;
-    results.innerHTML = `<div class="rhead">${list.length} ${list.length === 1 ? 'carattere' : 'caratteri'} · ${levelText()}` +
-      `<button data-clear aria-label="Annulla ricerca">×</button></div>` +
+    results.innerHTML = `<div class="rhead">${list.length} ${list.length === 1 ? t('char1') : t('charN')} · ${levelText()}` +
+      `<button data-clear aria-label="${t('clear')}">×</button></div>` +
       list.map((i) => {
         const gl = (ced.chars[chars[i].c]?.[0]?.[1] || [])[0] || '';
         return `<button class="row" data-go="${chars[i].c}"><span class="hz">${chars[i].c}</span>` +
@@ -1088,6 +1126,19 @@ async function main() {
     if (go) select(index.get(go.dataset.go));
   });
   window.addEventListener('resize', () => showResults());
+
+  function applyLanguage() {
+    I18N.apply(TEXT);
+    document.title = t('title');
+    $('#lang').textContent = t('lang');
+    $('#lang').title = t('langName');
+    card.querySelector('[data-writer="quiz"]').textContent = practicing() ? t('again') : t('practice');
+    setColors();
+    if (selected >= 0) renderCard(selected);
+    showResults();
+  }
+  $('#lang').addEventListener('click', () => { I18N.set(I18N.other); applyLanguage(); });
+  applyLanguage();
 
   $('#theme').addEventListener('click', () => {
     theme = theme === 'dark' ? 'light' : 'dark';
@@ -1121,5 +1172,5 @@ async function main() {
 
 main().catch((e) => {
   console.error(e);
-  $('#loading').textContent = 'Qualcosa è andato storto nel caricamento.';
+  $('#loading').textContent = t('failed');
 });

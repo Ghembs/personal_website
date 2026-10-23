@@ -1,5 +1,39 @@
-// Introduction page: theme switch, pronunciation through the device's speech
-// synthesis (when it has a Chinese voice), stroke-order demos with Hanzi Writer.
+// Introduction page: language and theme switches, pronunciation through the
+// device's speech synthesis (when it has a Chinese voice), stroke-order demos
+// with Hanzi Writer.
+
+const TEXT = {
+  it: {
+    title: 'Introduzione al cinese · Giuliano Gambacorta', back: '← i caratteri HSK 1–4',
+    nTones: 'toni', nPinyin: 'pinyin', nChars: 'caratteri', nGrammar: 'grammatica', theme: 'Tema chiaro / scuro',
+    foot: 'Testi di Giuliano Gambacorta. Ordine dei tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>. La pronuncia usa la sintesi vocale del tuo dispositivo.',
+    noVoice: 'Il tuo dispositivo non ha una voce cinese per la sintesi vocale: i pulsanti di ascolto sono disattivati.',
+    lang: 'EN', langName: 'English',
+  },
+  en: {
+    title: 'An introduction to Chinese · Giuliano Gambacorta', back: '← the HSK 1–4 characters',
+    nTones: 'tones', nPinyin: 'pinyin', nChars: 'characters', nGrammar: 'grammar', theme: 'Light / dark theme',
+    foot: 'Texts by Giuliano Gambacorta. Stroke order: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>. Pronunciation uses your device\'s speech synthesis.',
+    noVoice: 'Your device has no Chinese voice for speech synthesis: the listen buttons are off.',
+    lang: 'IT', langName: 'Italiano',
+  },
+};
+
+// Both texts live in the page: the Italian one in <main>, the English one in
+// a template; switching swaps them, so anchors (#toni, #caratteri) stay valid.
+const main = document.querySelector('main');
+const texts = { it: main.innerHTML, en: document.getElementById('main-en').innerHTML };
+let shown = 'it';
+function applyLanguage() {
+  if (shown !== I18N.lang) { main.innerHTML = texts[I18N.lang]; shown = I18N.lang; }
+  I18N.apply(TEXT);
+  document.title = I18N.t(TEXT, 'title');
+  const b = document.getElementById('lang');
+  b.textContent = I18N.t(TEXT, 'lang');
+  b.title = I18N.t(TEXT, 'langName');
+  findVoice?.();
+  watchStrokes?.();
+}
 
 const root = document.documentElement;
 document.getElementById('theme').addEventListener('click', () => {
@@ -17,9 +51,7 @@ function findVoice() {
   voice = voices.find((v) => /^zh[-_](CN|Hans)/i.test(v.lang)) || voices.find((v) => /^zh/i.test(v.lang)) || null;
   document.body.classList.toggle('no-voice', !voice);
   const note = document.getElementById('voice-note');
-  if (note && !voice && voices.length) {
-    note.textContent = 'Il tuo dispositivo non ha una voce cinese per la sintesi vocale: i pulsanti di ascolto sono disattivati.';
-  }
+  if (note && !voice && voices.length) note.textContent = I18N.t(TEXT, 'noVoice');
 }
 if (synth) {
   findVoice();
@@ -65,13 +97,22 @@ function drawStrokes() {
     setTimeout(() => w.animateCharacter(), 300 + k * 250);
   });
 }
-// animate when the section comes into view, once
-const strokes = document.querySelector('.strokes');
-if ('IntersectionObserver' in window) {
-  const io = new IntersectionObserver((entries) => {
+// animate when the section comes into view, once per text shown
+let io = null;
+function watchStrokes() {
+  io?.disconnect();
+  const strokes = document.querySelector('.strokes');
+  if (!('IntersectionObserver' in window)) { drawStrokes(); return; }
+  io = new IntersectionObserver((entries) => {
     if (entries.some((e) => e.isIntersecting)) { drawStrokes(); io.disconnect(); }
   }, { rootMargin: '100px' });
   io.observe(strokes);
-} else {
-  drawStrokes();
 }
+
+document.getElementById('lang').addEventListener('click', () => {
+  I18N.set(I18N.other);
+  const y = window.scrollY / Math.max(1, document.body.scrollHeight);
+  applyLanguage();
+  window.scrollTo(0, y * document.body.scrollHeight);
+});
+applyLanguage();

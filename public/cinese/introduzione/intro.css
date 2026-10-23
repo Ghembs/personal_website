@@ -60,6 +60,8 @@ i { font-style: italic; }
 #top nav a { text-decoration: none; color: var(--dim); }
 #top nav a:hover { color: var(--paper); }
 #theme { font-size: 18px; color: var(--dim); }
+#lang { font-size: 14px; letter-spacing: 0.08em; color: var(--dim); padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; }
+#lang:hover { color: var(--paper); }
 
 main { max-width: 820px; margin: 0 auto; padding: 0 20px 40px; }
 section { padding-top: 36px; }
@@ -154,6 +156,7 @@ ul.plain li { margin: 6px 0; }
 /* --- grammar --- */
 article.g { margin: 22px 0; }
 article.g h3 .hz { color: var(--red); }
+article.g h3.sub { font-size: 18px; margin-top: 16px; }
 .s {
   display: grid;
   grid-template-columns: auto auto 1fr;

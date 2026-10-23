@@ -14,30 +14,31 @@
   <canvas id="scene" touch-action="none"></canvas>
 
   <header id="bar">
-    <a class="home" href="../">← giulianogambacorta</a>
+    <a class="home" href="../" data-i18n="home">← giulianogambacorta</a>
     <h1><span class="hz">汉字</span> HSK 1–4</h1>
-    <a class="intro" href="introduzione/">introduzione</a>
-    <div class="group" role="group" aria-label="Vista">
-      <button data-view="levels" class="on">livelli</button>
-      <button data-view="radicals">radicali</button>
-      <button data-view="phonetic">famiglie fonetiche</button>
+    <a class="intro" href="introduzione/" data-i18n="intro">introduzione</a>
+    <div class="group" role="group" aria-label="Vista" data-i18n-attr="aria-label:aView">
+      <button data-view="levels" class="on" data-i18n="vLevels">livelli</button>
+      <button data-view="radicals" data-i18n="vRadicals">radicali</button>
+      <button data-view="phonetic" data-i18n="vPhonetic">famiglie fonetiche</button>
     </div>
-    <div class="group" role="group" aria-label="Livelli visibili">
+    <div class="group" role="group" aria-label="Livelli visibili" data-i18n-attr="aria-label:aLevels">
       <button data-level="1">1</button>
       <button data-level="2">2</button>
       <button data-level="3">3</button>
       <button data-level="4">4</button>
     </div>
-    <div class="group" role="group" aria-label="Dimensioni">
+    <div class="group" role="group" aria-label="Dimensioni" data-i18n-attr="aria-label:aDim">
       <button data-dim="2">2D</button>
       <button data-dim="3">3D</button>
     </div>
-    <div class="group" role="group" aria-label="Colore">
-      <button data-color="level" class="on">colore: livello</button>
-      <button data-color="tone">colore: tono</button>
+    <div class="group" role="group" aria-label="Colore" data-i18n-attr="aria-label:aColor">
+      <button data-color="level" class="on" data-i18n="cLevel">colore: livello</button>
+      <button data-color="tone" data-i18n="cTone">colore: tono</button>
     </div>
-    <input id="search" type="search" placeholder="字 o pinyin" autocomplete="off" spellcheck="false">
-    <button id="theme" aria-label="Tema chiaro o scuro" title="Tema chiaro / scuro">◐</button>
+    <input id="search" type="search" placeholder="字 o pinyin" data-i18n-attr="placeholder:search" autocomplete="off" spellcheck="false">
+    <button id="theme" aria-label="Tema chiaro o scuro" title="Tema chiaro / scuro" data-i18n-attr="title:theme;aria-label:theme">◐</button>
+    <button id="lang" title="English">EN</button>
   </header>
 
   <div id="legend"></div>
@@ -47,8 +48,8 @@
   <div id="results" hidden></div>
 
   <aside id="card" hidden>
-    <button class="grip" aria-label="Riduci o espandi la scheda"></button>
-    <button class="close" aria-label="Chiudi">×</button>
+    <button class="grip" aria-label="Riduci o espandi la scheda" data-i18n-attr="aria-label:aGrip"></button>
+    <button class="close" aria-label="Chiudi" data-i18n-attr="aria-label:aClose">×</button>
     <div class="head">
       <div class="big hz"></div>
       <div class="meta">
@@ -58,9 +59,9 @@
       <div class="strokes">
         <div id="writer"></div>
         <div class="writer-tools">
-          <button data-writer="play">tratti</button>
+          <button data-writer="play" data-i18n="strokesBtn">tratti</button>
           <button data-writer="quiz">esercitati</button>
-          <button data-writer="done">fine</button>
+          <button data-writer="done" data-i18n="done">fine</button>
         </div>
       </div>
     </div>
@@ -69,13 +70,10 @@
     <section class="family"></section>
     <section class="examples"></section>
     <section class="words"></section>
-    <footer class="sources">
-      Dati: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0),
-      <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL),
-      sillabo HSK 2025. Frasi: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.
-    </footer>
+    <footer class="sources" data-i18n="sources"></footer>
   </aside>
 
+  <script src="../i18n.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.28.0/babylon.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7.2/dist/hanzi-writer.min.js"></script>
   <script src="cinese.js"></script>

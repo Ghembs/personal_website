@@ -19,14 +19,15 @@
 </head>
 <body>
   <header id="top">
-    <a class="back" href="../">← i caratteri HSK 1–4</a>
+    <a class="back" href="../" data-i18n="back">← i caratteri HSK 1–4</a>
     <nav>
-      <a href="#toni">toni</a>
-      <a href="#pinyin">pinyin</a>
-      <a href="#caratteri">caratteri</a>
-      <a href="#grammatica">grammatica</a>
+      <a href="#toni" data-i18n="nTones">toni</a>
+      <a href="#pinyin" data-i18n="nPinyin">pinyin</a>
+      <a href="#caratteri" data-i18n="nChars">caratteri</a>
+      <a href="#grammatica" data-i18n="nGrammar">grammatica</a>
     </nav>
-    <button id="theme" aria-label="Tema chiaro o scuro" title="Tema chiaro / scuro">◐</button>
+    <button id="theme" aria-label="Tema chiaro o scuro" title="Tema chiaro / scuro" data-i18n-attr="title:theme;aria-label:theme">◐</button>
+    <button id="lang" title="English">EN</button>
   </header>
 
   <main>
@@ -302,11 +303,19 @@
       </article>
 
       <article class="g">
-        <h3>4. Essere: <span class="hz">是</span> tra due nomi, <span class="hz">很</span> con gli aggettivi</h3>
-        <p><span class="hz">是</span> <i>shì</i> collega due nomi. Con un aggettivo invece non si usa: l'aggettivo fa da verbo, e di solito si appoggia a
-          <span class="hz">很</span> <i>hěn</i> "molto", che in questa posizione è quasi neutro.</p>
+        <h3>4. <span class="hz">是</span>, <span class="hz">在</span>, <span class="hz">有</span>: tre modi di dire "è"</h3>
+        <p><span class="hz">是</span> <i>shì</i> collega due nomi o pronomi: "A è B", un'identità o una categoria. Si sovrappone in parte
+          al nostro "essere", ma non lo copre: <b>trovarsi in un luogo</b> si dice con <span class="hz">在</span> <i>zài</i> (punto 10),
+          <b>"c'è", "ci sono"</b> con <span class="hz">有</span> <i>yǒu</i>, e davanti a un aggettivo il verbo non serve affatto.</p>
         <div class="s"><span class="hz">他是老师。</span><i>Tā shì lǎoshī.</i><span>Lui è un insegnante.</span></div>
+        <div class="s"><span class="hz">他在学校。</span><i>Tā zài xuéxiào.</i><span>È a scuola.</span></div>
+        <div class="s"><span class="hz">那儿有很多人。</span><i>Nàr yǒu hěn duō rén.</i><span>Lì c'è tanta gente.</span></div>
+        <h3 class="sub"><span class="hz">很</span> con gli aggettivi</h3>
+        <p>L'aggettivo fa da verbo da solo. Ma un aggettivo nudo dopo il soggetto suona come un <b>confronto</b> ("lui è più alto",
+          sottinteso: dell'altro); con <span class="hz">很</span> <i>hěn</i> diventa una semplice <b>descrizione</b>. Per questo
+          <span class="hz">很</span> si mette quasi sempre, anche se alla lettera vuol dire "molto" e in questa posizione ne conserva poco.</p>
         <div class="s"><span class="hz">今天很热。</span><i>Jīntiān hěn rè.</i><span>Oggi fa caldo. (non *今天是热)</span></div>
+        <div class="s"><span class="hz">他高，我矮。</span><i>Tā gāo, wǒ ǎi.</i><span>Lui è alto, io basso. (un confronto tra i due)</span></div>
       </article>
 
       <article class="g">
@@ -372,11 +381,361 @@
     </section>
   </main>
 
-  <footer class="foot">
-    Testi di Giuliano Gambacorta. Ordine dei tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.
-    La pronuncia usa la sintesi vocale del tuo dispositivo.
-  </footer>
+  <!-- The English text: swapped into <main> by intro.js; the Italian one is kept the same way. -->
+  <template id="main-en">
+    <section class="hero">
+      <h1><span class="hz">入门</span> An introduction to Chinese</h1>
+      <p class="lead">Four things to know before looking at the characters: how a syllable sounds, how it is written in Latin letters,
+        how characters are built and how they line up in a sentence. Everything here is about standard Mandarin Chinese
+        (普通话 <i>pǔtōnghuà</i>) and simplified characters.</p>
+      <p class="note" id="voice-note">Where you see <span class="say-icon">▶</span> you can listen to the pronunciation, if your device has a Chinese voice installed.</p>
+    </section>
 
+    <!-- ===================================================== TONES -->
+    <section id="toni">
+      <h2><span class="hz">声调</span> The tones</h2>
+      <p>In Chinese every syllable has a <b>tone</b>, a contour of the pitch of the voice, and the tone changes the meaning:
+        <i>mā</i> and <i>mǎ</i> are as different as "bat" and "pat". There are four tones, plus a light, short
+        "neutral" one on unstressed syllables.</p>
+
+      <figure class="tones">
+        <svg viewBox="0 0 520 230" role="img" aria-label="Contours of the four tones on a pitch scale from 1 to 5">
+          <g class="grid">
+            <line x1="40" y1="30" x2="500" y2="30"/><line x1="40" y1="70" x2="500" y2="70"/>
+            <line x1="40" y1="110" x2="500" y2="110"/><line x1="40" y1="150" x2="500" y2="150"/>
+            <line x1="40" y1="190" x2="500" y2="190"/>
+            <text x="22" y="34">5</text><text x="22" y="74">4</text><text x="22" y="114">3</text><text x="22" y="154">2</text><text x="22" y="194">1</text>
+          </g>
+          <path class="t1" d="M60 30 L150 30"/>
+          <path class="t2" d="M175 110 C200 100 230 60 265 30"/>
+          <path class="t3" d="M290 150 C305 185 325 195 340 188 C355 180 370 120 380 70"/>
+          <path class="t4" d="M405 30 C430 60 460 140 480 190"/>
+          <circle class="t5" cx="505" cy="150" r="5"/>
+          <text class="lab t1" x="105" y="218">1st</text><text class="lab t2" x="215" y="218">2nd</text>
+          <text class="lab t3" x="330" y="218">3rd</text><text class="lab t4" x="440" y="218">4th</text>
+        </svg>
+        <figcaption>The pitch of the voice on a scale from 1 (low) to 5 (high), as Chinese textbooks describe it.</figcaption>
+      </figure>
+
+      <div class="cards">
+        <div class="tone c1"><div class="tn">1st tone · ā</div><p><b>high and level</b>, held: like singing a note.</p>
+          <button class="say" data-say="妈"><span class="hz">妈</span> mā · mother</button></div>
+        <div class="tone c2"><div class="tn">2nd tone · á</div><p><b>rising</b> from mid to high, like a surprised "huh?".</p>
+          <button class="say" data-say="麻"><span class="hz">麻</span> má · hemp</button></div>
+        <div class="tone c3"><div class="tn">3rd tone · ǎ</div><p><b>dips low and rises again</b>; in speech often only the low part is left, deep and a little creaky.</p>
+          <button class="say" data-say="马"><span class="hz">马</span> mǎ · horse</button></div>
+        <div class="tone c4"><div class="tn">4th tone · à</div><p><b>falls</b> sharply from high to low, like a curt order: "no!".</p>
+          <button class="say" data-say="骂"><span class="hz">骂</span> mà · to scold</button></div>
+        <div class="tone c5"><div class="tn">neutral tone · a</div><p><b>short and light</b>, unmarked; its pitch depends on the syllable before.</p>
+          <button class="say" data-say="吗"><span class="hz">吗</span> ma · question particle</button></div>
+      </div>
+      <p>On the character page, with "colour: tone", the tones always have these colours:
+        <span class="k1">1st</span>, <span class="k2">2nd</span>, <span class="k3">3rd</span>, <span class="k4">4th</span>, <span class="k5">neutral</span>.</p>
+
+      <h3>When a tone changes</h3>
+      <p>Some tones change next to others. Three rules come up right away:</p>
+      <dl class="rules">
+        <dt>Two third tones in a row</dt>
+        <dd>The first becomes a second tone. It is written <i>nǐ hǎo</i> but said <i>ní hǎo</i>.
+          <button class="say" data-say="你好"><span class="hz">你好</span> hello</button>
+          <button class="say" data-say="很好"><span class="hz">很好</span> hén hǎo · very well</button></dd>
+        <dt><span class="hz">不</span> bù</dt>
+        <dd>Before a 4th tone it becomes <i>bú</i>: <span class="hz">不是</span> <i>bú shì</i> "is not", <span class="hz">不要</span> <i>bú yào</i> "don't want".
+          <button class="say" data-say="不是">listen</button></dd>
+        <dt><span class="hz">一</span> yī</dt>
+        <dd>On its own, when counting or as an ordinal it stays <i>yī</i>; before a 4th tone it becomes <i>yí</i>
+          (<span class="hz">一个</span> <i>yí ge</i>: <span class="hz">个</span> is <i>gè</i>, 4th tone, even if it is said lightly here);
+          before the other tones <i>yì</i> (<span class="hz">一天</span> <i>yì tiān</i> "one day", <span class="hz">一起</span> <i>yìqǐ</i> "together").
+          <button class="say" data-say="一个">listen</button></dd>
+      </dl>
+      <p class="tip">Dictionaries, and the character page too, almost always write the "base" tone. The changes happen in speech.</p>
+    </section>
+
+    <!-- ===================================================== PINYIN -->
+    <section id="pinyin">
+      <h2><span class="hz">拼音</span> Pinyin and pronunciation</h2>
+      <p><b>Pinyin</b> is the official spelling of Chinese in Latin letters. Every syllable is made of an <b>initial</b>
+        (a consonant, which may be missing), a <b>final</b> (the vowel part, sometimes closed by <i>-n</i> or <i>-ng</i>) and a tone:
+        <i>h + ǎo = hǎo</i>. There are just over four hundred possible syllables, about thirteen hundred with the tones: this is why
+        so many characters are read the same way.</p>
+      <p class="tip">Pinyin is not read like English: many letters stand for different sounds. Tap a box to hear it.</p>
+
+      <h3>The initials</h3>
+      <div class="initials">
+        <div class="row"><span class="grp">lips</span>
+          <button class="say ini" data-say="八"><b>b</b><span class="hz">八</span></button>
+          <button class="say ini" data-say="怕"><b>p</b><span class="hz">怕</span></button>
+          <button class="say ini" data-say="妈"><b>m</b><span class="hz">妈</span></button>
+          <button class="say ini" data-say="飞"><b>f</b><span class="hz">飞</span></button></div>
+        <div class="row"><span class="grp">teeth</span>
+          <button class="say ini" data-say="大"><b>d</b><span class="hz">大</span></button>
+          <button class="say ini" data-say="他"><b>t</b><span class="hz">他</span></button>
+          <button class="say ini" data-say="你"><b>n</b><span class="hz">你</span></button>
+          <button class="say ini" data-say="来"><b>l</b><span class="hz">来</span></button></div>
+        <div class="row"><span class="grp">back</span>
+          <button class="say ini" data-say="哥"><b>g</b><span class="hz">哥</span></button>
+          <button class="say ini" data-say="看"><b>k</b><span class="hz">看</span></button>
+          <button class="say ini" data-say="好"><b>h</b><span class="hz">好</span></button></div>
+        <div class="row"><span class="grp">palate</span>
+          <button class="say ini" data-say="家"><b>j</b><span class="hz">家</span></button>
+          <button class="say ini" data-say="去"><b>q</b><span class="hz">去</span></button>
+          <button class="say ini" data-say="小"><b>x</b><span class="hz">小</span></button></div>
+        <div class="row"><span class="grp">retroflex</span>
+          <button class="say ini" data-say="中"><b>zh</b><span class="hz">中</span></button>
+          <button class="say ini" data-say="吃"><b>ch</b><span class="hz">吃</span></button>
+          <button class="say ini" data-say="是"><b>sh</b><span class="hz">是</span></button>
+          <button class="say ini" data-say="人"><b>r</b><span class="hz">人</span></button></div>
+        <div class="row"><span class="grp">sibilants</span>
+          <button class="say ini" data-say="字"><b>z</b><span class="hz">字</span></button>
+          <button class="say ini" data-say="菜"><b>c</b><span class="hz">菜</span></button>
+          <button class="say ini" data-say="四"><b>s</b><span class="hz">四</span></button></div>
+      </div>
+
+      <h3>The tricky sounds for an English speaker</h3>
+      <dl class="rules">
+        <dt>b d g / p t k</dt>
+        <dd>What matters in Chinese is not voicing but <b>aspiration</b>, a puff of air after the consonant.
+          <i>p t k</i> are like English "pen", "ten", "kin", with a strong puff; <i>b d g</i> are the same sounds without it,
+          like the <i>p</i> in "spin": not quite an English "b".</dd>
+        <dt>z c s</dt>
+        <dd><i>z</i> is the "ds" of "kids", unaspirated; <i>c</i> is the "ts" of "cats" with a puff of air
+          (<span class="hz">菜</span> <i>cài</i> is not "kai"!); <i>s</i> is always the "s" of "sun".</dd>
+        <dt>zh ch sh r</dt>
+        <dd>Said with the <b>tip of the tongue curled back</b> towards the roof of the mouth: <i>zh</i> is close to the "j" of
+          "jump", <i>ch</i> to the "ch" of "church" with a puff, <i>sh</i> to "sh", all darker. <i>r</i> is close to the "r" of
+          "run", with a little buzz.</dd>
+        <dt>j q x</dt>
+        <dd>Said with the <b>tongue flat against the palate</b> and the lips spread, as if smiling: <i>j</i> is close to the "j"
+          of "jeep", <i>q</i> to the "ch" of "cheap" with a puff, <i>x</i> sits between "sh" and "s". They are always followed by
+          <i>i</i> or <i>ü</i>.</dd>
+        <dt>h</dt>
+        <dd>Rougher than the English "h", from further back in the throat: like a light "ch" in Scottish "loch".</dd>
+        <dt>ü</dt>
+        <dd>Say "ee" with your lips rounded as for "oo": the French "u" or the German "ü". After <i>j q x y</i> it is written
+          without the dots (<i>qù, xué, yú</i>), but the sound is still <i>ü</i>.
+          <button class="say" data-say="去"><span class="hz">去</span> qù</button>
+          <button class="say" data-say="绿"><span class="hz">绿</span> lǜ</button></dd>
+        <dt>e</dt>
+        <dd>On its own, or after a consonant, it is not an English "e": it is a relaxed vowel at the back of the mouth, close to
+          the "u" of "duh" (<span class="hz">喝</span> <i>hē</i>). It becomes a real "e" in <i>ie, üe, ei</i>.</dd>
+        <dt>-i after z c s, zh ch sh r</dt>
+        <dd>It is not read "ee": the vowel is just the consonant buzzing on. <span class="hz">四</span> <i>sì</i> and
+          <span class="hz">是</span> <i>shì</i> contain no "ee" at all.</dd>
+        <dt>-n and -ng</dt>
+        <dd>As in English "sin" and "sing". <span class="hz">山</span> <i>shān</i> "mountain" and
+          <span class="hz">上</span> <i>shàng</i> "above" differ partly because of this.</dd>
+      </dl>
+
+      <h3>The finals</h3>
+      <div class="finals">
+        <div class="frow"><span class="grp">simple</span>
+          <button class="say fin" data-say="八">a</button><button class="say fin" data-say="我">o</button>
+          <button class="say fin" data-say="喝">e</button><button class="say fin" data-say="一">i</button>
+          <button class="say fin" data-say="五">u</button><button class="say fin" data-say="去">ü</button></div>
+        <div class="frow"><span class="grp">diphthongs</span>
+          <button class="say fin" data-say="爱">ai</button><button class="say fin" data-say="黑">ei</button>
+          <button class="say fin" data-say="好">ao</button><button class="say fin" data-say="口">ou</button></div>
+        <div class="frow"><span class="grp">nasals</span>
+          <button class="say fin" data-say="山">an</button><button class="say fin" data-say="门">en</button>
+          <button class="say fin" data-say="忙">ang</button><button class="say fin" data-say="冷">eng</button>
+          <button class="say fin" data-say="中">ong</button></div>
+        <div class="frow"><span class="grp">with i-</span>
+          <button class="say fin" data-say="家">ia</button><button class="say fin" data-say="写">ie</button>
+          <button class="say fin" data-say="小">iao</button><button class="say fin" data-say="六">iu</button>
+          <button class="say fin" data-say="天">ian</button><button class="say fin" data-say="今">in</button>
+          <button class="say fin" data-say="想">iang</button><button class="say fin" data-say="听">ing</button></div>
+        <div class="frow"><span class="grp">with u-</span>
+          <button class="say fin" data-say="花">ua</button><button class="say fin" data-say="我">uo</button>
+          <button class="say fin" data-say="快">uai</button><button class="say fin" data-say="对">ui</button>
+          <button class="say fin" data-say="晚">uan</button><button class="say fin" data-say="问">un</button>
+          <button class="say fin" data-say="黄">uang</button></div>
+        <div class="frow"><span class="grp">with ü-</span>
+          <button class="say fin" data-say="学">üe</button><button class="say fin" data-say="远">üan</button>
+          <button class="say fin" data-say="云">ün</button></div>
+      </div>
+      <p class="tip">Three abbreviations to remember: <i>iu</i> is read <i>iou</i>, <i>ui</i> is read <i>uei</i>, <i>un</i> is read <i>uen</i>.
+        And <i>ian</i> sounds almost like "yen".</p>
+
+      <h3>How it is written</h3>
+      <ul class="plain">
+        <li><b>The tone mark</b> goes on <i>a</i> or <i>e</i> if there is one; in <i>ou</i> on the <i>o</i>; otherwise on the last vowel:
+          <i>hǎo, xiè, duō, liù, guì</i>.</li>
+        <li><b>With no initial</b>, <i>i u ü</i> are written with <i>y</i> and <i>w</i>: <i>i → yi, ia → ya, u → wu, ua → wa, ü → yu</i>
+          (<span class="hz">一</span> <i>yī</i>, <span class="hz">五</span> <i>wǔ</i>, <span class="hz">鱼</span> <i>yú</i>).</li>
+        <li><b>The apostrophe</b> separates two syllables when the second begins with a vowel: <span class="hz">西安</span> <i>Xī'ān</i> (two syllables), not <i>xiān</i>.</li>
+        <li><b>Words</b> are written joined up, syllable after syllable: <span class="hz">朋友</span> <i>péngyou</i>, <span class="hz">学生</span> <i>xuésheng</i>.</li>
+      </ul>
+    </section>
+
+    <!-- ===================================================== CHARACTERS -->
+    <section id="caratteri">
+      <h2><span class="hz">汉字</span> How characters are made</h2>
+      <p>A character stands for one syllable and, almost always, for a meaning. Most words of modern Chinese, however, take two
+        characters: <span class="hz">朋</span> + <span class="hz">友</span> = <span class="hz">朋友</span> "friend".
+        HSK levels 1–4 have 1096 characters: with these you can already read much of an everyday text.</p>
+
+      <h3>Four ways to form a character</h3>
+      <div class="kinds">
+        <div class="kind"><div class="kt"><span class="hz">象形</span> pictograms</div>
+          <p>Stylised drawings of a thing.</p>
+          <div class="ex hz">人 山 日 月 木 口 马</div>
+          <p class="small">a person, three peaks, the sun, the moon, a tree, a mouth, a horse.</p></div>
+        <div class="kind"><div class="kt"><span class="hz">指事</span> indicatives</div>
+          <p>Abstract signs, sometimes on a pictogram.</p>
+          <div class="ex hz">一 二 三 上 下 本</div>
+          <p class="small">a stroke above or below a line; <span class="hz">本</span> "root": a mark at the foot of <span class="hz">木</span>.</p></div>
+        <div class="kind"><div class="kt"><span class="hz">会意</span> meaning compounds</div>
+          <p>Two parts that together suggest an idea.</p>
+          <div class="ex hz">休 明 好 林</div>
+          <p class="small"><span class="hz">亻</span> person + <span class="hz">木</span> tree = to rest; sun + moon = bright; two trees = woods.</p></div>
+        <div class="kind"><div class="kt"><span class="hz">形声</span> phono-semantic compounds</div>
+          <p>One part gives the <b>meaning</b>, the other the <b>sound</b>. They are the great majority.</p>
+          <div class="ex hz">请 清 情 晴</div>
+          <p class="small"><span class="hz">青</span> <i>qīng</i> gives the sound; <span class="hz">讠</span> speech, <span class="hz">氵</span> water,
+            <span class="hz">忄</span> heart, <span class="hz">日</span> sun give the sense: to ask, clear, feeling, fine weather.</p></div>
+      </div>
+      <p>On the character page the <a href="../?vista=fonetica#青">phonetic families</a> view gathers exactly these groups,
+        and shows how reliable each component is as a hint of the pronunciation.</p>
+
+      <h3>Radicals</h3>
+      <p>The <b>radical</b> is the component a character is filed under in dictionaries; often, though not always, it is the part
+        that gives the meaning. On the side or on top it takes a reduced form:</p>
+      <div class="radicals">
+        <a class="rad" href="../?vista=radicali#氵"><span class="hz">氵</span><span>water · <span class="hz">水</span></span><span class="hz eg">河 海 洗</span></a>
+        <a class="rad" href="../?vista=radicali#亻"><span class="hz">亻</span><span>person · <span class="hz">人</span></span><span class="hz eg">你 他 住</span></a>
+        <a class="rad" href="../?vista=radicali#讠"><span class="hz">讠</span><span>speech · <span class="hz">言</span></span><span class="hz eg">说 话 语</span></a>
+        <a class="rad" href="../?vista=radicali#扌"><span class="hz">扌</span><span>hand · <span class="hz">手</span></span><span class="hz eg">打 找 拿</span></a>
+        <a class="rad" href="../?vista=radicali#忄"><span class="hz">忄</span><span>heart · <span class="hz">心</span></span><span class="hz eg">忙 快 情</span></a>
+        <a class="rad" href="../?vista=radicali#艹"><span class="hz">艹</span><span>grass</span><span class="hz eg">花 茶 菜</span></a>
+        <a class="rad" href="../?vista=radicali#钅"><span class="hz">钅</span><span>metal · <span class="hz">金</span></span><span class="hz eg">钱 银 钟</span></a>
+        <a class="rad" href="../?vista=radicali#口"><span class="hz">口</span><span>mouth</span><span class="hz eg">吃 喝 叫</span></a>
+      </div>
+      <p>Tap one to open it in the <a href="../?vista=radicali">radicals</a> view, where they sit on rings by number of strokes.</p>
+
+      <h3>Strokes and their order</h3>
+      <p>Every character is written with a fixed number of <b>strokes</b>, in a fixed order. Learning the order helps to write
+        quickly, to count strokes when looking things up and to read handwriting. The basic strokes are few:
+        <span class="hz">横</span> horizontal, <span class="hz">竖</span> vertical, <span class="hz">撇</span> falling left,
+        <span class="hz">捺</span> falling right, <span class="hz">点</span> dot, <span class="hz">提</span> rising,
+        plus their variants with turns (<span class="hz">折</span>) and hooks (<span class="hz">钩</span>).</p>
+      <div class="strokes">
+        <figure><div class="sw" data-char="三"></div><figcaption>top to bottom</figcaption></figure>
+        <figure><div class="sw" data-char="川"></div><figcaption>left to right</figcaption></figure>
+        <figure><div class="sw" data-char="十"></div><figcaption>horizontal before vertical</figcaption></figure>
+        <figure><div class="sw" data-char="人"></div><figcaption>falling left before falling right</figcaption></figure>
+        <figure><div class="sw" data-char="国"></div><figcaption>the frame first, then the inside, and close last</figcaption></figure>
+        <figure><div class="sw" data-char="小"></div><figcaption>the middle before the sides</figcaption></figure>
+      </div>
+      <p class="tip">Tap a character to see its strokes again. Every card on the character page has "practise", to try writing it by hand.</p>
+    </section>
+
+    <!-- ===================================================== GRAMMAR -->
+    <section id="grammatica">
+      <h2><span class="hz">语法</span> Essential grammar</h2>
+      <p>Chinese grammar is simple in one way and hard in another: <b>words never change their form</b> (no conjugations,
+        genders, plurals, articles), and for that very reason <b>word order</b> matters a lot, and a few small function words
+        do the work that endings do in European languages.</p>
+
+      <article class="g">
+        <h3>1. Subject, verb, object</h3>
+        <p>The basic order is the same as in English.</p>
+        <div class="s"><span class="hz">我吃米饭。</span><i>Wǒ chī mǐfàn.</i><span>I eat rice.</span></div>
+      </article>
+
+      <article class="g">
+        <h3>2. When and where come before the verb</h3>
+        <p>Time and place go before the verb, usually in this order: who, when, where, what they do.</p>
+        <div class="s"><span class="hz">我明天在家学习。</span><i>Wǒ míngtiān zài jiā xuéxí.</i><span>Tomorrow I'll study at home. (lit. I tomorrow at home study)</span></div>
+      </article>
+
+      <article class="g">
+        <h3>3. Words do not change</h3>
+        <p>The verb is the same for every person and every tense; the plural is only marked when needed, with numbers or, for people, with <span class="hz">们</span> <i>men</i>.</p>
+        <div class="s"><span class="hz">我是学生。他们是学生。</span><i>Wǒ shì xuésheng. Tāmen shì xuésheng.</i><span>I am a student. They are students.</span></div>
+      </article>
+
+      <article class="g">
+        <h3>4. <span class="hz">是</span>, <span class="hz">在</span>, <span class="hz">有</span>: three ways to say "is"</h3>
+        <p><span class="hz">是</span> <i>shì</i> links two nouns or pronouns: "A is B", an identity or a category. It overlaps with English
+          "to be" only in part: <b>being somewhere</b> is <span class="hz">在</span> <i>zài</i> (point 10),
+          <b>"there is", "there are"</b> is <span class="hz">有</span> <i>yǒu</i>, and before an adjective no verb is needed at all.</p>
+        <div class="s"><span class="hz">他是老师。</span><i>Tā shì lǎoshī.</i><span>He is a teacher.</span></div>
+        <div class="s"><span class="hz">他在学校。</span><i>Tā zài xuéxiào.</i><span>He is at school.</span></div>
+        <div class="s"><span class="hz">那儿有很多人。</span><i>Nàr yǒu hěn duō rén.</i><span>There are a lot of people there.</span></div>
+        <h3 class="sub"><span class="hz">很</span> with adjectives</h3>
+        <p>The adjective works as a verb by itself. But a bare adjective after the subject sounds like a <b>comparison</b> ("he is
+          taller", than the other one); with <span class="hz">很</span> <i>hěn</i> it becomes a plain <b>description</b>. That is why
+          <span class="hz">很</span> is nearly always there, even though it literally means "very" and keeps little of that here.</p>
+        <div class="s"><span class="hz">今天很热。</span><i>Jīntiān hěn rè.</i><span>It's hot today. (not *今天是热)</span></div>
+        <div class="s"><span class="hz">他高，我矮。</span><i>Tā gāo, wǒ ǎi.</i><span>He is tall, I am short. (a comparison between the two)</span></div>
+      </article>
+
+      <article class="g">
+        <h3>5. Negation: <span class="hz">不</span> and <span class="hz">没</span></h3>
+        <p><span class="hz">不</span> <i>bù</i> negates habits, wishes, the present and the future. <span class="hz">没</span> <i>méi</i> negates
+          what did not happen, and <span class="hz">没有</span> <i>méiyǒu</i> means "not have", "there isn't".</p>
+        <div class="s"><span class="hz">我不喝咖啡。</span><i>Wǒ bù hē kāfēi.</i><span>I don't drink coffee.</span></div>
+        <div class="s"><span class="hz">我昨天没去。</span><i>Wǒ zuótiān méi qù.</i><span>I didn't go yesterday.</span></div>
+        <div class="s"><span class="hz">我没有车。</span><i>Wǒ méiyǒu chē.</i><span>I don't have a car.</span></div>
+      </article>
+
+      <article class="g">
+        <h3>6. Questions</h3>
+        <p>For a yes/no question just add <span class="hz">吗</span> <i>ma</i> at the end. Question words
+          (<span class="hz">什么</span> what, <span class="hz">谁</span> who, <span class="hz">哪儿</span> where…) stay where the answer would be,
+          with nothing moved. Another form repeats the verb with <span class="hz">不</span> in the middle.</p>
+        <div class="s"><span class="hz">你是学生吗？</span><i>Nǐ shì xuésheng ma?</i><span>Are you a student?</span></div>
+        <div class="s"><span class="hz">你叫什么名字？</span><i>Nǐ jiào shénme míngzi?</i><span>What's your name? (lit. you are called what name?)</span></div>
+        <div class="s"><span class="hz">你去不去？</span><i>Nǐ qù bu qù?</i><span>Are you going or not?</span></div>
+      </article>
+
+      <article class="g">
+        <h3>7. <span class="hz">的</span>: "of", and adjectives before the noun</h3>
+        <p><span class="hz">的</span> <i>de</i> ties whatever describes to the noun that follows: possession, adjectives, whole clauses. With close
+          people and closely linked things it is often left out.</p>
+        <div class="s"><span class="hz">我的书</span><i>wǒ de shū</i><span>my book</span></div>
+        <div class="s"><span class="hz">很漂亮的衣服</span><i>hěn piàoliang de yīfu</i><span>very beautiful clothes</span></div>
+        <div class="s"><span class="hz">我妈妈</span><i>wǒ māma</i><span>my mum</span></div>
+      </article>
+
+      <article class="g">
+        <h3>8. Measure words</h3>
+        <p>Between a number (or <span class="hz">这</span> this, <span class="hz">那</span> that) and the noun comes a <b>measure word</b>,
+          chosen by the kind of thing. <span class="hz">个</span> <i>gè</i> is the most general. For "two" before a measure word
+          you use <span class="hz">两</span> <i>liǎng</i>, not <span class="hz">二</span>.</p>
+        <div class="s"><span class="hz">一个人</span><i>yí ge rén</i><span>one person</span></div>
+        <div class="s"><span class="hz">三本书</span><i>sān běn shū</i><span>three books (<span class="hz">本</span>: volumes)</span></div>
+        <div class="s"><span class="hz">两杯茶</span><i>liǎng bēi chá</i><span>two cups of tea</span></div>
+        <p class="small">On the character page, words list their measure words; the "measure words" filter gathers them.</p>
+      </article>
+
+      <article class="g">
+        <h3>9. <span class="hz">了</span>: it happened, or something changed</h3>
+        <p>After a verb, <span class="hz">了</span> <i>le</i> says that the action is complete; at the end of a sentence, that the situation has changed.
+          It is not a "past tense": it says that something took place, not when.</p>
+        <div class="s"><span class="hz">我买了一本书。</span><i>Wǒ mǎi le yì běn shū.</i><span>I bought a book.</span></div>
+        <div class="s"><span class="hz">下雨了。</span><i>Xià yǔ le.</i><span>It has started to rain.</span></div>
+      </article>
+
+      <article class="g">
+        <h3>10. <span class="hz">在</span>: being somewhere, and doing something right now</h3>
+        <p>On its own <span class="hz">在</span> <i>zài</i> means "to be at"; before a verb it marks an action in progress.</p>
+        <div class="s"><span class="hz">我在家。</span><i>Wǒ zài jiā.</i><span>I'm at home.</span></div>
+        <div class="s"><span class="hz">我在吃饭。</span><i>Wǒ zài chī fàn.</i><span>I'm eating.</span></div>
+      </article>
+
+      <p class="tip">Every sentence can be heard by tapping it. To see these words in context, the cards of the character page
+        have real example sentences, sorted by level.</p>
+    </section>
+
+    <section class="next">
+      <a class="go" href="../">To the HSK 1–4 characters →</a>
+    </section>
+  </template>
+
+  <footer class="foot" data-i18n="foot"></footer>
+
+  <script src="../../i18n.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7.2/dist/hanzi-writer.min.js"></script>
   <script src="intro.js"></script>
 </body>

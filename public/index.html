@@ -19,9 +19,9 @@
       <a class="node" href="https://stairwaytoflorence.com/" target="_blank" rel="noopener" data-shan="pavilion" data-ascii="[ STF ]">STF</a>
       <a class="node" href="https://www.vestalaris.com/" target="_blank" rel="noopener" data-shan="pagoda" data-ascii="[ vesta laris ]">Vesta Laris</a>
       <a class="node seal" href="cinese/" data-shan="seal" data-ascii="[ zhōngwén ]">中文</a>
-      <a class="node" href="#about" data-shan="walker" data-ascii="[ chi sono ]">chi sono</a>
-      <a class="node" href="#lab" data-shan="boat" data-ascii="[ lab ]">laboratorio</a>
-      <a class="node" href="mailto:info@giulianogambacorta.com" data-shan="birds" data-ascii="[ @ ]">scrivimi</a>
+      <a class="node" href="#about" data-shan="walker" data-i18n="about" data-ascii="[ chi sono ]">chi sono</a>
+      <a class="node" href="#lab" data-shan="boat" data-i18n="lab" data-ascii="[ lab ]">laboratorio</a>
+      <a class="node" href="mailto:info@giulianogambacorta.com" data-shan="birds" data-i18n="write" data-ascii="[ @ ]">scrivimi</a>
     </div>
   </main>
 
@@ -29,16 +29,18 @@
     <button data-mode="0"><span class="n" data-zh="一">1</span><span class="t" data-zh="隧道">tunnel</span></button>
     <button data-mode="1"><span class="n" data-zh="二">2</span><span class="t" data-zh="场景">scene</span></button>
     <button data-mode="2"><span class="n" data-zh="三">3</span><span class="t" data-zh="山水">shan shui</span></button>
+    <button id="lang" aria-label="Language"><span class="n" data-zh="文">·</span><span class="t" data-zh="英">EN</span></button>
   </nav>
   <div id="toast" role="status"></div>
 
   <section id="boring" hidden>
     <h1>Giuliano Gambacorta</h1>
-    <p>Modalità noiosa attivata.</p>
+    <p data-i18n="boring">Modalità noiosa attivata.</p>
     <ul></ul>
     <button id="boring-close">Aesthetics</button>
   </section>
 
+  <script src="i18n.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
   <script src="shaders.js"></script>
   <script src="kaleido.js"></script>

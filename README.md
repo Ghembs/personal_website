@@ -6,14 +6,20 @@ The landing page is a single full-screen scene that keeps changing its look,
 always passing through a grid of characters (p5.js WebGL shaders):
 
 - **tunnel**: rectangles in riso inks turning on the inner wall of a cylinder (Canvas2D);
-- **scene**: ascii scenarios drawn cell by cell — a dinosaur in the desert (a
-  little game: space or a tap to jump), a boat at sea, a plane towing a banner;
-  each with its own times of day and weather, the links written inside them;
+- **scene**: ascii scenarios drawn cell by cell — a dinosaur crossing desert,
+  jungle, volcano or ice (a little game: space or a tap to jump, hold to jump
+  higher), a boat at sea, a plane over the countryside, a train through
+  stations, bridges and tunnels; each with its own times of day and weather.
+  Links sit on objects of the scene, never twice at once; Florence's Duomo
+  carries only STF and Shanghai's Oriental Pearl tower only 中文;
 - **shan shui**: an endless ink-landscape handscroll, with the links hidden in it.
 
 Keys `1`–`3` pick a mode, `8` (八, which sounds like 发, "to prosper") opens the
 handscroll, `space` a random mode (in a scene: jump, or the next scene).
-`#dino`, `#mare` and `#aereo` open a scene directly. There are a few easter eggs.
+`#dino`, `#mare`, `#aereo` and `#treno` open a scene directly.
+
+Every page is in Italian and English (`public/i18n.js`, a button on each page;
+the browser's language at first). There are a few easter eggs.
 
 ## Structure
 

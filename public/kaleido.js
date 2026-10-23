@@ -20,12 +20,12 @@ const RISO = {
 };
 
 const PALETTES = [
-  { name: 'acqua e rosa',  bg: '#141518', inks: [RISO.aqua, RISO.fluoPink] },
-  { name: 'menta e sole',  bg: '#1c1d21', inks: [RISO.mint, RISO.sunflower] },
-  { name: 'rosso e blu',   bg: '#101014', inks: [RISO.brightRed, RISO.blue] },
-  { name: 'giallo viola',  bg: '#1a1a1e', inks: [RISO.yellow, RISO.purple] },
-  { name: 'oro e menta',   bg: '#202125', inks: [RISO.flatGold, RISO.mint] },
-  { name: 'arancio acqua', bg: '#17181c', inks: [RISO.orange, RISO.aqua] },
+  { name: 'acqua e rosa', en: 'aqua and pink',  bg: '#141518', inks: [RISO.aqua, RISO.fluoPink] },
+  { name: 'menta e sole', en: 'mint and sun',  bg: '#1c1d21', inks: [RISO.mint, RISO.sunflower] },
+  { name: 'rosso e blu', en: 'red and blue',   bg: '#101014', inks: [RISO.brightRed, RISO.blue] },
+  { name: 'giallo viola', en: 'yellow and violet',  bg: '#1a1a1e', inks: [RISO.yellow, RISO.purple] },
+  { name: 'oro e menta', en: 'gold and mint',   bg: '#202125', inks: [RISO.flatGold, RISO.mint] },
+  { name: 'arancio acqua', en: 'orange and aqua', bg: '#17181c', inks: [RISO.orange, RISO.aqua] },
 ];
 
 const FOCAL = 0.9;        // screen radius (in half-diagonals) of a point at z = 1

@@ -24,6 +24,30 @@ const SNAP_SIZE = 1024;      // tunnel copy used as texture by the ascii pass
 
 const motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.3 : 1;
 
+const TEXT = {
+  it: {
+    about: 'chi sono', 'about.ascii': '[ chi sono ]', lab: 'laboratorio', 'lab.ascii': '[ lab ]', write: 'scrivimi', 'write.ascii': '[ @ ]',
+    boring: 'Modalità noiosa attivata.', inks: 'inchiostri: {name}', ascii: 'ascii, di nuovo',
+    flight: 'volo: il tunnel ti viene incontro', orbit: 'orbita: il tunnel gira su se stesso',
+    dino: 'il dinosauro', mare: 'il mare', aereo: "l'aereo", treno: 'il treno',
+    space: 'premi spazio per giocare', tap: 'tocca per giocare', spaceAgain: 'spazio per ricominciare', tapAgain: 'tocca per ricominciare',
+    console: 'Prova a digitare "nihao" o "boring", o clicca sullo sfondo.', lang: 'EN', langName: 'English',
+  },
+  en: {
+    about: 'about', 'about.ascii': '[ about ]', lab: 'lab', 'lab.ascii': '[ lab ]', write: 'write me', 'write.ascii': '[ @ ]',
+    boring: 'Boring mode on.', inks: 'inks: {name}', ascii: 'ascii again',
+    flight: 'flight: the tunnel comes at you', orbit: 'orbit: the tunnel turns on itself',
+    dino: 'the dinosaur', mare: 'the sea', aereo: 'the plane', treno: 'the train',
+    space: 'press space to play', tap: 'tap to play', spaceAgain: 'space to start again', tapAgain: 'tap to start again',
+    console: 'Try typing "nihao" or "boring", or click the background.', lang: 'IT', langName: 'Italiano',
+  },
+};
+const t = (key, vars) => I18N.t(TEXT, key, vars);
+
+// Labels in the page's language, before anything reads them.
+I18N.apply(TEXT);
+document.querySelectorAll('#links [data-i18n]').forEach((el) => { el.dataset.ascii = t(`${el.dataset.i18n}.ascii`); });
+
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = (t) => t * t * (3 - 2 * t);
@@ -52,7 +76,7 @@ function sketch(p) {
   const nodes = [...document.querySelectorAll('#links .node')];
   const links = nodes.filter((el) => !el.classList.contains('title'));
   const titleEl = nodes.find((el) => el.classList.contains('title'));
-  const hudButtons = [...document.querySelectorAll('#hud button')];
+  const hudButtons = [...document.querySelectorAll('#hud button[data-mode]')];
   let linkStyle = null;       // 'k' tunnel, 'a' ascii transition, 'g' ascii scene, 's' shan shui
   let asciiStyle = false;
 
@@ -82,7 +106,14 @@ function sketch(p) {
     // Paint the first panels while nothing else is going on.
     (window.requestIdleCallback || setTimeout)(() => shan.update(0));
     kaleido.resize(p.width, p.height, Math.min(density, KALEIDO_DPR));
-    scenes = new Scenes(sceneEl, links.map((el) => el.dataset.ascii), titleEl.dataset.ascii);
+    // STF and 中文 are the links the Duomo and the Oriental Pearl keep for themselves.
+    const special = {
+      stf: links.findIndex((el) => el.href.includes('stairwaytoflorence')),
+      zh: links.findIndex((el) => el.dataset.shan === 'seal'),
+    };
+    scenes = new Scenes(sceneEl, links.map((el) => el.dataset.ascii), titleEl.dataset.ascii, special);
+    scenes.setText(links.map((el) => el.dataset.ascii), titleEl.dataset.ascii,
+      { space: t('space'), tap: t('tap'), spaceAgain: t('spaceAgain'), tapAgain: t('tapAgain') });
     scenes.resize(p.width, p.height, density);
     scenes.pick();
     sceneSnap = p.createImage(SNAP_SIZE, SNAP_SIZE);
@@ -318,7 +349,7 @@ function sketch(p) {
     // A new ascii scene each time; the page takes its colours.
     if (MODES[i].name === 'scene' && modeIndex !== i) {
       scenes.pick(scene);
-      toastSoon = scenes.name;
+      toastSoon = t(scenes.slug);
     }
     from = { ...cur, paper: [...cur.paper], ink: [...cur.ink], hl: [...cur.hl] };
     to = MODES[i].name === 'scene' ? sceneLook() : MODES[i];
@@ -487,6 +518,11 @@ function sketch(p) {
   }
 
   hudButtons.forEach((b) => b.addEventListener('click', () => goTo(+b.dataset.mode, true)));
+  // The tunnel's tiles carry their words in the drawing: switching language reloads.
+  const langBtn = document.getElementById('lang');
+  langBtn.querySelector('.t').textContent = t('lang');
+  langBtn.title = t('langName');
+  langBtn.addEventListener('click', () => { I18N.set(I18N.other); location.reload(); });
 
   // A click on the background: new inks in the tunnel; in an ascii scene the
   // dinosaur jumps, and the other scenes give way to the next one.
@@ -494,7 +530,7 @@ function sketch(p) {
     if (scenes.action()) return;
     scenes.pick();
     Object.assign(to, sceneLook());
-    toast(scenes.name);
+    toast(t(scenes.slug));
   }
   const inScene = () => modeIndex === 1 && cur.ascii < 0.5 && cur.mix > 0.5;
 
@@ -504,7 +540,7 @@ function sketch(p) {
     if (cur.mix > 0.5) return;
     const pal = kaleido.nextPalette();
     applyPalette();
-    toast(`inchiostri: ${pal.name}`);
+    toast(t('inks', { name: I18N.lang === 'it' ? pal.name : pal.en }));
   });
 
   const boring = document.getElementById('boring');
@@ -513,11 +549,16 @@ function sketch(p) {
     .join('');
   document.getElementById('boring-close').addEventListener('click', () => { boring.hidden = true; p.loop(); });
 
+  // Letting go of the jump key ends the dinosaur's push upwards.
+  window.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'ArrowUp') scenes.release(); });
+  window.addEventListener('pointerup', () => scenes.release());
+
   let typed = '';
   window.addEventListener('keydown', (e) => {
     if (e.key >= '1' && e.key <= '3') goTo(+e.key - 1, true);
     // 八 bā sounds like 发 fā, to prosper: the luckiest key opens the handscroll.
     if (e.key === '8') { goTo(SHAN, true); toast('八 · 发'); }
+    if ((e.key === ' ' || e.key === 'ArrowUp') && e.repeat) { e.preventDefault(); return; }
     if (e.key === ' ' || e.key === 'ArrowUp') {
       e.preventDefault();
       if (inScene()) { sceneAction(); return; }
@@ -533,11 +574,11 @@ function sketch(p) {
       scenes.hanzi = glyphSet === 'hanzi';
       computeCells();
       if (modeIndex !== 1) goTo(1, true);
-      toast(glyphSet === 'hanzi' ? '你好！ 字符 → 汉字' : 'ascii, di nuovo');
+      toast(glyphSet === 'hanzi' ? '你好！ 字符 → 汉字' : t('ascii'));
     }
     if (e.key === 'v' && cur.mix < 0.5) {
       kaleido.setFlight(!kaleido.flight);
-      toast(kaleido.flight ? 'volo: il tunnel ti viene incontro' : 'orbita: il tunnel gira su se stesso');
+      toast(kaleido.flight ? t('flight') : t('orbit'));
     }
     if (typed.endsWith('boring')) {
       boring.hidden = false;
@@ -545,10 +586,7 @@ function sketch(p) {
     }
   });
 
-  console.log(
-    '%c你好, curioso.%c\nProva a digitare "nihao" o "boring", o clicca sullo sfondo.',
-    'font: 20px serif; color: #c33', 'font: 12px monospace'
-  );
+  console.log(`%c你好, curioso.%c\n${t('console')}`, 'font: 20px serif; color: #c33', 'font: 12px monospace');
 }
 
 (async () => {
