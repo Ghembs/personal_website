@@ -1,6 +1,6 @@
 # Deploys public/ to the Cloudflare Pages project giuliano-gambacorta-website.
-# Pushes to main go to production; a manual run deploys the chosen branch,
-# which Cloudflare publishes as a preview unless it is main.
+# Pushes to master go to production; a manual run deploys the chosen branch,
+# which Cloudflare publishes as a preview unless it is master.
 #
 # Repository secrets:
 #   CLOUDFLARE_API_TOKEN   API token with "Account > Cloudflare Pages > Edit"
@@ -10,7 +10,7 @@ name: Deploy to Cloudflare Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -45,7 +45,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages project create ${{ env.PROJECT }} --production-branch main
+          command: pages project create ${{ env.PROJECT }} --production-branch master
 
       - name: Deploy
         uses: cloudflare/wrangler-action@v3

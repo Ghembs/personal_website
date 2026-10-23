@@ -38,7 +38,7 @@ Then open <http://localhost:5173>.
 The Cloudflare Pages project is `giuliano-gambacorta-website`, serving `public/`.
 
 Deploys run from GitHub Actions ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)):
-every push to `main` goes to production, and a manual run (Actions → Deploy to
+every push to `master` goes to production, and a manual run (Actions → Deploy to
 Cloudflare Pages → Run workflow) deploys the chosen branch as a preview. The first
 run creates the Pages project if it does not exist yet.
 
