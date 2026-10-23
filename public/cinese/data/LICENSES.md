@@ -8,6 +8,7 @@ kept apart.
 |---|---|---|
 | `hsk.json` | Characters (认读字) and words of HSK levels 1–4 from the HSK syllabus (HSK 考试大纲), 中外语言交流合作中心, 2025 | lists of facts taken from the syllabus; the syllabus itself is not redistributed |
 | `cedict.json` | [CC-CEDICT](https://cc-cedict.org/), MDBG | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/): this file is shared under the same licence |
+| `sentences.json` | Example sentences from [Tatoeba](https://tatoeba.org/) (Mandarin, with Italian or English translations), chosen so that every word is in HSK 1–4; each keeps its Tatoeba id | [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/): the authors are the Tatoeba contributors of each sentence, see its page `tatoeba.org/sentences/show/<id>` |
 | `decomp.json` | `dictionary.txt` of [Make Me a Hanzi](https://github.com/skishore/makemeahanzi), derived from Unihan and CJKlib | [LGPL-3.0](licenses/LGPL-3.0.txt) (with the [GPL-3.0](licenses/GPL-3.0.txt) it builds on) |
 
 Stroke-order data is not hosted here: [Hanzi Writer](https://hanziwriter.org/)

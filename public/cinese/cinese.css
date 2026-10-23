@@ -203,6 +203,23 @@ a { color: inherit; }
 .word .lv { grid-column: 1 / -1; font-size: 12px; color: var(--dim); }
 .muted { color: var(--dim); font-size: 15px; font-style: italic; }
 
+.ex { padding: 6px 0; border-top: 1px solid rgba(239, 230, 210, 0.07); }
+.ex .zh { font-size: 20px; }
+.ex mark { color: var(--red); background: none; }
+.ex .py { font-size: 15px; color: var(--dim); }
+.ex .tr { font-size: 16px; }
+.ex .tr small, .ex .lv { font-size: 12px; color: var(--dim); }
+
+.pos { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 6px; }
+.pos button {
+  font-size: 13px;
+  color: var(--dim);
+  padding: 0 8px;
+  border-radius: 999px;
+  border-color: var(--line);
+}
+.pos button.on { color: var(--paper); background: rgba(239, 230, 210, 0.08); }
+
 #card .sources { margin-top: 18px; font-size: 12px; color: var(--dim); }
 
 @media (max-width: 700px) {

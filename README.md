@@ -31,8 +31,11 @@ wrangler.toml    Cloudflare Pages project config
 
 The HSK 1–4 characters in 3D (Babylon.js, one instanced mesh): arranged by level,
 by radical or by phonetic family, coloured by level or tone, with a card for each
-character (readings, meanings, composition, family, words up to the chosen level,
-stroke order with Hanzi Writer). `#字` in the URL opens a character directly.
+character (readings, meanings, composition, family, example sentences and words
+up to the chosen level, words filterable by part of speech, stroke order with
+Hanzi Writer). A 2D mode (default on phones) lays the levels out as flat discs
+and, on a click, shows only the clicked character, radical or phonetic component
+with what it connects to. `#字` in the URL opens a character directly.
 
 Its data and font subset are built by:
 
@@ -41,8 +44,8 @@ npm install
 npm run build:hanzi -- path/to/HSK-syllabus.pdf
 ```
 
-which needs `pdftotext` (poppler-utils) and downloads CC-CEDICT, Make Me a Hanzi
-and Noto Serif SC into `data/raw/` (git-ignored). The syllabus PDF is read
+which needs `pdftotext` (poppler-utils) and `bzip2`, and downloads CC-CEDICT,
+Make Me a Hanzi, the Tatoeba exports and Noto Serif SC into `data/raw/` (git-ignored). The syllabus PDF is read
 locally and not published. Data licences: [public/cinese/data/LICENSES.md](public/cinese/data/LICENSES.md).
 
 ## Run locally

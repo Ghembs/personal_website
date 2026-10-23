@@ -9,6 +9,8 @@
 //   - CC-CEDICT (CC BY-SA 4.0): pinyin and meanings.      -> data/cedict.json
 //   - Make Me a Hanzi dictionary.txt (LGPL-3.0): radical,
 //     decomposition and etymology (phonetic / semantic).  -> data/decomp.json
+//   - Tatoeba (CC BY 2.0 FR): example sentences made only of
+//     HSK 1-4 words, with Italian or English translations. -> data/sentences.json
 //   - Noto Serif SC (OFL): subset to the characters used. -> fonts/hanzi.woff2
 // Downloads are cached in data/raw (git-ignored).
 
@@ -29,6 +31,7 @@ const SOURCES = {
   cedict: 'https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz',
   mmah: 'https://raw.githubusercontent.com/skishore/makemeahanzi/master/dictionary.txt',
   font: 'https://github.com/google/fonts/raw/main/ofl/notoserifsc/NotoSerifSC%5Bwght%5D.ttf',
+  tatoeba: 'https://downloads.tatoeba.org/exports/per_language/',
 };
 
 // Characters the page itself writes, beyond the HSK data.
@@ -126,6 +129,67 @@ function readCedict(buf) {
 // pinyin, e.g. 青 Qīng for Qinghai): they rarely help a learner.
 const minor = (e) => e.defs.every((d) => /^(surname|variant of|old variant|archaic variant|see )/i.test(d));
 
+// ---------- Tatoeba ----------
+
+const bunzip = (buf) => execFileSync('bzip2', ['-dc'], { input: buf, maxBuffer: 1 << 30 }).toString();
+const PUNCT = /^[\s，。！？、；：“”‘’（）《》…—·,.!?;:'"()\-0-9０-９%％]$/;
+const SENTENCES_PER_LEVEL = 2;
+
+async function readTatoeba() {
+  const get = (name) => cached(`tatoeba-${name.replace(/\//g, "-")}`, `${SOURCES.tatoeba}${name}`);
+  const rows = (buf) => bunzip(buf).split('\n').filter(Boolean).map((l) => l.split('\t'));
+  const cmn = rows(await get('cmn/cmn_sentences.tsv.bz2')).map(([id, , text]) => ({ id: +id, text }));
+  const links = {};
+  const need = new Set();
+  for (const lang of ['ita', 'eng']) {
+    links[lang] = new Map();
+    for (const [a, b] of rows(await get(`cmn/cmn-${lang}_links.tsv.bz2`))) {
+      if (!links[lang].has(+a)) links[lang].set(+a, +b);
+      need.add(+b);
+    }
+  }
+  const text = {};
+  for (const lang of ['ita', 'eng']) {
+    text[lang] = new Map();
+    for (const [id, , t] of rows(await get(`${lang}/${lang}_sentences.tsv.bz2`))) if (need.has(+id)) text[lang].set(+id, t);
+  }
+  const tr = (lang, id) => text[lang].get(links[lang].get(id)) || null;
+  return cmn.map((x) => ({ ...x, it: tr('ita', x.id), en: tr('eng', x.id) }));
+}
+
+// Forward maximum matching on the HSK vocabulary; a character outside any word
+// may stand alone if it is an HSK character. Returns null for anything else
+// (traditional forms, names, words beyond the levels).
+function segment(text, vocab, single, maxLen) {
+  const tokens = [];
+  for (let i = 0; i < text.length;) {
+    const ch = text[i];
+    if (PUNCT.test(ch)) { tokens.push({ t: ch, punct: true }); i++; continue; }
+    let hit = null;
+    for (let L = Math.min(maxLen, text.length - i); L >= 1 && !hit; L--) {
+      const w = text.slice(i, i + L);
+      if (vocab.has(w)) hit = { t: w, ...vocab.get(w) };
+    }
+    if (!hit && single.has(ch)) hit = { t: ch, ...single.get(ch) };
+    if (!hit) return null;
+    tokens.push(hit);
+    i += hit.t.length;
+  }
+  return tokens;
+}
+
+const ASCII_PUNCT = { '，': ',', '。': '.', '！': '!', '？': '?', '、': ',', '；': ';', '：': ':', '“': '"', '”': '"' };
+
+// Pinyin of a segmented sentence, word by word, with Western punctuation.
+function pinyinOf(tokens) {
+  let out = '';
+  for (const tk of tokens) {
+    if (tk.punct) { out += ASCII_PUNCT[tk.t] ?? tk.t; continue; }
+    out += (out && !/[\s"]$/.test(out) ? ' ' : '') + tk.py;
+  }
+  return out.trim();
+}
+
 // ---------- build ----------
 
 async function main() {
@@ -193,7 +257,45 @@ async function main() {
   }
   console.log(`Make Me a Hanzi: ${Object.keys(dec).length} entries`);
 
+  // Example sentences: only HSK 1-4 words; the sentence level is its hardest word.
+  const vocab = new Map();
+  for (const { w, level, py } of hsk.words) if (!vocab.has(w) || vocab.get(w).level > level) vocab.set(w, { level, py });
+  const single = new Map(hsk.chars.map(({ c, level }) => [c, { level, py: ced.chars[c]?.[0]?.[0] || '' }]));
+  const maxLen = Math.max(...[...vocab.keys()].map((w) => w.length));
+  const kept = [];
+  const byChar = new Map();
+  const seen = new Set();
+  for (const s of await readTatoeba()) {
+    const han = [...s.text].filter((x) => HAN.test(x)).length;
+    if (han < 4 || han > 18 || seen.has(s.text) || !(s.it || s.en)) continue;
+    const tokens = segment(s.text, vocab, single, maxLen);
+    if (!tokens) continue;
+    seen.add(s.text);
+    const level = Math.max(...tokens.filter((t) => !t.punct).map((t) => t.level));
+    const k = kept.push([s.id, s.text, pinyinOf(tokens), level, s.it, s.en]) - 1;
+    for (const ch of new Set([...s.text].filter((x) => single.has(x)))) (byChar.get(ch) || byChar.set(ch, []).get(ch)).push(k);
+  }
+  // Per character and level: Italian first, then the length closest to ~9 characters.
+  const score = (k) => (kept[k][4] ? 0 : 100) + Math.abs([...kept[k][1]].length - 9);
+  const slot = new Map();
+  const sent = { s: [], c: {} };
+  for (const { c } of hsk.chars) {
+    const picks = [];
+    for (let lv = 1; lv <= MAX_LEVEL; lv++) {
+      picks.push(...(byChar.get(c) || []).filter((k) => kept[k][3] === lv).sort((a, b) => score(a) - score(b)).slice(0, SENTENCES_PER_LEVEL));
+    }
+    if (!picks.length) continue;
+    sent.c[c] = picks.map((k) => {
+      if (!slot.has(k)) slot.set(k, sent.s.push(kept[k]) - 1);
+      return slot.get(k);
+    });
+  }
+  const covered = Object.keys(sent.c).length;
+  console.log(`Tatoeba: ${kept.length} usable sentences, ${sent.s.length} kept; ${covered}/${hsk.chars.length} characters have examples, ` +
+    `${sent.s.filter((x) => x[4]).length} with Italian`);
+
   writeFileSync(join(OUT, 'hsk.json'), JSON.stringify(hsk));
+  writeFileSync(join(OUT, 'sentences.json'), JSON.stringify(sent));
   writeFileSync(join(OUT, 'cedict.json'), JSON.stringify(ced));
   writeFileSync(join(OUT, 'decomp.json'), JSON.stringify(dec));
 

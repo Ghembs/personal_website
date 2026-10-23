@@ -13,6 +13,12 @@ const COLORS = {
   phonetic: '#6fd1c4',
 };
 const NODE_NAMES = { radicals: 'radicale', phonetic: 'componente fonetica' };
+const POS_NAMES = {
+  名: 'nomi', 动: 'verbi', 形: 'aggettivi', 副: 'avverbi', 量: 'classificatori', 代: 'pronomi',
+  数: 'numerali', 助: 'particelle', 介: 'preposizioni', 连: 'congiunzioni', 叹: 'interiezioni',
+  拟声: 'onomatopee', 前缀: 'prefissi', 后缀: 'suffissi',
+};
+const posTags = (pos) => (pos || '').replace(/[（）()]/g, '').split('、').filter(Boolean);
 const LEVEL_NAMES = { 1: 'HSK 1', 2: 'HSK 2', 3: 'HSK 3', 4: 'HSK 4' };
 const TONE_NAMES = { 1: '1° tono', 2: '2° tono', 3: '3° tono', 4: '4° tono', 5: 'neutro' };
 const TONES = { āēīōūǖ: 1, áéíóúǘ: 2, ǎěǐǒǔǚ: 3, àèìòùǜ: 4 };
@@ -72,6 +78,56 @@ function column(list, cx, cy, cz, out) {
     const side = ring % 2 ? -1 : 1, h = (Math.floor(ring / 2) + 1) * STEP;
     out.set([cx + Math.cos(a) * R, cy + side * h, cz + Math.sin(a) * R], i * 3);
   });
+}
+
+// ---------- 2D layouts (in the XY plane, seen through an orthographic camera) ----------
+
+// Sunflower disc: even spacing, first items at the centre.
+function phyllo(k, step) {
+  const r = step * Math.sqrt(k + 0.5), a = k * GOLDEN;
+  return [Math.cos(a) * r, Math.sin(a) * r];
+}
+
+// The levels as separate discs: in a row on wide screens, two by two on tall ones.
+function layoutLevels2D(chars, out, wide) {
+  const byLevel = {};
+  chars.forEach((x, i) => (byLevel[x.level] ||= []).push(i));
+  const lists = Object.keys(byLevel).sort().map((lv) => byLevel[lv]);
+  const step = SPREAD * 1.05;
+  const radii = lists.map((l) => step * Math.sqrt(l.length) + 1);
+  const centres = [];
+  if (wide) {
+    let x = 0;
+    radii.forEach((r, k) => { x += (k ? radii[k - 1] : 0) + r + (k ? 4 : 0); centres.push([x, 0]); });
+    const mid = (centres[0][0] - radii[0] + centres.at(-1)[0] + radii.at(-1)) / 2;
+    centres.forEach((c) => (c[0] -= mid));
+  } else {
+    const R = Math.max(...radii) + 2;
+    centres.push([-R, R], [R, R], [-R, -R], [R, -R]);
+  }
+  lists.forEach((l, k) => l.forEach((i, j) => {
+    const [x, y] = phyllo(j, step);
+    out.set([centres[k][0] + x, centres[k][1] + y, 0], i * 3);
+  }));
+}
+
+function layoutGalaxy2D(keys, out, base) {
+  keys.forEach((_, k) => out.set([...phyllo(k, SPREAD * 1.6), 0], (base + k) * 3));
+}
+
+// Concentric rings around a centre, as many per ring as fit; returns the outer radius.
+function rings2D(list, cx, cy, r0, out) {
+  const gap = SPREAD * 1.4;
+  let r = r0, j = 0;
+  while (j < list.length) {
+    const cap = Math.max(6, Math.floor((2 * Math.PI * r) / gap)), n = Math.min(cap, list.length - j);
+    for (let k = 0; k < n; k++, j++) {
+      const a = (k / n) * Math.PI * 2 + r * 0.3;
+      out.set([cx + Math.cos(a) * r, cy + Math.sin(a) * r, 0], list[j] * 3);
+    }
+    r += gap;
+  }
+  return r;
 }
 
 // ---------- page ----------
@@ -137,6 +193,13 @@ async function main() {
   for (const g of Object.values(GROUPS)) layoutGalaxy(g.keys, galaxy, g.base);
   const LAYOUTS = { levels: new Float32Array(galaxy) };
   layoutLevels(chars, LAYOUTS.levels);
+  const galaxy2D = new Float32Array(T * 3);
+  for (const g of Object.values(GROUPS)) layoutGalaxy2D(g.keys, galaxy2D, g.base);
+  const levels2D = () => {
+    const out = new Float32Array(galaxy2D);
+    layoutLevels2D(chars, out, window.innerWidth > window.innerHeight * 1.2);
+    return out;
+  };
 
   // ---------- Babylon ----------
 
@@ -243,7 +306,15 @@ async function main() {
   const scale = new Float32Array(T).fill(0);
   const alpha = new Float32Array(T).fill(0);
   const pickable = new Uint8Array(T);
-  let view = 'levels', colorMode = 'level', maxLevel = 4;
+  let view = 'levels', colorMode = 'level', maxLevel = 4, posFilter = 'all';
+  // 2D by default on narrow screens; the choice is remembered.
+  let flat = window.innerWidth <= 700;
+  try { const v = localStorage.getItem('hanzi-dim'); if (v) flat = v === '2'; } catch (e) { /* private mode */ }
+  let sentences = null;
+  fetch('data/sentences.json').then((r) => r.json()).then((d) => {
+    sentences = d;
+    if (selected >= 0 && !isNode(selected)) renderExamples(selected);
+  });
   let selected = -1, hovered = -1, open = -1;   // open: radical node whose column is up
   let related = new Set(), highlight = new Set(), column_ = new Set();
   let lines = null;
@@ -277,39 +348,63 @@ async function main() {
   // A galaxy layout: the open node's column raised, every other character
   // folded into its own node (a character with no family waits at the core,
   // and stands there alone when selected).
+  // In 2D the open node's characters ring it instead, and the other radicals
+  // they contain gather on an outer ring: everything else disappears.
   let lonely = -1;
   function galaxyLayout() {
-    const out = new Float32Array(galaxy);
+    const base = flat ? galaxy2D : galaxy;
+    const out = new Float32Array(base);
     for (let i = 0; i < N; i++) {
       const n = nodeFor(view, i);
-      out.set(n >= 0 ? galaxy.subarray(n * 3, n * 3 + 3) : [0, 0, 0], i * 3);
+      out.set(n >= 0 ? base.subarray(n * 3, n * 3 + 3) : [0, 0, 0], i * 3);
     }
     column_ = new Set();
+    alsoContainsOpen = new Set();
     if (open >= 0) {
       const list = members(open);
-      column(list, galaxy[open * 3], galaxy[open * 3 + 1], galaxy[open * 3 + 2], out);
       column_ = new Set(list);
+      if (view === 'radicals') alsoContainsOpen = new Set(list.flatMap((j) => alsoContains[j]));
+      const [cx, cy, cz] = base.subarray(open * 3, open * 3 + 3);
+      if (flat) {
+        const r = rings2D(list, cx, cy, SPREAD * 2.4, out);
+        rings2D([...alsoContainsOpen], cx, cy, r + SPREAD * 1.2, out);
+      } else {
+        column(list, cx, cy, cz, out);
+      }
     } else if (lonely >= 0) {
       column_ = new Set([lonely]);
     }
     return out;
   }
 
+  // 2D levels: a selected character gathers the ones it forms words with
+  // around itself; the rest stays as a faint backdrop.
+  function flatLevels() {
+    const out = levels2D();
+    if (selected >= 0 && !isNode(selected)) {
+      const [cx, cy] = out.subarray(selected * 3, selected * 3 + 2);
+      rings2D([...related].filter((j) => !isNode(j) && inLevel(j)), cx, cy, SPREAD * 2.4, out);
+    }
+    return out;
+  }
+  const currentLayout = () => (galactic() ? galaxyLayout() : flat ? flatLevels() : LAYOUTS.levels);
+
   function moveTo(layout) {
     from = new Float32Array(pos);
     to = layout;
     tStart = performance.now() / 1000;
     clearLines();
+    if (flat) fit();
   }
 
   // The galaxy is flat: look at it from above; the other views from the side.
   let betaGoal = null;
   function setView(v) {
     view = v;
-    betaGoal = v === 'levels' ? Math.PI / 2.35 : 0.95;
+    if (!flat) betaGoal = v === 'levels' ? Math.PI / 2.35 : 0.95;
     open = -1;
     lonely = -1;
-    moveTo(galactic() ? galaxyLayout() : LAYOUTS.levels);
+    moveTo(currentLayout());
     document.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
     setColors();
   }
@@ -319,7 +414,7 @@ async function main() {
     if (open === node && lonely === alone) return;
     open = node;
     lonely = alone;
-    betaGoal = node >= 0 ? 1.3 : 0.95;
+    if (!flat) betaGoal = node >= 0 ? 1.3 : 0.95;
     moveTo(galaxyLayout());
   }
 
@@ -391,13 +486,14 @@ async function main() {
         else {
           s = 1 + 0.16 * Math.sqrt(n);
           if (i === selected || i === open) s *= 1.6;
-          else if (open >= 0 && !related.has(i) && !alsoContainsOpen.has(i)) a = 0.4;
+          else if (open >= 0 && !related.has(i) && !alsoContainsOpen.has(i)) a = flat ? 0 : 0.4;
+          else if (flat && open >= 0 && alsoContainsOpen.has(i)) s = 1.3;
         }
       } else if (gal && !column_.has(i)) { s = 0; a = 0; }
       else if (!inLevel(i)) { s = 0.55; a = 0.07; }
       else if (i === selected) { s = 2.4; }
       else if (related.has(i) || highlight.has(i)) { s = 1.35; }
-      else if (focus && !gal) { a = 0.32; }
+      else if (focus && !gal) { a = flat && selected >= 0 ? 0.07 : 0.32; }
       if (i === hovered && a > 0.1) s *= 1.3;
       pickable[i] = a > 0.1 && s > 0.2 ? 1 : 0;
       scale[i] += (s - scale[i]) * k;
@@ -411,22 +507,131 @@ async function main() {
     mesh.thinInstanceBufferUpdated('matrix');
     mesh.thinInstanceBufferUpdated('tint');
 
-    const f = selected >= 0 ? selected : open;
-    if (f >= 0) target.set(pos[f * 3], pos[f * 3 + 1], pos[f * 3 + 2]);
-    else target.set(0, 0, 0);
-    BABYLON.Vector3.LerpToRef(camera.target, target, 1 - Math.exp(-dt * 3), camera.target);
+    const ease3 = 1 - Math.exp(-dt * 3);
+    if (flat) {
+      // 2D: pan and zoom towards their goals, fitted to what is on show.
+      half += (halfGoal - half) * ease3;
+      target.set(panGoal.x, panGoal.y, 0);
+      const aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.orthoTop = half; camera.orthoBottom = -half;
+      camera.orthoLeft = -half * aspect; camera.orthoRight = half * aspect;
+    } else {
+      const f = selected >= 0 ? selected : open;
+      if (f >= 0) target.set(pos[f * 3], pos[f * 3 + 1], pos[f * 3 + 2]);
+      else target.set(0, 0, 0);
+    }
+    BABYLON.Vector3.LerpToRef(camera.target, target, flat && dragging ? 1 : ease3, camera.target);
     if (betaGoal !== null) {
       camera.beta += (betaGoal - camera.beta) * (1 - Math.exp(-dt * 2.5));
       if (Math.abs(betaGoal - camera.beta) < 0.005) betaGoal = null;
     }
     // On narrow screens the card is a bottom sheet: keep the selection above it.
-    const lift = selected >= 0 && canvas.clientWidth <= 700 ? camera.radius * 0.17 : 0;
+    const lift = !flat && selected >= 0 && canvas.clientWidth <= 700 ? camera.radius * 0.17 : 0;
     camera.targetScreenOffset.y += (lift - camera.targetScreenOffset.y) * (1 - Math.exp(-dt * 3));
     mat.setVector3('eye', camera.position);
-    mat.setVector2('fog', new BABYLON.Vector2(camera.radius * 0.7, camera.radius * 2));
+    mat.setVector2('fog', flat ? new BABYLON.Vector2(1e4, 2e4) : new BABYLON.Vector2(camera.radius * 0.7, camera.radius * 2));
   });
   // Radicals reached through the open column's characters stay lit.
   let alsoContainsOpen = new Set();
+
+  // ---------- 2D camera: orthographic, panned and zoomed by hand ----------
+
+  let half = 30, halfGoal = 30, dragging = false;
+  const panGoal = new BABYLON.Vector2(0, 0);
+  const sheet = () => canvas.clientWidth <= 700 && !card.hidden;
+
+  // What is (or is about to be) on screen, framed with a margin; with the
+  // bottom sheet open the frame is the visible top part of the screen.
+  function fit() {
+    const show = [];
+    if (galactic()) {
+      if (open >= 0) show.push(open, ...column_, ...alsoContainsOpen);
+      else if (lonely >= 0) show.push(lonely);
+      else nodes.forEach((n, k) => { if (n.view === view && nodeCount[k]) show.push(N + k); });
+    } else if (selected >= 0) {
+      show.push(selected, ...[...related].filter((j) => !isNode(j)));
+    } else {
+      for (let i = 0; i < N; i++) show.push(i);
+    }
+    if (!show.length) return;
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const i of show) {
+      x0 = Math.min(x0, to[i * 3]); x1 = Math.max(x1, to[i * 3]);
+      y0 = Math.min(y0, to[i * 3 + 1]); y1 = Math.max(y1, to[i * 3 + 1]);
+    }
+    // The free part of the screen: above the bottom sheet on phones, left of
+    // the card on wider screens. Fit there, and shift the aim to match.
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const side = !card.hidden && !sheet() ? Math.min(W * 0.6, card.offsetWidth + 32) : 0;
+    const top = sheet() ? H * 0.42 : H;
+    const bar = $('#bar').offsetHeight + 8;
+    const fw = W - side, fh = top - bar;
+    const pxPerUnit = Math.min(fw / (x1 - x0 + 4), fh / (y1 - y0 + 4));
+    halfGoal = Math.min(200, Math.max(4, H / 2 / pxPerUnit));
+    const k = (2 * halfGoal) / H;                  // world units per pixel
+    panGoal.set((x0 + x1) / 2 + (side / 2) * k, (y0 + y1) / 2 - (H / 2 - (bar + fh / 2)) * k);
+  }
+
+  function applyCamera() {
+    if (flat) {
+      camera.detachControl();
+      camera.useAutoRotationBehavior = false;
+      camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
+      camera.alpha = -Math.PI / 2;
+      camera.beta = Math.PI / 2;
+      camera.radius = 80;
+      camera.targetScreenOffset.set(0, 0);
+      betaGoal = null;
+    } else {
+      camera.mode = BABYLON.Camera.PERSPECTIVE_CAMERA;
+      camera.attachControl(canvas, true);
+      camera.useAutoRotationBehavior = true;
+      camera.autoRotationBehavior.idleRotationSpeed = 0.04;
+      camera.radius = 68;
+      betaGoal = view === 'levels' ? Math.PI / 2.35 : open >= 0 ? 1.3 : 0.95;
+    }
+    document.querySelectorAll('[data-dim]').forEach((b) => b.classList.toggle('on', (b.dataset.dim === '2') === flat));
+  }
+
+  function setFlat(on) {
+    flat = on;
+    try { localStorage.setItem('hanzi-dim', on ? '2' : '3'); } catch (e) { /* private mode */ }
+    applyCamera();
+    moveTo(currentLayout());
+  }
+
+  // Drag to pan, wheel or pinch to zoom.
+  const touches = new Map();
+  let pinch = 0;
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!flat) return;
+    touches.set(e.pointerId, [e.clientX, e.clientY]);
+    dragging = true;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!flat || !touches.has(e.pointerId)) return;
+    const [px, py] = touches.get(e.pointerId);
+    touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (touches.size === 2) {
+      const [a, b] = [...touches.values()];
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      if (pinch) { halfGoal = Math.min(200, Math.max(3, halfGoal * (pinch / d))); half = halfGoal; }
+      pinch = d;
+      return;
+    }
+    const k = (2 * half) / canvas.clientHeight;
+    panGoal.x -= (e.clientX - px) * k;
+    panGoal.y += (e.clientY - py) * k;
+  });
+  const lift_ = (e) => { touches.delete(e.pointerId); pinch = 0; dragging = touches.size > 0; };
+  canvas.addEventListener('pointerup', lift_);
+  canvas.addEventListener('pointercancel', lift_);
+  canvas.addEventListener('wheel', (e) => {
+    if (!flat) return;
+    e.preventDefault();
+    halfGoal = Math.min(200, Math.max(3, halfGoal * Math.exp(e.deltaY * 0.0012)));
+  }, { passive: false });
 
   engine.runRenderLoop(() => scene.render());
   window.addEventListener('resize', () => engine.resize());
@@ -438,15 +643,16 @@ async function main() {
     const vp = scene.getTransformMatrix(), vm = camera.getViewMatrix();
     const W = canvas.clientWidth, H = canvas.clientHeight;
     const focal = H / 2 / Math.tan(camera.fov / 2);
+    const perPx = H / (2 * half);                  // 2D: pixels per world unit
     let best = -1, bestD = Infinity;
     for (let i = 0; i < T; i++) {
       if (!pickable[i]) continue;
       tmp.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
       const zv = BABYLON.Vector3.TransformCoordinates(tmp, vm).z;
-      if (zv <= camera.minZ) continue;
+      if (!flat && zv <= camera.minZ) continue;
       const p = BABYLON.Vector3.TransformCoordinates(tmp, vp);
       const sx = ((p.x + 1) / 2) * W, sy = ((1 - p.y) / 2) * H;
-      const r = Math.max(10, (scale[i] * GLYPH * focal) / zv * 0.55);
+      const r = Math.max(10, flat ? scale[i] * GLYPH * perPx * 0.55 : (scale[i] * GLYPH * focal) / zv * 0.55);
       const d = Math.hypot(sx - x, sy - y);
       if (d < r && d / r + zv * 0.002 < bestD) { bestD = d / r + zv * 0.002; best = i; }
     }
@@ -534,6 +740,7 @@ async function main() {
         Object.entries(byLv).map(([lv, l]) => `<div class="ety">HSK ${lv}</div><div class="chips">${l.map((i) => chip(chars[i].c)).join('')}</div>`).join('');
     }
     card.querySelector('.family').innerHTML = '';
+    card.querySelector('.examples').innerHTML = '';
     card.querySelector('.words').innerHTML = '';
     showWriter(r);
     card.scrollTop = 0;
@@ -572,9 +779,42 @@ async function main() {
         fam.filter((j) => j !== i).map((j) => chip(chars[j].c)).join('') + `</div>`
       : '';
 
-    const words = (wordsOf.get(c) || []).filter((w) => w.level <= maxLevel && w.w !== c)
+    renderExamples(i);
+    renderWords(i);
+    showWriter(c);
+    card.scrollTop = 0;
+  }
+
+  // Example sentences up to the chosen level, a couple per level, the
+  // character marked; Tatoeba sentences, linked to their page.
+  function renderExamples(i) {
+    const { c } = chars[i];
+    const el = card.querySelector('.examples');
+    if (!sentences) { el.innerHTML = `<h2>Frasi d'esempio</h2><p class="muted">caricamento…</p>`; return; }
+    const list = (sentences.c[c] || []).map((k) => sentences.s[k]).filter((x) => x[3] <= maxLevel);
+    el.innerHTML = `<h2>Frasi d'esempio fino a HSK ${maxLevel}</h2>` + (list.length
+      ? list.map(([id, zh, py, lv, it, en]) => `<div class="ex">` +
+        `<div class="zh hz">${zh.replaceAll(c, `<mark>${c}</mark>`)}</div>` +
+        `<div class="py">${py}</div>` +
+        `<div class="tr">${it || `${en} <small>(en)</small>`}</div>` +
+        `<div class="lv">HSK ${lv} · <a href="https://tatoeba.org/it/sentences/show/${id}" target="_blank" rel="noopener">Tatoeba #${id}</a></div>` +
+        `</div>`).join('')
+      : `<p class="muted">Nessuna frase entro questo livello.</p>`);
+  }
+
+  // Words up to the chosen level, filterable by part of speech.
+  function renderWords(i) {
+    const { c } = chars[i];
+    const all = (wordsOf.get(c) || []).filter((w) => w.level <= maxLevel && w.w !== c);
+    const tags = [...new Set(all.flatMap((w) => posTags(w.pos)))].filter((t) => POS_NAMES[t]);
+    if (posFilter !== 'all' && !tags.includes(posFilter)) posFilter = 'all';
+    const words = all.filter((w) => posFilter === 'all' || posTags(w.pos).includes(posFilter))
       .sort((a, b) => a.level - b.level || a.w.length - b.w.length).slice(0, 30);
-    card.querySelector('.words').innerHTML = `<h2>Parole fino a HSK ${maxLevel}</h2>` + (words.length
+    const filters = tags.length > 1
+      ? `<div class="pos">${[['all', 'tutte'], ...tags.map((t) => [t, POS_NAMES[t]])]
+        .map(([t, n]) => `<button data-pos="${t}" class="${t === posFilter ? 'on' : ''}">${t === 'all' ? '' : `<span class="hz">${t}</span> `}${n}</button>`).join('')}</div>`
+      : '';
+    card.querySelector('.words').innerHTML = `<h2>Parole fino a HSK ${maxLevel}</h2>` + filters + (words.length
       ? words.map((w) => {
         const info = ced.words[w.w];
         const gl = info?.d?.[0] || '';
@@ -583,9 +823,6 @@ async function main() {
           `<span class="lv">HSK ${w.level}${w.pos ? ` · ${w.pos}` : ''}${cl}</span></div>`;
       }).join('')
       : `<p class="muted">Nessuna parola fino a questo livello.</p>`);
-
-    showWriter(c);
-    card.scrollTop = 0;
   }
 
   function select(i) {
@@ -596,11 +833,11 @@ async function main() {
     }
     selected = i;
     related = relatedTo(i);
-    alsoContainsOpen = new Set(open >= 0 && view === 'radicals' ? [...column_].flatMap((j) => alsoContains[j]) : []);
     highlight = new Set();
     renderCard(i);
     card.hidden = false;
-    if (camera.radius > 34) camera.radius = 34;
+    if (!flat && camera.radius > 34) camera.radius = 34;
+    if (flat) { if (view === 'levels') moveTo(flatLevels()); else fit(); }
     if (tStart < 0) drawLines();
     history.replaceState(null, '', `#${encodeURIComponent(glyphs[i])}`);
   }
@@ -609,7 +846,8 @@ async function main() {
     selected = -1;
     related = new Set();
     card.hidden = true;
-    if (galactic() && (open >= 0 || lonely >= 0)) { alsoContainsOpen = new Set(); openNode(-1); }
+    if (galactic() && (open >= 0 || lonely >= 0)) openNode(-1);
+    else if (flat) moveTo(currentLayout());
     clearLines();
     history.replaceState(null, '', location.pathname);
   }
@@ -617,6 +855,8 @@ async function main() {
   card.addEventListener('click', (e) => {
     const go = e.target.closest('[data-go]');
     if (go) select(index.has(go.dataset.go) ? index.get(go.dataset.go) : nodeOf[view].get(go.dataset.go));
+    const pf = e.target.closest('[data-pos]');
+    if (pf && selected >= 0 && !isNode(selected)) { posFilter = pf.dataset.pos; renderWords(selected); }
     const w = e.target.closest('[data-writer]');
     if (w && writer) w.dataset.writer === 'quiz' ? writer.quiz() : writer.animateCharacter();
   });
@@ -661,6 +901,13 @@ async function main() {
       if (ok && inLevel(i)) highlight.add(i);
     });
   });
+
+  document.querySelectorAll('[data-dim]').forEach((b) => b.addEventListener('click', () => {
+    if ((b.dataset.dim === '2') !== flat) setFlat(b.dataset.dim === '2');
+  }));
+  window.addEventListener('resize', () => { if (flat) moveTo(currentLayout()); });
+  applyCamera();
+  if (flat) { pos.set(currentLayout()); moveTo(currentLayout()); half = halfGoal; }
 
   setColors();
   $('#loading').classList.add('done');

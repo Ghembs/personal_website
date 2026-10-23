@@ -63,8 +63,9 @@ SOFTWARE.
 
 ## Chinese section data and font
 
-`public/cinese/data` holds data derived from CC-CEDICT (CC BY-SA 4.0) and
-Make Me a Hanzi (LGPL-3.0), plus lists taken from the HSK syllabus; see
+`public/cinese/data` holds data derived from CC-CEDICT (CC BY-SA 4.0),
+Make Me a Hanzi (LGPL-3.0) and Tatoeba sentences (CC BY 2.0 FR), plus lists
+taken from the HSK syllabus; see
 [public/cinese/data/LICENSES.md](public/cinese/data/LICENSES.md).
 `public/cinese/fonts/hanzi.woff2` is a subset of Noto Serif SC
 (SIL Open Font License, [public/cinese/fonts/OFL.txt](public/cinese/fonts/OFL.txt)).
