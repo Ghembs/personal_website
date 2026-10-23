@@ -590,6 +590,7 @@ async function main() {
       else if (!inLevel(i)) { s = 0; a = 0; }
       else if (i === selected) { s = 2.4; }
       else if (related.has(i) || highlight.has(i)) { s = 1.35; }
+      else if (narrowSearch() && !highlight.has(i)) { a = 0; }
       else if (focus && !gal) { a = flat && selected >= 0 ? 0.07 : 0.32; }
       if (i === hovered && a > 0.1) s *= 1.3;
       if (!isLabel(i)) pickable[i] = a > 0.1 && s > 0.2 ? 1 : 0;
@@ -623,7 +624,7 @@ async function main() {
       if (Math.abs(betaGoal - camera.beta) < 0.005) betaGoal = null;
     }
     // On narrow screens the card is a bottom sheet: keep the selection above it.
-    const lift = !flat && selected >= 0 && canvas.clientWidth <= 700 ? camera.radius * 0.17 : 0;
+    const lift = !flat && selected >= 0 && canvas.clientWidth <= 700 ? camera.radius * (card.classList.contains('peek') ? 0.06 : 0.17) : 0;
     camera.targetScreenOffset.y += (lift - camera.targetScreenOffset.y) * (1 - Math.exp(-dt * 3));
     mat.setVector3('eye', camera.position);
     mat.setVector2('fog', flat ? new BABYLON.Vector2(1e4, 2e4) : new BABYLON.Vector2(camera.radius * 0.7, camera.radius * 2));
@@ -660,7 +661,7 @@ async function main() {
     // the card on wider screens. Fit there, and shift the aim to match.
     const W = canvas.clientWidth, H = canvas.clientHeight;
     const side = !card.hidden && !sheet() ? Math.min(W * 0.6, card.offsetWidth + 32) : 0;
-    const top = sheet() ? H * 0.42 : H;
+    const top = sheet() ? card.getBoundingClientRect().top - 8 : H;
     const bar = $('#bar').offsetHeight + 8;
     const fw = W - side, fh = top - bar;
     const pxPerUnit = Math.min(fw / (x1 - x0 + 4), fh / (y1 - y0 + 4));
@@ -794,17 +795,60 @@ async function main() {
       `<span class="hz">${c}</span>${py ? `<small>${py}</small>` : ''}${def ? ` ${def}` : ''}${extra}</${go ? 'button' : 'span'}>`;
   };
 
-  function showWriter(c) {
+  // Practice mode: the writer alone in the card, as large as it fits.
+  const practicing = () => card.classList.contains('practice');
+  function writerSize() {
+    if (!practicing()) return 96;
+    const r = card.getBoundingClientRect();
+    return Math.max(160, Math.floor(Math.min(r.width - 48, r.height - 120, 440)));
+  }
+
+  let writerChar = null;
+  function showWriter(c, quiz = practicing()) {
+    writerChar = c;
     const el = $('#writer');
     el.innerHTML = '';
+    const size = writerSize();
+    el.style.width = el.style.height = `${size}px`;
     writer = window.HanziWriter ? HanziWriter.create(el, c, {
-      width: 96, height: 96, padding: 6,
+      width: size, height: size, padding: practicing() ? 14 : 6,
       ...COLORS.writer,
       showCharacter: false, strokeAnimationSpeed: 1.3, delayBetweenStrokes: 140,
       onLoadCharDataError: () => { el.innerHTML = ''; },
     }) : null;
-    writer?.animateCharacter();
+    if (quiz) writer?.quiz({ showHintAfterMisses: 2 });
+    else writer?.animateCharacter();
   }
+
+  function setPractice(on) {
+    card.classList.toggle('practice', on);
+    card.querySelector('[data-writer="quiz"]').textContent = on ? 'ricomincia' : 'esercitati';
+    if (on) card.classList.remove('peek');
+    card.scrollTop = 0;
+    // the card has its new size on the next frame
+    requestAnimationFrame(() => { if (writerChar) showWriter(writerChar, on); if (flat) fit(); });
+  }
+
+  // ---------- the bottom sheet on phones: a grip folds it down to its head ----------
+
+  function setPeek(on) {
+    card.classList.toggle('peek', on);
+    if (flat) requestAnimationFrame(fit);
+  }
+  const grip = card.querySelector('.grip');
+  grip.addEventListener('click', () => setPeek(!card.classList.contains('peek')));
+  let swipe = null;
+  card.addEventListener('pointerdown', (e) => {
+    if (canvas.clientWidth > 700 || !e.target.closest('.grip, .head')) return;
+    swipe = e.clientY;
+  });
+  card.addEventListener('pointerup', (e) => {
+    if (swipe === null) return;
+    const d = e.clientY - swipe;
+    swipe = null;
+    if (d > 30) setPeek(true);
+    else if (d < -30) setPeek(false);
+  });
 
   const tonePy = (py) => `<span style="color:${COLORS.tone[toneOf(py)]}">${py}</span>`;
 
@@ -929,9 +973,10 @@ async function main() {
     }
     selected = i;
     related = relatedTo(i);
-    highlight = new Set();
+    if (!narrowSearch()) highlight = new Set();
     renderCard(i);
     card.hidden = false;
+    showResults();
     if (!flat && camera.radius > 34) camera.radius = 34;
     if (flat) { if (view === 'levels') moveTo(flatLevels()); else fit(); }
     if (tStart < 0) drawLines();
@@ -942,6 +987,8 @@ async function main() {
     selected = -1;
     related = new Set();
     card.hidden = true;
+    if (practicing()) setPractice(false);
+    showResults();
     if (galactic() && (open >= 0 || lonely >= 0)) openNode(-1);
     else if (flat) moveTo(currentLayout());
     clearLines();
@@ -954,10 +1001,18 @@ async function main() {
     const pf = e.target.closest('[data-pos]');
     if (pf && selected >= 0 && !isNode(selected)) { posFilter = pf.dataset.pos; renderWords(selected); }
     const w = e.target.closest('[data-writer]');
-    if (w && writer) w.dataset.writer === 'quiz' ? writer.quiz() : writer.animateCharacter();
+    if (w) {
+      const act = w.dataset.writer;
+      if (act === 'quiz') practicing() ? showWriter(writerChar, true) : setPractice(true);
+      else if (act === 'done') setPractice(false);
+      else writer?.animateCharacter();
+    }
   });
   card.querySelector('.close').addEventListener('click', deselect);
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') deselect(); });
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (practicing()) setPractice(false); else deselect();
+  });
 
   // ---------- controls ----------
 
@@ -977,6 +1032,7 @@ async function main() {
     if (galactic() && open >= 0) moveTo(galaxyLayout());
     else if (flat && !galactic()) moveTo(currentLayout());
     if (selected >= 0) select(selected);
+    runSearch(false);
   }));
   document.querySelectorAll('[data-level]').forEach((x) => x.classList.add('on'));
   document.querySelectorAll('[data-color]').forEach((b) => b.addEventListener('click', () => {
@@ -985,21 +1041,53 @@ async function main() {
     setColors();
   }));
 
-  // A character selects it; pinyin (tones optional) highlights every match.
-  $('#search').addEventListener('input', (e) => {
-    const q = e.target.value.trim();
+  // A character selects it; pinyin (tones optional) highlights every match
+  // among the shown levels. Run again when the levels change.
+  function runSearch(pickChar = true) {
+    const q = $('#search').value.trim();
     highlight = new Set();
-    if (!q) return;
-    const han = [...q].find((ch) => index.has(ch));
-    if (han) { select(index.get(han)); return; }
-    const p = plain(q).replace(/\s+/g, '');
-    const toneQ = /[1-5]$/.test(p) ? +p.slice(-1) : 0;
-    const base = toneQ ? p.slice(0, -1) : p;
-    chars.forEach((_, i) => {
-      const ok = (ced.chars[chars[i].c] || []).some(([py]) => plain(py) === base && (!toneQ || toneOf(py) === toneQ));
-      if (ok && inLevel(i)) highlight.add(i);
-    });
+    if (q) {
+      const han = [...q].find((ch) => index.has(ch));
+      if (han) { if (pickChar) select(index.get(han)); }
+      else {
+        const p = plain(q).replace(/\s+/g, '');
+        const toneQ = /[1-5]$/.test(p) ? +p.slice(-1) : 0;
+        const base = toneQ ? p.slice(0, -1) : p;
+        chars.forEach((_, i) => {
+          const ok = (ced.chars[chars[i].c] || []).some(([py]) => plain(py) === base && (!toneQ || toneOf(py) === toneQ));
+          if (ok && inLevel(i)) highlight.add(i);
+        });
+      }
+    }
+    showResults();
+  }
+  $('#search').addEventListener('input', () => runSearch());
+
+  // On phones the matches are too scattered to find in the cloud: the cloud
+  // keeps only them, and they are listed in a column under the bar.
+  const narrowSearch = () => canvas.clientWidth <= 700 && highlight.size > 0;
+  const results = $('#results');
+  function showResults() {
+    const on = narrowSearch() && card.hidden;
+    results.hidden = !on;
+    if (!on) return;
+    const list = [...highlight].sort((a, b) => chars[a].level - chars[b].level || tone[a] - tone[b]);
+    results.style.top = `${$('#bar').offsetHeight + 4}px`;
+    results.innerHTML = `<div class="rhead">${list.length} ${list.length === 1 ? 'carattere' : 'caratteri'} · ${levelText()}` +
+      `<button data-clear aria-label="Annulla ricerca">×</button></div>` +
+      list.map((i) => {
+        const gl = (ced.chars[chars[i].c]?.[0]?.[1] || [])[0] || '';
+        return `<button class="row" data-go="${chars[i].c}"><span class="hz">${chars[i].c}</span>` +
+          `<span class="py" style="color:${COLORS.tone[tone[i]]}">${reading[i]}</span>` +
+          `<span class="gl">${gl}</span><span class="lv">HSK ${chars[i].level}</span></button>`;
+      }).join('');
+  }
+  results.addEventListener('click', (e) => {
+    if (e.target.closest('[data-clear]')) { $('#search').value = ''; runSearch(); return; }
+    const go = e.target.closest('[data-go]');
+    if (go) select(index.get(go.dataset.go));
   });
+  window.addEventListener('resize', () => showResults());
 
   $('#theme').addEventListener('click', () => {
     theme = theme === 'dark' ? 'light' : 'dark';
