@@ -1,0 +1,8 @@
+# local tooling
+.claude/
+.wrangler/
+node_modules/
+.DS_Store
+
+# reference material, not ours to publish
+*.pdf

@@ -1,0 +1,280 @@
+:root {
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --grotesk: "Space Grotesk", system-ui, sans-serif;
+  --display: "Unbounded", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #07070c;
+  color: #fff;
+}
+
+canvas { display: block; }
+
+#stage { position: fixed; inset: 0; }
+#stage canvas { position: absolute; inset: 0; }
+
+#links {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Every link is positioned by main.js through transform. */
+.node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: pre;
+  text-decoration: none;
+  pointer-events: auto;
+  will-change: transform, opacity;
+  transform-origin: 50% 50%;
+}
+
+/* Square, larger than the screen, rotated by main.js (compositor only). */
+#stage #kaleido {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  display: block;
+  z-index: 1;
+  will-change: transform;
+}
+
+/* --- tunnel style: tiles and labels are drawn on the canvas (kaleido.js),
+   the DOM element is an invisible hit area stretched over its tile --- */
+.node.k {
+  font-family: var(--grotesk);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: transparent;
+  padding: 10px 18px;
+  background: none;
+}
+.node.k.title {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: 17px;
+  line-height: 1.45;
+  letter-spacing: 0.22em;
+  text-align: center;
+  width: min-content;
+  white-space: normal;
+  padding: 0;
+  color: transparent;   /* drawn cut out of the hexagon by kaleido.js */
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  outline: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* --- shan shui: the handscroll panels slide by transform (shanshui.js) --- */
+#shan {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+  visibility: hidden;
+}
+#shan canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+/* Links are invisible hit areas over painted elements: only a breath of ink on hover. */
+.node.s {
+  color: transparent;
+  padding: 0;
+  background: none;
+  border-radius: 40%;
+}
+/* A barely-there red halo, like a faded vermilion mark, gives the links away. */
+.node.s:not(.title):not(.seal) {
+  background: radial-gradient(closest-side, rgba(179, 54, 43, 0.06), rgba(179, 54, 43, 0));
+  mix-blend-mode: multiply;
+}
+.node.s:not(.title):not(.seal):hover {
+  background: radial-gradient(closest-side, rgba(40, 30, 20, 0.14), rgba(40, 30, 20, 0));
+}
+/* The title becomes an inscription, the 中文 link its red seal. */
+.node.s.title {
+  position: fixed;
+  top: 8vh;
+  right: 6vw;
+  left: auto;
+  writing-mode: vertical-rl;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 19px;
+  letter-spacing: 0.28em;
+  white-space: nowrap;
+  color: rgba(45, 40, 34, 0.82);
+  transform: none !important;
+}
+.node.s.seal {
+  position: fixed;
+  top: calc(8vh + var(--title-h, 220px) + 14px);
+  right: calc(6vw - 6px);
+  left: auto;
+  writing-mode: vertical-rl;
+  font-family: "Ma Shan Zheng", "Noto Serif SC", serif;
+  font-size: 19px;
+  line-height: 1;
+  padding: 6px 5px;
+  border-radius: 3px;
+  color: rgba(244, 234, 214, 0.95);
+  background: #b3362b;
+  box-shadow: inset 0 0 0 2px rgba(244, 234, 214, 0.55);
+  mix-blend-mode: multiply;
+  transform: rotate(-3deg) !important;
+}
+.node.s.seal:hover { background: #8f2a21; }
+
+/* --- ascii style: plain characters on the grid, like the ones around them.
+   The paper background only blanks the glyphs underneath, it reads as spaces. --- */
+.node.a {
+  font-family: var(--mono);
+  font-weight: 700;
+  padding: 0;
+  border-radius: 0;
+  color: var(--hl);
+  background: var(--paper);
+}
+.node.a:hover {
+  background: var(--hl);
+  color: var(--paper);
+}
+.node.a.title { pointer-events: none; }
+
+/* --- hud: dressed like the section on screen (body[data-look], set by main.js) --- */
+#hud {
+  position: fixed;
+  left: 12px;
+  bottom: 10px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#hud button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  gap: 0.45em;
+  align-items: baseline;
+  transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+}
+
+/* tunnel: light tiles with the black line and the pop shadow of the rects */
+body[data-look="tunnel"] #hud { gap: 10px; }
+body[data-look="tunnel"] #hud button {
+  font: 600 10px var(--grotesk);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #111114;
+  background: #eeece6;
+  outline: 1.5px solid #000;
+  box-shadow: -2px 4px 0 rgba(0, 0, 0, 0.55);
+  padding: 5px 9px;
+}
+body[data-look="tunnel"] #hud button.on { background: var(--k-ink); }
+body[data-look="tunnel"] #hud .n { opacity: 0.5; }
+
+/* ascii and clouds: plain characters on the grid, brackets instead of boxes */
+body[data-look="ascii"] #hud button,
+body[data-look="nuvole"] #hud button {
+  font: 400 12px var(--mono);
+  color: var(--hl);
+  background: var(--paper);   /* blanks the glyphs underneath, like the links */
+}
+body[data-look="ascii"] #hud button::before,
+body[data-look="nuvole"] #hud button::before { content: "["; margin-right: -0.25em; }
+body[data-look="ascii"] #hud button::after,
+body[data-look="nuvole"] #hud button::after { content: "]"; margin-left: -0.25em; }
+body[data-look="ascii"] #hud button.on,
+body[data-look="nuvole"] #hud button.on {
+  opacity: 1;
+  font-weight: 700;
+  color: var(--paper);
+  background: var(--hl);
+}
+
+/* shan shui: brush numerals and an italic name, the active one sealed in red */
+body[data-look="shan"] #hud { gap: 18px; }
+body[data-look="shan"] #hud button {
+  color: rgba(45, 40, 34, 0.62);
+  position: relative;
+}
+body[data-look="shan"] #hud .n { font-size: 0; }
+body[data-look="shan"] #hud .n::before {
+  content: attr(data-zh);
+  font: 16px "Ma Shan Zheng", "Noto Serif SC", serif;
+}
+body[data-look="shan"] #hud .t { font-size: 0; }
+body[data-look="shan"] #hud .t::before {
+  content: attr(data-zh);
+  font: 17px "Ma Shan Zheng", "Noto Serif SC", serif;
+}
+body[data-look="shan"] #hud button.on { color: rgba(45, 40, 34, 0.95); }
+body[data-look="shan"] #hud button.on .n::before {
+  color: #f4ead6;
+  background: #b3362b;
+  padding: 1px 2px;
+  border-radius: 2px;
+  mix-blend-mode: multiply;
+}
+
+#toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  font: 14px var(--mono);
+  background: #000;
+  color: #fff;
+  padding: 6px 12px;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+#toast.show { opacity: 1; }
+
+/* --- boring mode easter egg --- */
+#boring {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #fff;
+  color: #000;
+  font: 16px/1.5 Times, serif;
+  padding: 24px 16px;
+  overflow: auto;
+}
+#boring a { color: #00e; }
+#boring button { font: inherit; margin-top: 1em; }
+
+@media (max-width: 600px) {
+  .node.k { font-size: 12px; padding: 8px 14px; }
+  .node.k.title { font-size: 13px; }
+}

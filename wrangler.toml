@@ -1,0 +1,4 @@
+# Cloudflare Pages project. Deploy with: npx wrangler pages deploy
+name = "giuliano-gambacorta-website"
+pages_build_output_dir = "public"
+compatibility_date = "2026-10-01"
