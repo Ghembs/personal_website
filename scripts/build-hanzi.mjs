@@ -8,7 +8,8 @@
 //                                                         -> data/hsk.json
 //   - CC-CEDICT (CC BY-SA 4.0): pinyin and meanings.      -> data/cedict.json
 //   - Make Me a Hanzi dictionary.txt (LGPL-3.0): radical,
-//     decomposition and etymology (phonetic / semantic).  -> data/decomp.json
+//     decomposition and etymology (phonetic / semantic),
+//     plus stroke counts from its graphics.txt (APL).    -> data/decomp.json
 //   - Tatoeba (CC BY 2.0 FR): example sentences made only of
 //     HSK 1-4 words, with Italian or English translations. -> data/sentences.json
 //   - Noto Serif SC (OFL): subset to the characters used. -> fonts/hanzi.woff2
@@ -30,6 +31,7 @@ const MAX_LEVEL = 4;
 const SOURCES = {
   cedict: 'https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz',
   mmah: 'https://raw.githubusercontent.com/skishore/makemeahanzi/master/dictionary.txt',
+  graphics: 'https://raw.githubusercontent.com/skishore/makemeahanzi/master/graphics.txt',
   font: 'https://github.com/google/fonts/raw/main/ofl/notoserifsc/NotoSerifSC%5Bwght%5D.ttf',
   tatoeba: 'https://downloads.tatoeba.org/exports/per_language/',
 };
@@ -255,7 +257,15 @@ async function main() {
     const d = dec[c];
     [d.r, ...[...(d.d || '')].filter((x) => HAN.test(x)), d.e?.p, d.e?.s].filter(Boolean).forEach(add);
   }
-  console.log(`Make Me a Hanzi: ${Object.keys(dec).length} entries`);
+  // Stroke counts: only the number is kept, not the stroke outlines.
+  const strokes = new Map((await cached('makemeahanzi-graphics.txt', SOURCES.graphics)).toString().trim().split('\n')
+    .map((l) => JSON.parse(l)).map((e) => [e.character, e.strokes.length]));
+  let noCount = 0;
+  for (const c of Object.keys(dec)) {
+    if (strokes.has(c)) dec[c].n = strokes.get(c);
+    else noCount++;
+  }
+  console.log(`Make Me a Hanzi: ${Object.keys(dec).length} entries, ${noCount} without a stroke count`);
 
   // Example sentences: only HSK 1-4 words; the sentence level is its hardest word.
   const vocab = new Map();

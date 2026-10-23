@@ -6,12 +6,30 @@
 // across the galactic plane.
 // Data comes from scripts/build-hanzi.mjs (see data/ and the page footer).
 
-const COLORS = {
-  level: { 1: '#f3e6c8', 2: '#e8b15a', 3: '#d9644a', 4: '#7fb0c9' },
-  tone: { 1: '#5d9de6', 2: '#f0b34a', 3: '#6fbf73', 4: '#e8574a', 5: '#a8a8a8' },
-  radicals: '#c4a6f0',
-  phonetic: '#6fd1c4',
+const THEMES = {
+  dark: {
+    level: { 1: '#f3e6c8', 2: '#e8b15a', 3: '#d9644a', 4: '#7fb0c9' },
+    tone: { 1: '#5d9de6', 2: '#f0b34a', 3: '#6fbf73', 4: '#e8574a', 5: '#a8a8a8' },
+    radicals: '#c4a6f0',
+    phonetic: '#6fd1c4',
+    orbit: [0.77, 0.65, 0.94],
+    line: [0.94, 0.9, 0.82],
+    writer: { strokeColor: '#efe6d2', radicalColor: '#c8503c', outlineColor: 'rgba(239,230,210,0.15)', highlightColor: '#e8b15a', drawingColor: '#efe6d2' },
+  },
+  light: {
+    level: { 1: '#2b303b', 2: '#b0741a', 3: '#bf3b2c', 4: '#2c6a8f' },
+    tone: { 1: '#2160c4', 2: '#c4870f', 3: '#2d8a44', 4: '#c43b2b', 5: '#7a7a7a' },
+    radicals: '#7448c2',
+    phonetic: '#138476',
+    orbit: [0.45, 0.28, 0.76],
+    line: [0.12, 0.13, 0.17],
+    writer: { strokeColor: '#1e222c', radicalColor: '#b8402e', outlineColor: 'rgba(30,34,44,0.12)', highlightColor: '#b0741a', drawingColor: '#1e222c' },
+  },
 };
+let theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+try { theme = localStorage.getItem('hanzi-theme') || theme; } catch (e) { /* private mode */ }
+let COLORS = THEMES[theme];
+document.documentElement.dataset.theme = theme;
 const NODE_NAMES = { radicals: 'radicale', phonetic: 'componente fonetica' };
 const POS_NAMES = {
   名: 'nomi', 动: 'verbi', 形: 'aggettivi', 副: 'avverbi', 量: 'classificatori', 代: 'pronomi',
@@ -69,6 +87,33 @@ function layoutGalaxy(nodes, out, base) {
   });
 }
 
+// Radicals on concentric orbits, one per stroke count (10 and more share the
+// outermost), busiest first along each orbit. A gap is left at `labelAngle`
+// for the orbit's number. `plane` maps (x, y) on the disc to world coordinates.
+// Returns the orbits: [{ r, label }].
+const ORBIT_MAX = 10;
+function layoutOrbits(keys, strokesOf, out, base, labelAngle, plane) {
+  const rings = new Map();
+  keys.forEach((key, k) => {
+    const n = Math.min(ORBIT_MAX, strokesOf(key));
+    (rings.get(n) || rings.set(n, []).get(n)).push(k);
+  });
+  const spacing = SPREAD * 2.3, gap = SPREAD * 2.4;
+  const orbits = [];
+  let r = 0;
+  for (const n of [...rings.keys()].sort((a, b) => a - b)) {
+    const list = rings.get(n);
+    r = Math.max(r ? r + gap : SPREAD * 3, ((list.length + 1.5) * spacing) / (2 * Math.PI));
+    const room = 2 * Math.PI - (2.2 * spacing) / r;          // leave the label's slot free
+    list.forEach((k, j) => {
+      const a = labelAngle + Math.PI - room / 2 + (room * (j + 0.5)) / list.length;
+      out.set(plane(Math.cos(a) * r, Math.sin(a) * r, j), (base + k) * 3);
+    });
+    orbits.push({ r, label: n === ORBIT_MAX ? `${n}+` : `${n}` });
+  }
+  return orbits;
+}
+
 // A radical's characters stand in rings stacked above and below it.
 function column(list, cx, cy, cz, out) {
   const PER = 7, R = SPREAD * 1.9, STEP = SPREAD * 2;
@@ -88,10 +133,14 @@ function phyllo(k, step) {
   return [Math.cos(a) * r, Math.sin(a) * r];
 }
 
-// The levels as separate discs: in a row on wide screens, two by two on tall ones.
-function layoutLevels2D(chars, out, wide) {
+// The shown levels as separate discs: in a row on wide screens, two by two
+// on tall ones. Hidden levels wait at the centre.
+function layoutLevels2D(chars, out, wide, shown) {
   const byLevel = {};
-  chars.forEach((x, i) => (byLevel[x.level] ||= []).push(i));
+  chars.forEach((x, i) => {
+    if (shown.has(x.level)) (byLevel[x.level] ||= []).push(i);
+    else out.set([0, 0, 0], i * 3);
+  });
   const lists = Object.keys(byLevel).sort().map((lv) => byLevel[lv]);
   const step = SPREAD * 1.05;
   const radii = lists.map((l) => step * Math.sqrt(l.length) + 1);
@@ -103,7 +152,9 @@ function layoutLevels2D(chars, out, wide) {
     centres.forEach((c) => (c[0] -= mid));
   } else {
     const R = Math.max(...radii) + 2;
-    centres.push([-R, R], [R, R], [-R, -R], [R, -R]);
+    const grid = [[-R, R], [R, R], [-R, -R], [R, -R]];
+    if (lists.length < 3) grid.splice(0, 4, [0, R], [0, -R]);
+    centres.push(...grid.slice(0, lists.length));
   }
   lists.forEach((l, k) => l.forEach((i, j) => {
     const [x, y] = phyllo(j, step);
@@ -166,6 +217,8 @@ async function main() {
   });
   for (const [p, list] of families) if (list.length < 2) { families.delete(p); list.forEach((i) => familyOf.delete(chars[i].c)); }
 
+  const strokesOf = (c) => dec[c]?.n || 1;
+
   // Galaxy nodes, after the characters: radicals, then phonetic components.
   const GROUPS = {
     radicals: { members: byRadical, keyOf: (i) => radicalOf[i] },
@@ -176,12 +229,15 @@ async function main() {
   for (const [view, gdef] of Object.entries(GROUPS)) {
     gdef.base = N + nodes.length;
     gdef.keys = [...gdef.members.keys()].sort((a, b) => gdef.members.get(b).length - gdef.members.get(a).length);
+    if (view === 'radicals') gdef.keys.sort((a, b) => Math.min(ORBIT_MAX, strokesOf(a)) - Math.min(ORBIT_MAX, strokesOf(b)));
     gdef.keys.forEach((key) => {
       nodeOf[view].set(key, N + nodes.length);
       nodes.push({ view, key, list: gdef.members.get(key) });
     });
   }
-  const T = N + nodes.length;
+  // Orbit numbers for the radicals, one instance each, after the nodes.
+  const orbitCount = new Set(GROUPS.radicals.keys.map((k) => Math.min(ORBIT_MAX, strokesOf(k)))).size;
+  const NL = N + nodes.length, T = NL + orbitCount;
   const glyphs = [...chars.map((x) => x.c), ...nodes.map((n) => n.key)];
   const nodeFor = (view, i) => nodeOf[view].get(GROUPS[view].keyOf(i)) ?? -1;
   // Other radicals a character contains, among its direct components.
@@ -190,14 +246,21 @@ async function main() {
 
   // Layouts cover all T instances; nodes rest on their galaxy, hidden outside their view.
   const galaxy = new Float32Array(T * 3);
-  for (const g of Object.values(GROUPS)) layoutGalaxy(g.keys, galaxy, g.base);
+  layoutGalaxy(GROUPS.phonetic.keys, galaxy, GROUPS.phonetic.base);
+  const jitter = (j) => Math.sin(j * 1.3) * 0.5;
+  const orbits3D = layoutOrbits(GROUPS.radicals.keys, strokesOf, galaxy, GROUPS.radicals.base,
+    -Math.PI / 2, (x, y, j) => [x, jitter(j), y]);
+  orbits3D.forEach((o, k) => { galaxy.set([0, 0, -o.r], (NL + k) * 3); glyphs.push(o.label); });
   const LAYOUTS = { levels: new Float32Array(galaxy) };
   layoutLevels(chars, LAYOUTS.levels);
   const galaxy2D = new Float32Array(T * 3);
-  for (const g of Object.values(GROUPS)) layoutGalaxy2D(g.keys, galaxy2D, g.base);
+  layoutGalaxy2D(GROUPS.phonetic.keys, galaxy2D, GROUPS.phonetic.base);
+  const orbits2D = layoutOrbits(GROUPS.radicals.keys, strokesOf, galaxy2D, GROUPS.radicals.base,
+    Math.PI / 2, (x, y) => [x, y, 0]);
+  orbits2D.forEach((o, k) => galaxy2D.set([0, o.r, 0], (NL + k) * 3));
   const levels2D = () => {
     const out = new Float32Array(galaxy2D);
-    layoutLevels2D(chars, out, window.innerWidth > window.innerHeight * 1.2);
+    layoutLevels2D(chars, out, window.innerWidth > window.innerHeight * 1.2, levels);
     return out;
   };
 
@@ -220,7 +283,7 @@ async function main() {
   camera.autoRotationBehavior.idleRotationWaitTime = 4000;
 
   // Glyph atlas, drawn with the subset font.
-  await document.fonts.load('80px HanziSerif');
+  await Promise.all([document.fonts.load('80px HanziSerif'), document.fonts.load('italic 40px "Cormorant Garamond"')]);
   const COLS = Math.ceil(Math.sqrt(T)), CS = 96;
   const atlasCanvas = document.createElement('canvas');
   atlasCanvas.width = atlasCanvas.height = COLS * CS;
@@ -229,7 +292,10 @@ async function main() {
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.fillStyle = '#fff';
-  glyphs.forEach((c, i) => g.fillText(c, (i % COLS) * CS + CS / 2, Math.floor(i / COLS) * CS + CS * 0.54));
+  glyphs.forEach((c, i) => {
+    g.font = i >= NL ? `italic ${CS * 0.5}px "Cormorant Garamond", serif` : `${CS * 0.8}px HanziSerif`;
+    g.fillText(c, (i % COLS) * CS + CS / 2, Math.floor(i / COLS) * CS + CS * 0.54);
+  });
   const atlas = new BABYLON.DynamicTexture('atlas', atlasCanvas, scene, true);
   atlas.hasAlpha = true;
   atlas.anisotropicFilteringLevel = 4;
@@ -306,7 +372,9 @@ async function main() {
   const scale = new Float32Array(T).fill(0);
   const alpha = new Float32Array(T).fill(0);
   const pickable = new Uint8Array(T);
-  let view = 'levels', colorMode = 'level', maxLevel = 4, posFilter = 'all';
+  let view = 'levels', colorMode = 'level', posFilter = 'all';
+  const levels = new Set([1, 2, 3, 4]);
+  const levelText = () => (levels.size === 4 ? 'HSK 1–4' : `HSK ${[...levels].sort().join(' · ')}`);
   // 2D by default on narrow screens; the choice is remembered.
   let flat = window.innerWidth <= 700;
   try { const v = localStorage.getItem('hanzi-dim'); if (v) flat = v === '2'; } catch (e) { /* private mode */ }
@@ -320,10 +388,11 @@ async function main() {
   let lines = null;
   const target = BABYLON.Vector3.Zero();
 
-  const isNode = (i) => i >= N;
+  const isNode = (i) => i >= N && i < NL;
+  const isLabel = (i) => i >= NL;
   const nodeView = (i) => nodes[i - N].view;
   const galactic = () => view !== 'levels';
-  const inLevel = (i) => chars[i].level <= maxLevel;
+  const inLevel = (i) => levels.has(chars[i].level);
   // A family's members are ordered by reading, so tones line up in the column.
   const members = (node) => nodes[node - N].list.filter(inLevel)
     .sort((a, b) => (nodeView(node) === 'phonetic' ? plain(reading[a]).localeCompare(plain(reading[b])) || tone[a] - tone[b] : 0) ||
@@ -335,13 +404,14 @@ async function main() {
 
   function setColors() {
     for (let i = 0; i < T; i++) {
-      const c = isNode(i) ? COLORS[nodeView(i)] : colorMode === 'level' ? COLORS.level[chars[i].level] : COLORS.tone[tone[i]];
+      const c = isLabel(i) ? COLORS.radicals : isNode(i) ? COLORS[nodeView(i)] : colorMode === 'level' ? COLORS.level[chars[i].level] : COLORS.tone[tone[i]];
       tints.set(hex(c), i * 4);
     }
     const names = colorMode === 'level' ? LEVEL_NAMES : TONE_NAMES;
     $('#legend').innerHTML = Object.entries(names)
       .map(([k, n]) => `<span style="--c:${COLORS[colorMode][k]}">${n}</span>`).join('') +
-      (galactic() ? `<span style="--c:${COLORS[view]}">${NODE_NAMES[view]}</span>` : '');
+      (galactic() ? `<span style="--c:${COLORS[view]}">${NODE_NAMES[view]}</span>` : '') +
+      (view === 'radicals' ? `<span class="plain">anelli: numero di tratti</span>` : '');
     mesh.thinInstanceBufferUpdated('tint');
   }
 
@@ -394,6 +464,8 @@ async function main() {
     to = layout;
     tStart = performance.now() / 1000;
     clearLines();
+    orbitMesh?.dispose();
+    orbitMesh = null;
     if (flat) fit();
   }
 
@@ -430,10 +502,31 @@ async function main() {
       const n = nodeFor('phonetic', i);
       if (n >= 0) { out.add(n); members(n).forEach((j) => out.add(j)); }
     } else {
-      for (const w of wordsOf.get(chars[i].c) || []) if (w.level <= maxLevel) for (const ch of w.w) if (index.has(ch)) out.add(index.get(ch));
+      for (const w of wordsOf.get(chars[i].c) || []) if (levels.has(w.level)) for (const ch of w.w) if (index.has(ch)) out.add(index.get(ch));
     }
     out.delete(i);
     return out;
+  }
+
+  // Faint orbit circles of the radicals view, in 3D or 2D.
+  let orbitMesh = null;
+  function drawOrbits() {
+    orbitMesh?.dispose();
+    orbitMesh = null;
+    if (view !== 'radicals') return;
+    const c = new BABYLON.Color4(...COLORS.orbit, open >= 0 ? 0.05 : 0.14);
+    const segs = [], cols = [];
+    for (const o of flat ? orbits2D : orbits3D) {
+      const pts = [];
+      for (let k = 0; k <= 96; k++) {
+        const a = (k / 96) * Math.PI * 2;
+        pts.push(flat ? new BABYLON.Vector3(Math.cos(a) * o.r, Math.sin(a) * o.r, 0.01) : new BABYLON.Vector3(Math.cos(a) * o.r, 0, Math.sin(a) * o.r));
+      }
+      segs.push(pts);
+      cols.push(pts.map(() => c));
+    }
+    orbitMesh = BABYLON.MeshBuilder.CreateLineSystem('orbits', { lines: segs, colors: cols, useVertexAlpha: true }, scene);
+    orbitMesh.isPickable = false;
   }
 
   function clearLines() {
@@ -448,8 +541,8 @@ async function main() {
     const p = (i) => new BABYLON.Vector3(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
     const segs = [], cols = [];
     const add = (a, b, c) => { segs.push([p(a), p(b)]); cols.push([c, c]); };
-    const paper = new BABYLON.Color4(0.94, 0.9, 0.82, 0.2);
-    const violet = new BABYLON.Color4(0.77, 0.65, 0.94, 0.28);
+    const paper = new BABYLON.Color4(...COLORS.line, 0.2);
+    const violet = new BABYLON.Color4(...COLORS.orbit, 0.3);
     if (galactic() && open >= 0) {
       for (const i of column_) {
         add(open, i, paper);
@@ -457,7 +550,7 @@ async function main() {
       }
     }
     if (selected >= 0 && !isNode(selected) && view !== 'phonetic') {
-      const strong = new BABYLON.Color4(0.94, 0.9, 0.82, 0.45);
+      const strong = new BABYLON.Color4(...COLORS.line, 0.45);
       for (const j of related) if (isNode(j) || inLevel(j)) add(selected, j, strong);
     }
     if (!segs.length) return;
@@ -473,14 +566,18 @@ async function main() {
     if (tStart >= 0) {
       const t = Math.min(1, (now - tStart) / TRANSITION), e = ease(t);
       for (let k = 0; k < pos.length; k++) pos[k] = from[k] + (to[k] - from[k]) * e;
-      if (t >= 1) { tStart = -1; drawLines(); }
+      if (t >= 1) { tStart = -1; drawLines(); drawOrbits(); }
     }
     const gal = galactic();
     const focus = selected >= 0 || highlight.size > 0;
     const k = 1 - Math.exp(-dt * 8);
     for (let i = 0; i < T; i++) {
       let s = 1, a = 1;
-      if (isNode(i)) {
+      if (isLabel(i)) {
+        if (view !== 'radicals') { s = 0; a = 0; }
+        else { s = 2.4; a = open >= 0 ? 0 : 0.85; }
+        pickable[i] = 0;
+      } else if (isNode(i)) {
         const n = nodeCount[i - N];
         if (nodeView(i) !== view || !n) { s = 0; a = 0; }
         else {
@@ -490,12 +587,12 @@ async function main() {
           else if (flat && open >= 0 && alsoContainsOpen.has(i)) s = 1.3;
         }
       } else if (gal && !column_.has(i)) { s = 0; a = 0; }
-      else if (!inLevel(i)) { s = 0.55; a = 0.07; }
+      else if (!inLevel(i)) { s = 0; a = 0; }
       else if (i === selected) { s = 2.4; }
       else if (related.has(i) || highlight.has(i)) { s = 1.35; }
       else if (focus && !gal) { a = flat && selected >= 0 ? 0.07 : 0.32; }
       if (i === hovered && a > 0.1) s *= 1.3;
-      pickable[i] = a > 0.1 && s > 0.2 ? 1 : 0;
+      if (!isLabel(i)) pickable[i] = a > 0.1 && s > 0.2 ? 1 : 0;
       scale[i] += (s - scale[i]) * k;
       alpha[i] += (a - alpha[i]) * k;
       const sc = scale[i] * GLYPH;
@@ -551,7 +648,7 @@ async function main() {
     } else if (selected >= 0) {
       show.push(selected, ...[...related].filter((j) => !isNode(j)));
     } else {
-      for (let i = 0; i < N; i++) show.push(i);
+      for (let i = 0; i < N; i++) if (inLevel(i)) show.push(i);
     }
     if (!show.length) return;
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
@@ -660,7 +757,7 @@ async function main() {
   }
 
   const label = (i) => (isNode(i)
-    ? `<span class="hz">${glyphs[i]}</span> ${NODE_NAMES[nodeView(i)]} · ${nodeCount[i - N]}`
+    ? `<span class="hz">${glyphs[i]}</span> ${NODE_NAMES[nodeView(i)]}${nodeView(i) === 'radicals' ? ` · ${strokesOf(glyphs[i])} tratti` : ''} · ${nodeCount[i - N]}`
     : `<span class="hz">${glyphs[i]}</span> ${reading[i]}`);
 
   const hoverEl = $('#hover');
@@ -702,8 +799,7 @@ async function main() {
     el.innerHTML = '';
     writer = window.HanziWriter ? HanziWriter.create(el, c, {
       width: 96, height: 96, padding: 6,
-      strokeColor: '#efe6d2', radicalColor: '#c8503c', outlineColor: 'rgba(239,230,210,0.15)',
-      highlightColor: '#e8b15a', drawingColor: '#efe6d2',
+      ...COLORS.writer,
       showCharacter: false, strokeAnimationSpeed: 1.3, delayBetweenStrokes: 140,
       onLoadCharDataError: () => { el.innerHTML = ''; },
     }) : null;
@@ -718,7 +814,7 @@ async function main() {
     const phonetic = nodeView(node) === 'phonetic';
     const own = index.has(r) ? reading[index.get(r)] : (d.py || '').split(',')[0];
     card.querySelector('.big').textContent = r;
-    card.querySelector('.level').textContent = phonetic ? 'Componente fonetica' : 'Radicale';
+    card.querySelector('.level').textContent = phonetic ? 'Componente fonetica' : `Radicale · ${strokesOf(r)} tratti`;
     card.querySelector('.readings').innerHTML = own ? tonePy(own) : '';
     card.querySelector('.meanings').innerHTML = `<h2>Significato</h2><p>${d.def || '—'}</p>`;
     if (phonetic) {
@@ -736,7 +832,7 @@ async function main() {
     } else {
       const byLv = {};
       list.forEach((i) => (byLv[chars[i].level] ||= []).push(i));
-      card.querySelector('.parts').innerHTML = `<h2>${list.length} caratteri fino a HSK ${maxLevel}</h2>` +
+      card.querySelector('.parts').innerHTML = `<h2>${list.length} caratteri · ${levelText()}</h2>` +
         Object.entries(byLv).map(([lv, l]) => `<div class="ety">HSK ${lv}</div><div class="chips">${l.map((i) => chip(chars[i].c)).join('')}</div>`).join('');
     }
     card.querySelector('.family').innerHTML = '';
@@ -752,7 +848,7 @@ async function main() {
     const entries = ced.chars[c] || [];
     const d = dec[c] || {};
     card.querySelector('.big').textContent = c;
-    card.querySelector('.level').textContent = `HSK ${level}`;
+    card.querySelector('.level').textContent = `HSK ${level}${d.n ? ` · ${d.n} tratti` : ''}`;
     card.querySelector('.readings').innerHTML = entries.length
       ? entries.slice(0, 3).map(([py]) => `<span style="color:${COLORS.tone[toneOf(py)]}">${py}</span>`).join('')
       : `<span>${d.py || ''}</span>`;
@@ -791,21 +887,21 @@ async function main() {
     const { c } = chars[i];
     const el = card.querySelector('.examples');
     if (!sentences) { el.innerHTML = `<h2>Frasi d'esempio</h2><p class="muted">caricamento…</p>`; return; }
-    const list = (sentences.c[c] || []).map((k) => sentences.s[k]).filter((x) => x[3] <= maxLevel);
-    el.innerHTML = `<h2>Frasi d'esempio fino a HSK ${maxLevel}</h2>` + (list.length
+    const list = (sentences.c[c] || []).map((k) => sentences.s[k]).filter((x) => levels.has(x[3]));
+    el.innerHTML = `<h2>Frasi d'esempio · ${levelText()}</h2>` + (list.length
       ? list.map(([id, zh, py, lv, it, en]) => `<div class="ex">` +
         `<div class="zh hz">${zh.replaceAll(c, `<mark>${c}</mark>`)}</div>` +
         `<div class="py">${py}</div>` +
         `<div class="tr">${it || `${en} <small>(en)</small>`}</div>` +
         `<div class="lv">HSK ${lv} · <a href="https://tatoeba.org/it/sentences/show/${id}" target="_blank" rel="noopener">Tatoeba #${id}</a></div>` +
         `</div>`).join('')
-      : `<p class="muted">Nessuna frase entro questo livello.</p>`);
+      : `<p class="muted">Nessuna frase in questi livelli.</p>`);
   }
 
   // Words up to the chosen level, filterable by part of speech.
   function renderWords(i) {
     const { c } = chars[i];
-    const all = (wordsOf.get(c) || []).filter((w) => w.level <= maxLevel && w.w !== c);
+    const all = (wordsOf.get(c) || []).filter((w) => levels.has(w.level) && w.w !== c);
     const tags = [...new Set(all.flatMap((w) => posTags(w.pos)))].filter((t) => POS_NAMES[t]);
     if (posFilter !== 'all' && !tags.includes(posFilter)) posFilter = 'all';
     const words = all.filter((w) => posFilter === 'all' || posTags(w.pos).includes(posFilter))
@@ -814,7 +910,7 @@ async function main() {
       ? `<div class="pos">${[['all', 'tutte'], ...tags.map((t) => [t, POS_NAMES[t]])]
         .map(([t, n]) => `<button data-pos="${t}" class="${t === posFilter ? 'on' : ''}">${t === 'all' ? '' : `<span class="hz">${t}</span> `}${n}</button>`).join('')}</div>`
       : '';
-    card.querySelector('.words').innerHTML = `<h2>Parole fino a HSK ${maxLevel}</h2>` + filters + (words.length
+    card.querySelector('.words').innerHTML = `<h2>Parole · ${levelText()}</h2>` + filters + (words.length
       ? words.map((w) => {
         const info = ced.words[w.w];
         const gl = info?.d?.[0] || '';
@@ -822,7 +918,7 @@ async function main() {
         return `<div class="word"><span class="hz">${w.w}</span><span class="py">${w.py}</span><span class="gl">${gl}</span>` +
           `<span class="lv">HSK ${w.level}${w.pos ? ` · ${w.pos}` : ''}${cl}</span></div>`;
       }).join('')
-      : `<p class="muted">Nessuna parola fino a questo livello.</p>`);
+      : `<p class="muted">Nessuna parola in questi livelli.</p>`);
   }
 
   function select(i) {
@@ -872,11 +968,14 @@ async function main() {
     if (keep >= 0) select(keep);
     else { card.hidden = true; related = new Set(); }
   }));
+  // Each level shows or hides on its own; at least one stays on.
   document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('click', () => {
-    maxLevel = +b.dataset.level;
+    const lv = +b.dataset.level;
+    if (levels.has(lv)) { if (levels.size > 1) levels.delete(lv); } else levels.add(lv);
     recount();
-    document.querySelectorAll('[data-level]').forEach((x) => x.classList.toggle('on', +x.dataset.level <= maxLevel));
+    document.querySelectorAll('[data-level]').forEach((x) => x.classList.toggle('on', levels.has(+x.dataset.level)));
     if (galactic() && open >= 0) moveTo(galaxyLayout());
+    else if (flat && !galactic()) moveTo(currentLayout());
     if (selected >= 0) select(selected);
   }));
   document.querySelectorAll('[data-level]').forEach((x) => x.classList.add('on'));
@@ -900,6 +999,17 @@ async function main() {
       const ok = (ced.chars[chars[i].c] || []).some(([py]) => plain(py) === base && (!toneQ || toneOf(py) === toneQ));
       if (ok && inLevel(i)) highlight.add(i);
     });
+  });
+
+  $('#theme').addEventListener('click', () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('hanzi-theme', theme); } catch (e) { /* private mode */ }
+    COLORS = THEMES[theme];
+    document.documentElement.dataset.theme = theme;
+    setColors();
+    drawLines();
+    drawOrbits();
+    if (selected >= 0) renderCard(selected);
   });
 
   document.querySelectorAll('[data-dim]').forEach((b) => b.addEventListener('click', () => {

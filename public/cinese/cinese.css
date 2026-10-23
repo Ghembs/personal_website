@@ -5,11 +5,13 @@
 }
 
 :root {
+  --fg: 239, 230, 210;   /* text and strokes */
+  --bg: 12, 16, 22;      /* panels */
   --ink: #0c1016;
   --ink2: #161d27;
-  --paper: #efe6d2;
-  --dim: rgba(239, 230, 210, 0.55);
-  --line: rgba(239, 230, 210, 0.16);
+  --paper: rgb(var(--fg));
+  --dim: rgba(var(--fg), 0.55);
+  --line: rgba(var(--fg), 0.16);
   --red: #c8503c;
   --serif: "Cormorant Garamond", Georgia, serif;
   --hz: "HanziSerif", "Noto Serif SC", serif;
@@ -26,7 +28,20 @@ html, body {
   font: 17px/1.4 var(--serif);
 }
 
+:root[data-theme="light"] {
+  --fg: 30, 34, 44;
+  --bg: 248, 244, 235;
+  --ink: #efe8da;
+  --ink2: #faf7f0;
+  --red: #b8402e;
+}
+:root[data-theme="light"] #card { box-shadow: 0 10px 40px rgba(60, 50, 30, 0.12); }
+
 .hz { font-family: var(--hz); }
+
+#theme { font-size: 18px; color: var(--dim); padding: 0 6px; }
+#theme:hover { color: var(--paper); }
+#legend .plain::before { display: none; }
 
 #scene {
   position: fixed;
@@ -59,7 +74,7 @@ a { color: inherit; }
   gap: 10px 18px;
   padding: 12px 16px 22px;
   pointer-events: none;
-  background: linear-gradient(rgba(12, 16, 22, 0.92), rgba(12, 16, 22, 0.6) 65%, rgba(12, 16, 22, 0));
+  background: linear-gradient(rgba(var(--bg), 0.92), rgba(var(--bg), 0.6) 65%, rgba(var(--bg), 0));
 }
 #bar > * { pointer-events: auto; }
 #bar .home { font-style: italic; color: var(--dim); text-decoration: none; }
@@ -78,11 +93,11 @@ a { color: inherit; }
   border-radius: 999px;
 }
 #bar .group button:hover { color: var(--paper); }
-#bar .group button.on { color: var(--paper); border-color: var(--line); background: rgba(239, 230, 210, 0.06); }
+#bar .group button.on { color: var(--paper); border-color: var(--line); background: rgba(var(--fg), 0.06); }
 #search {
   font: 16px var(--serif);
   color: var(--paper);
-  background: rgba(239, 230, 210, 0.05);
+  background: rgba(var(--fg), 0.05);
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 4px 12px;
@@ -118,7 +133,7 @@ a { color: inherit; }
   padding: 2px 8px;
   font-size: 15px;
   color: var(--paper);
-  background: rgba(12, 16, 22, 0.8);
+  background: rgba(var(--bg), 0.8);
   border: 1px solid var(--line);
   border-radius: 6px;
   transform: translate(12px, -130%);
@@ -146,7 +161,7 @@ a { color: inherit; }
   width: min(420px, calc(100vw - 32px));
   overflow-y: auto;
   padding: 18px 20px 14px;
-  background: rgba(12, 16, 22, 0.82);
+  background: rgba(var(--bg), 0.82);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--line);
@@ -192,18 +207,18 @@ a { color: inherit; }
   font-size: 15px;
 }
 .chip .hz { font-size: 20px; }
-.chip.go:hover { border-color: var(--dim); background: rgba(239, 230, 210, 0.06); }
+.chip.go:hover { border-color: var(--dim); background: rgba(var(--fg), 0.06); }
 .chip small { color: var(--dim); }
 .ety { font-size: 15px; color: var(--dim); margin-top: 6px; }
 
-.word { display: grid; grid-template-columns: auto auto 1fr; gap: 0 10px; align-items: baseline; padding: 3px 0; border-top: 1px solid rgba(239, 230, 210, 0.07); }
+.word { display: grid; grid-template-columns: auto auto 1fr; gap: 0 10px; align-items: baseline; padding: 3px 0; border-top: 1px solid rgba(var(--fg), 0.07); }
 .word .hz { font-size: 20px; }
 .word .py { color: var(--dim); }
 .word .gl { font-size: 15px; }
 .word .lv { grid-column: 1 / -1; font-size: 12px; color: var(--dim); }
 .muted { color: var(--dim); font-size: 15px; font-style: italic; }
 
-.ex { padding: 6px 0; border-top: 1px solid rgba(239, 230, 210, 0.07); }
+.ex { padding: 6px 0; border-top: 1px solid rgba(var(--fg), 0.07); }
 .ex .zh { font-size: 20px; }
 .ex mark { color: var(--red); background: none; }
 .ex .py { font-size: 15px; color: var(--dim); }
@@ -218,7 +233,7 @@ a { color: inherit; }
   border-radius: 999px;
   border-color: var(--line);
 }
-.pos button.on { color: var(--paper); background: rgba(239, 230, 210, 0.08); }
+.pos button.on { color: var(--paper); background: rgba(var(--fg), 0.08); }
 
 #card .sources { margin-top: 18px; font-size: 12px; color: var(--dim); }
 

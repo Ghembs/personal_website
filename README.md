@@ -35,7 +35,9 @@ character (readings, meanings, composition, family, example sentences and words
 up to the chosen level, words filterable by part of speech, stroke order with
 Hanzi Writer). A 2D mode (default on phones) lays the levels out as flat discs
 and, on a click, shows only the clicked character, radical or phonetic component
-with what it connects to. `#字` in the URL opens a character directly.
+with what it connects to. Each HSK level can be shown or hidden on its own;
+radicals sit on orbits by stroke count; a switch toggles a light and a dark
+theme. `#字` in the URL opens a character directly.
 
 Its data and font subset are built by:
 
