@@ -1,14 +1,16 @@
-// Landing prototype: a Canvas2D tunnel (kaleido.js) and an ink handscroll
-// (shanshui.js) shown directly, and a p5 WEBGL pipeline (source -> ascii
-// post-process) used for the ascii modes and the transitions.
-// DOM links follow the scene in every mode.
+// Landing: three scenes, each on its own canvas — a Canvas2D tunnel (kaleido.js),
+// ascii scenes (scenes.js) and an ink handscroll (shanshui.js) — and a p5 WEBGL
+// pipeline (source -> ascii post-process) that carries every transition through
+// a grid of characters. DOM links follow the scene in every mode.
 
+// mix: tunnel (0) or another picture (1); shan: that picture is the handscroll
+// rather than the ascii scene; invert: dark ink on light paper, for the ascii pass.
 const MODES = [
-  { name: 'tunnel', ascii: 0, mix: 0, shan: 0, color: 1, paper: [7, 7, 12],    ink: [255, 255, 255], hl: [214, 212, 204] },
-  { name: 'ascii',   ascii: 1, mix: 0, shan: 0, color: 1, paper: [7, 7, 12],    ink: [255, 255, 255], hl: [214, 212, 204] },
-  { name: 'nuvole',  ascii: 1, mix: 1, shan: 0, color: 0, paper: [239, 233, 220], ink: [34, 32, 28],  hl: [34, 32, 28] },
-  { name: 'shan shui', ascii: 0, mix: 1, shan: 1, color: 1, paper: [239, 233, 220], ink: [34, 32, 28], hl: [34, 32, 28] },
+  { name: 'tunnel', ascii: 0, mix: 0, shan: 0, invert: 0, color: 1, paper: [7, 7, 12], ink: [255, 255, 255], hl: [214, 212, 204] },
+  { name: 'scene', ascii: 0, mix: 1, shan: 0, invert: 1, color: 1, paper: [247, 247, 247], ink: [83, 83, 83], hl: [32, 33, 36] },
+  { name: 'shan shui', ascii: 0, mix: 1, shan: 1, invert: 1, color: 1, paper: [239, 233, 220], ink: [34, 32, 28], hl: [34, 32, 28] },
 ];
+const SHAN = 2;
 
 const GLYPHS = {
   ascii: { chars: ' .,:-=+*coxO#%@', square: false, font: '400 {s}px "JetBrains Mono", monospace' },
@@ -19,8 +21,6 @@ const GLYPHS = {
 const TRANSITION = 4.5;      // seconds
 const KALEIDO_DPR = 1.5;     // the tunnel canvas is larger than the screen: cap its density
 const SNAP_SIZE = 1024;      // tunnel copy used as texture by the ascii pass
-const CLOUD_MAP = 64;        // resolution of the cloud density probe
-const CLOUD_WAIT = 5;        // seconds an exited cloud link waits for a dense cloud
 
 const motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.3 : 1;
 
@@ -32,10 +32,9 @@ const smooth = (a, b, v) => ease(clamp01((v - a) / (b - a)));
 const rand = (a, b) => a + Math.random() * (b - a);
 
 function sketch(p) {
-  let srcShader, asciiShader, fb, cloudFb, kc, snap, kaleido, shan, shanSnap;
+  let srcShader, asciiShader, fb, kc, snap, kaleido, shan, shanSnap, scenes, sceneSnap;
   const shanEl = document.getElementById('shan');
-  const mapBuf = new Uint8Array(CLOUD_MAP * CLOUD_MAP * 4);
-  let needCloudPlacement = false;   // done inside draw(), where WebGL state is p5's
+  const sceneEl = document.getElementById('scene');
   let snapStale = true;
   let atlases = {};
   let glyphSet = 'ascii';
@@ -54,7 +53,7 @@ function sketch(p) {
   const links = nodes.filter((el) => !el.classList.contains('title'));
   const titleEl = nodes.find((el) => el.classList.contains('title'));
   const hudButtons = [...document.querySelectorAll('#hud button')];
-  let linkStyle = null;       // 'k' tunnel, 'a' ascii, 's' shan shui
+  let linkStyle = null;       // 'k' tunnel, 'a' ascii transition, 'g' ascii scene, 's' shan shui
   let asciiStyle = false;
 
   // ---------- setup ----------
@@ -69,7 +68,6 @@ function sketch(p) {
     asciiShader = p.createShader(VERT, ASCII_FRAG);
     // The source pass is only ever read at cell centres: density 1 is plenty.
     fb = p.createFramebuffer({ depth: false, density: 1 });
-    cloudFb = p.createFramebuffer({ width: CLOUD_MAP, height: CLOUD_MAP, density: 1, depth: false, antialias: false });
 
     // The tunnel is a plain 2D canvas, rotated by CSS. The ascii pass reads a
     // small copy of it (a p5.Image is only re-uploaded when marked modified).
@@ -84,6 +82,10 @@ function sketch(p) {
     // Paint the first panels while nothing else is going on.
     (window.requestIdleCallback || setTimeout)(() => shan.update(0));
     kaleido.resize(p.width, p.height, Math.min(density, KALEIDO_DPR));
+    scenes = new Scenes(sceneEl, links.map((el) => el.dataset.ascii), titleEl.dataset.ascii);
+    scenes.resize(p.width, p.height, density);
+    scenes.pick();
+    sceneSnap = p.createImage(SNAP_SIZE, SNAP_SIZE);
 
     atlases.ascii = makeAtlas(GLYPHS.ascii);
     atlases.hanzi = makeAtlas(GLYPHS.hanzi);
@@ -93,6 +95,9 @@ function sketch(p) {
     kaleido.build();
     applyPalette();
     markHud();
+    // #dino, #mare, #aereo open that scene directly.
+    const direct = Scenes.indexOf(location.hash.slice(1));
+    if (direct !== null) goTo(1, true, direct);
   };
 
   function makeAtlas({ chars, square, font }) {
@@ -163,95 +168,6 @@ function sketch(p) {
     titleEl.dataset.label = titleEl.textContent;
   }
 
-  // ---------- links in the clouds ----------
-  // The near cloud layer is a pure translation, so a link placed inside a cloud
-  // stays inside it by drifting at the same speed. Positions are kept in cloud
-  // space (_cu along the drift, _cv across it).
-
-  const vertical = () => p.height > p.width;
-  const cloudSpeed = () => (0.045 / 1.1) * Math.min(p.width, p.height);
-  const asciiWidth = (el) => [...el.dataset.ascii].length * cellW;
-
-  function cloudPos(el) {
-    const u = el._cu - cloudSpeed() * T;
-    return vertical() ? { x: el._cv, y: u } : { x: u, y: el._cv };
-  }
-
-  // Renders the clouds alone over a css region into a 64x64 target and reads
-  // it back: a density lookup for that region at the current time.
-  function sampleClouds(x0, y0, w, h) {
-    cloudFb.begin();
-    p.clear();
-    p.shader(srcShader);
-    setSourceUniforms(1, 0, [x0, y0], [w / CLOUD_MAP, h / CLOUD_MAP]);
-    p.rect(0, 0, p.width, p.height);
-    const gl = p._renderer.GL;
-    gl.readPixels(0, 0, CLOUD_MAP, CLOUD_MAP, gl.RGBA, gl.UNSIGNED_BYTE, mapBuf);
-    cloudFb.end();
-    return (x, y) => {
-      const col = Math.floor(((x - x0) / w) * CLOUD_MAP), row = Math.floor(((y - y0) / h) * CLOUD_MAP);
-      if (col < 0 || row < 0 || col >= CLOUD_MAP || row >= CLOUD_MAP) return 0;
-      return mapBuf[((CLOUD_MAP - 1 - row) * CLOUD_MAP + col) * 4] / 255;
-    };
-  }
-
-  // Best of a few random spots in the region: the whole label (ends and a row
-  // above and below) must sit on dense cloud, away from the other links.
-  // Returns false, leaving the link where it is, if nothing reaches minScore.
-  function placeInCloud(el, x0, y0, w, h, density, minScore = 0) {
-    const lw = asciiWidth(el), lh = cellH;
-    let best = { x: x0 + w / 2, y: y0 + h / 2 }, bestScore = -1;
-    for (let i = 0; i < 60; i++) {
-      const x = x0 + lw / 2 + Math.random() * Math.max(1, w - lw);
-      const y = y0 + lh * 1.5 + Math.random() * Math.max(1, h - lh * 3);
-      const crowded = links.some((o) => {
-        if (o === el || o._cu === undefined) return false;
-        const q = cloudPos(o);
-        return Math.abs(q.x - x) < (lw + asciiWidth(o)) / 2 + cellW * 2 && Math.abs(q.y - y) < lh * 3;
-      });
-      if (crowded) continue;
-      const score = Math.min(density(x, y), density(x - lw / 2, y), density(x + lw / 2, y),
-        density(x, y - lh), density(x, y + lh));
-      if (score > bestScore) { bestScore = score; best = { x, y }; }
-      if (score > 0.6) break;
-    }
-    if (bestScore < minScore) return false;
-    const speedT = cloudSpeed() * T;
-    if (vertical()) { el._cu = best.y + speedT; el._cv = best.x; }
-    else { el._cu = best.x + speedT; el._cv = best.y; }
-    return true;
-  }
-
-  function placeAllInClouds() {
-    const density = sampleClouds(0, 0, p.width, p.height);
-    links.forEach((el) => { el._cu = undefined; });
-    links.forEach((el) => placeInCloud(el, 0, 0, p.width, p.height, density));
-  }
-
-  // A link that drifted off screen is reborn in a thin strip just beyond the
-  // edge the clouds come from, as soon as a dense cloud passes there; after
-  // CLOUD_WAIT seconds it settles for the best spot available.
-  let lastProbe = 0;
-  function recycleCloudLinks() {
-    const now = performance.now() / 1000;
-    if (now - lastProbe < 0.3) return;
-    const W = p.width, H = p.height, v = vertical();
-    const out = links.filter((el) => {
-      if (el._cu === undefined) return false;
-      const q = cloudPos(el);
-      return v ? q.y < -cellH * 2 : q.x < -asciiWidth(el) / 2 - cellW * 2;
-    });
-    if (!out.length) return;
-    lastProbe = now;
-    const region = v ? [0, H + cellH, W, cellH * 6] : [W + cellW * 2, 0, cellW * 24, H];
-    const density = sampleClouds(...region);
-    for (const el of out) {
-      el._outSince = el._outSince || now;
-      const patient = now - el._outSince < CLOUD_WAIT;
-      if (placeInCloud(el, ...region, density, patient ? 0.5 : 0)) el._outSince = 0;
-    }
-  }
-
   function setStyle(style) {
     linkStyle = style;
     asciiStyle = style === 'a';
@@ -259,6 +175,7 @@ function sketch(p) {
       el.classList.toggle('a', style === 'a');
       el.classList.toggle('k', style === 'k');
       el.classList.toggle('s', style === 's');
+      el.classList.toggle('g', style === 'g');
       el.style.width = el.style.height = '';
       if (style === 'a') {
         scramble(el);
@@ -275,6 +192,9 @@ function sketch(p) {
       kaleido.titleSize = parseFloat(getComputedStyle(titleEl).fontSize);
       kaleido.dirty = true;
     }
+    // In an ascii scene the scene writes title and labels itself: the DOM
+    // links are transparent hit areas over them.
+    titleEl.style.visibility = style === 'g' ? 'hidden' : '';
     if (style === 's') {
       // Title and seal are laid out by CSS, as an inscription; the seal sits below.
       for (const el of nodes) { el.style.transform = ''; el.style.opacity = '1'; el.style.visibility = 'visible'; }
@@ -317,15 +237,31 @@ function sketch(p) {
     });
   }
 
+  function placeSceneLinks() {
+    const spots = scenes.spots, cw = scenes.cellW, ch = scenes.cellH;
+    let hover = -1;
+    links.forEach((el, i) => {
+      const r = spots[i];
+      el.style.visibility = r ? 'visible' : 'hidden';
+      el.style.opacity = '1';
+      if (el._hover) hover = i;
+      if (!r) return;
+      el.style.width = `${r.len * cw}px`;
+      el.style.height = `${ch}px`;
+      el.style.transform = `translate(${r.col * cw}px, ${r.row * ch}px)`;
+    });
+    scenes.hover = hover;
+  }
+
   function updateLinks() {
     if (linkStyle === 's') { placeShanLinks(); return; }
-    const W = p.width, H = p.height, m = Math.min(W, H);
+    if (linkStyle === 'g') { placeSceneLinks(); return; }
+    const W = p.width, H = p.height;
     const flat = Math.max(cur.ascii, cur.mix);
     const now = performance.now();
-    if (needCloudPlacement) { placeAllInClouds(); needCloudPlacement = false; }
-    if (cur.mix > 0.5 && cur.shan < 0.5) recycleCloudLinks();
 
     const shanRects = cur.shan > 0.001 ? shan.linkRects() : [];
+    const spots = cur.mix > 0.001 ? scenes.spots : [];
     links.forEach((el, i) => {
       const tile = kaleido.links[i];
       // Redraw the (otherwise static) tunnel only when a link changes look.
@@ -338,18 +274,21 @@ function sketch(p) {
       const kOpacity = g.rm > kaleido.coreRadius * 1.05 && kaleido.alpha(tile.z) > 0.3 ? 1 : 0;
       const sx = g.width / (el._kw || 1), sy = g.height / (el._kh || 1);
 
-      let c = el._cu === undefined ? { x: W / 2, y: H / 2 } : cloudPos(el);
-      // Towards shan shui, head for the painted element (the seal: top right).
+      // Away from the tunnel, head for the link's place in the ascii scene, then
+      // for its painted element in shan shui (the seal: top right).
+      const sp = spots[i];
+      const inScene = sp ? { x: (sp.col + sp.len / 2) * scenes.cellW, y: (sp.row + 0.5) * scenes.cellH } : null;
       const sr = shanRects[i];
-      const target = sr ? { x: sr.x + sr.w / 2, y: sr.y + sr.h / 2 }
+      const inShan = sr ? { x: sr.x + sr.w / 2, y: sr.y + sr.h / 2 }
         : el.dataset.shan === 'seal' ? { x: W * 0.9, y: H * 0.5 } : null;
-      if (target && cur.shan > 0.001) c = { x: lerp(c.x, target.x, cur.shan), y: lerp(c.y, target.y, cur.shan) };
-      const cx = c.x, cy = c.y;
+      let c = inScene || { x: g.x, y: g.y };
+      if (inShan) c = { x: lerp(c.x, inShan.x, cur.shan), y: lerp(c.y, inShan.y, cur.shan) };
+      // links with no place in the picture fade out on the way there
+      const seen = lerp(inScene ? 1 : 0, inShan ? 1 : 0, cur.shan);
 
-      place(el, lerp(g.x, cx, cur.mix), lerp(g.y, cy, cur.mix),
+      place(el, lerp(g.x, c.x, cur.mix), lerp(g.y, c.y, cur.mix),
         deg * (1 - flat), lerp(sx, 1, flat), lerp(sy, 1, flat),
-        // links whose element is not in view fade out on the way to shan shui
-        lerp(kOpacity, 1, cur.mix) * (target ? 1 : 1 - cur.shan));
+        lerp(kOpacity, seen, cur.mix));
       updateScramble(el, now);
     });
     place(titleEl, W / 2, H / 2, 0, 1, 1, 1);
@@ -372,17 +311,27 @@ function sketch(p) {
 
   // ---------- modes ----------
 
-  function goTo(i, manual) {
+  function goTo(i, manual, scene) {
     if (i === modeIndex && p.millis() / 1000 - transStart > TRANSITION) return;
     // Back to the tunnel: a new structure, hidden by the ascii it comes out of.
     if (i === 0 && modeIndex !== 0) kaleido.build();
-    if (MODES[i].name === 'nuvole' && modeIndex !== i) needCloudPlacement = true;
+    // A new ascii scene each time; the page takes its colours.
+    if (MODES[i].name === 'scene' && modeIndex !== i) {
+      scenes.pick(scene);
+      toastSoon = scenes.name;
+    }
     from = { ...cur, paper: [...cur.paper], ink: [...cur.ink], hl: [...cur.hl] };
-    to = MODES[i];
+    to = MODES[i].name === 'scene' ? sceneLook() : MODES[i];
     modeIndex = i;
     transStart = p.millis() / 1000;
     nextSwitch = transStart + (manual ? 25 : rand(14, 22));
     markHud();
+  }
+
+  let toastSoon = null;
+  function sceneLook() {
+    const l = scenes.look;
+    return { ...MODES[1], paper: l.paper, ink: l.ink, hl: l.hl, invert: l.light ? 1 : 0 };
   }
 
   function updateTransition(now) {
@@ -397,22 +346,27 @@ function sketch(p) {
     const swap = from.mix !== to.mix || from.shan !== to.shan;
     if (from.ascii < 0.5 && to.ascii < 0.5 && swap) {
       cur.ascii = t < 0.5 ? ease(seg(t, 0, 0.42)) : 1 - ease(seg(t, 0.58, 1));
-      po = ease(seg(t, 0.42, 0.58));
+      po = ease(seg(t, 0.46, 0.54));
     }
     cur.mix = lerp(from.mix, to.mix, po);
     cur.color = lerp(from.color, to.color, po);
     cur.shan = lerp(from.shan, to.shan, po);
+    cur.invert = lerp(from.invert, to.invert, po);
+    // In the scene the colours follow it (the dinosaur's night, a lightning flash).
+    if (t >= 1 && modeIndex === 1) Object.assign(to, sceneLook());
     for (const k of ['paper', 'ink', 'hl']) cur[k] = from[k].map((v, j) => lerp(v, to[k][j], po));
 
-    const want = cur.ascii > 0.5 ? 'a' : cur.shan > 0.5 ? 's' : 'k';
+    const want = cur.ascii > 0.5 ? 'a' : cur.shan > 0.5 ? 's' : cur.mix > 0.5 ? 'g' : 'k';
     if (want !== linkStyle) setStyle(want);
 
     const root = document.documentElement.style;
     root.setProperty('--paper', `rgb(${cur.paper.map(Math.round)})`);
     root.setProperty('--hl', `rgb(${cur.hl.map(Math.round)})`);
-    document.body.dataset.look = cur.ascii > 0.5 ? (cur.mix > 0.5 ? 'nuvole' : 'ascii') : cur.shan > 0.5 ? 'shan' : 'tunnel';
+    document.body.dataset.look = cur.ascii > 0.5 ? 'ascii' : cur.shan > 0.5 ? 'shan' : cur.mix > 0.5 ? 'scene' : 'tunnel';
     document.body.style.background = `rgb(${cur.paper.map(Math.round)})`;
 
+    // A dinosaur game in progress keeps the scene on screen.
+    if (scenes.busy && modeIndex === 1) nextSwitch = Math.max(nextSwitch, now + 5);
     if (now > nextSwitch) {
       let i;
       do { i = (Math.random() * MODES.length) | 0; } while (i === modeIndex);
@@ -439,7 +393,10 @@ function sketch(p) {
     // Pure modes show their own canvases: no WebGL work at all.
     const pureTunnel = cur.ascii < 0.001 && cur.mix < 0.001 && cur.shan < 0.001;
     const pureShan = cur.ascii < 0.001 && cur.shan > 0.999;
-    const pure = pureTunnel || pureShan;
+    const pureScene = cur.ascii < 0.001 && cur.mix > 0.999 && cur.shan < 0.001;
+    const pure = pureTunnel || pureShan || pureScene;
+    const sceneOn = cur.mix > 0.001 && cur.shan < 0.999;
+    if (sceneOn) { scenes.update(sdt); scenes.render(); }
     if (cur.mix < 0.999 && cur.shan < 0.999) {
       kaleido.update(sdt);
       if (kaleido.dirty) {
@@ -451,6 +408,8 @@ function sketch(p) {
     if (cur.shan > 0.001) shan.update(sdt);
     kc.style.visibility = pureTunnel ? 'visible' : 'hidden';
     shanEl.style.visibility = pureShan ? 'visible' : 'hidden';
+    sceneEl.style.visibility = pureScene ? 'visible' : 'hidden';
+    if (pureScene && toastSoon) { toast(toastSoon); toastSoon = null; }
     p.canvas.style.visibility = pure ? 'hidden' : 'visible';
 
     if (!pure) {
@@ -463,6 +422,10 @@ function sketch(p) {
       if (cur.shan > 0.001) {
         shan.drawView(shanSnap.drawingContext, SNAP_SIZE, SNAP_SIZE);
         shanSnap.setModified(true);
+      }
+      if (sceneOn) {
+        sceneSnap.drawingContext.drawImage(sceneEl, 0, 0, SNAP_SIZE, SNAP_SIZE);
+        sceneSnap.setModified(true);
       }
 
       fb.begin();
@@ -484,12 +447,12 @@ function sketch(p) {
       asciiShader.setUniform('uColorMode', cur.color);
       asciiShader.setUniform('uInk', cur.ink.map((v) => v / 255));
       asciiShader.setUniform('uPaper', cur.paper.map((v) => v / 255));
-      asciiShader.setUniform('uInvert', cur.shan);
+      asciiShader.setUniform('uInvert', cur.invert);
       p.rect(0, 0, p.width, p.height);
     }
   };
 
-  function setSourceUniforms(mix, shanAmount, mapOrigin = [0, 0], mapScale = [0, 0]) {
+  function setSourceUniforms(mix, shanAmount) {
     srcShader.setUniform('uRes', [p.width, p.height]);
     srcShader.setUniform('uDensity', fb.density);
     srcShader.setUniform('uTime', T);
@@ -499,10 +462,7 @@ function sketch(p) {
     srcShader.setUniform('uKaleido', snap);
     srcShader.setUniform('uKRot', rot);
     srcShader.setUniform('uKSize', 2 * kaleido.R);
-    srcShader.setUniform('uVertical', vertical() ? 1 : 0);
-    srcShader.setUniform('uMapOrigin', mapOrigin);
-    srcShader.setUniform('uMapScale', mapScale);
-    srcShader.setUniform('uMapPx', [CLOUD_MAP, CLOUD_MAP]);
+    srcShader.setUniform('uSceneTex', sceneSnap);
   }
 
   p.windowResized = () => {
@@ -510,9 +470,9 @@ function sketch(p) {
     kaleido.resize(p.width, p.height, Math.min(p.pixelDensity(), KALEIDO_DPR));
     computeCells();
     shan.resize(p.width, p.height, p.pixelDensity());
+    scenes.resize(p.width, p.height, p.pixelDensity());
     if (linkStyle === 'k') setStyle('k');
     kaleido.build();
-    if (cur.mix > 0) needCloudPlacement = true;
   };
 
   // ---------- easter eggs & controls ----------
@@ -528,8 +488,20 @@ function sketch(p) {
 
   hudButtons.forEach((b) => b.addEventListener('click', () => goTo(+b.dataset.mode, true)));
 
+  // A click on the background: new inks in the tunnel; in an ascii scene the
+  // dinosaur jumps, and the other scenes give way to the next one.
+  function sceneAction() {
+    if (scenes.action()) return;
+    scenes.pick();
+    Object.assign(to, sceneLook());
+    toast(scenes.name);
+  }
+  const inScene = () => modeIndex === 1 && cur.ascii < 0.5 && cur.mix > 0.5;
+
   document.getElementById('stage').addEventListener('click', (e) => {
-    if (e.target.closest('.node') || cur.mix > 0.5) return;
+    if (e.target.closest('.node')) return;
+    if (inScene()) { sceneAction(); return; }
+    if (cur.mix > 0.5) return;
     const pal = kaleido.nextPalette();
     applyPalette();
     toast(`inchiostri: ${pal.name}`);
@@ -543,9 +515,13 @@ function sketch(p) {
 
   let typed = '';
   window.addEventListener('keydown', (e) => {
-    if (e.key >= '1' && e.key <= '4') goTo(+e.key - 1, true);
-    if (e.key === ' ') {
+    if (e.key >= '1' && e.key <= '3') goTo(+e.key - 1, true);
+    // 八 bā sounds like 发 fā, to prosper: the luckiest key opens the handscroll.
+    if (e.key === '8') { goTo(SHAN, true); toast('八 · 发'); }
+    if (e.key === ' ' || e.key === 'ArrowUp') {
       e.preventDefault();
+      if (inScene()) { sceneAction(); return; }
+      if (e.key === 'ArrowUp') return;
       let i;
       do { i = (Math.random() * MODES.length) | 0; } while (i === modeIndex);
       goTo(i, true);
@@ -554,8 +530,9 @@ function sketch(p) {
     typed = (typed + e.key.toLowerCase()).slice(-12);
     if (typed.endsWith('nihao')) {
       glyphSet = glyphSet === 'ascii' ? 'hanzi' : 'ascii';
+      scenes.hanzi = glyphSet === 'hanzi';
       computeCells();
-      if (modeIndex === 0) goTo(1, true);
+      if (modeIndex !== 1) goTo(1, true);
       toast(glyphSet === 'hanzi' ? '你好！ 字符 → 汉字' : 'ascii, di nuovo');
     }
     if (e.key === 'v' && cur.mix < 0.5) {

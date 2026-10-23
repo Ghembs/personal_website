@@ -7,12 +7,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital@1&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;600&family=Unbounded:wght@300;500&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&text=%E4%B8%AD%E6%96%87%E4%B8%80%E4%BA%8C%E4%B8%89%E5%9B%9B%E9%9A%A7%E9%81%93%E5%AD%97%E7%AC%A6%E4%BA%91%E5%B1%B1%E6%B0%B4&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&text=%E4%B8%AD%E6%96%87%E4%B8%80%E4%BA%8C%E4%B8%89%E5%85%AB%E9%9A%A7%E9%81%93%E5%9C%BA%E6%99%AF%E5%B1%B1%E6%B0%B4&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main id="stage" aria-label="Giuliano Gambacorta">
     <div id="shan"></div>
+    <canvas id="scene"></canvas>
     <div id="links">
       <span class="node title" data-ascii="GIULIANO GAMBACORTA">Giuliano Gambacorta</span>
       <a class="node" href="https://stairwaytoflorence.com/" target="_blank" rel="noopener" data-shan="pavilion" data-ascii="[ STF ]">STF</a>
@@ -26,9 +27,8 @@
 
   <nav id="hud" aria-hidden="true">
     <button data-mode="0"><span class="n" data-zh="一">1</span><span class="t" data-zh="隧道">tunnel</span></button>
-    <button data-mode="1"><span class="n" data-zh="二">2</span><span class="t" data-zh="字符">ascii</span></button>
-    <button data-mode="2"><span class="n" data-zh="三">3</span><span class="t" data-zh="云">nuvole</span></button>
-    <button data-mode="3"><span class="n" data-zh="四">4</span><span class="t" data-zh="山水">shan shui</span></button>
+    <button data-mode="1"><span class="n" data-zh="二">2</span><span class="t" data-zh="场景">scene</span></button>
+    <button data-mode="2"><span class="n" data-zh="三">3</span><span class="t" data-zh="山水">shan shui</span></button>
   </nav>
   <div id="toast" role="status"></div>
 
@@ -43,6 +43,7 @@
   <script src="shaders.js"></script>
   <script src="kaleido.js"></script>
   <script src="shanshui.js"></script>
+  <script src="scenes.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

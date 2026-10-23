@@ -146,6 +146,15 @@ canvas { display: block; }
 }
 .node.s.seal:hover { background: #8f2a21; }
 
+/* --- ascii scenes: the scene draws its labels; links are hit areas over them --- */
+#stage #scene { z-index: 1; visibility: hidden; }
+.node.g {
+  color: transparent;
+  background: none;
+  padding: 0;
+  font-size: 0;
+}
+
 /* --- ascii style: plain characters on the grid, like the ones around them.
    The paper background only blanks the glyphs underneath, it reads as spaces. --- */
 .node.a {
@@ -202,17 +211,17 @@ body[data-look="tunnel"] #hud .n { opacity: 0.5; }
 
 /* ascii and clouds: plain characters on the grid, brackets instead of boxes */
 body[data-look="ascii"] #hud button,
-body[data-look="nuvole"] #hud button {
+body[data-look="scene"] #hud button {
   font: 400 12px var(--mono);
   color: var(--hl);
   background: var(--paper);   /* blanks the glyphs underneath, like the links */
 }
 body[data-look="ascii"] #hud button::before,
-body[data-look="nuvole"] #hud button::before { content: "["; margin-right: -0.25em; }
+body[data-look="scene"] #hud button::before { content: "["; margin-right: -0.25em; }
 body[data-look="ascii"] #hud button::after,
-body[data-look="nuvole"] #hud button::after { content: "]"; margin-left: -0.25em; }
+body[data-look="scene"] #hud button::after { content: "]"; margin-left: -0.25em; }
 body[data-look="ascii"] #hud button.on,
-body[data-look="nuvole"] #hud button.on {
+body[data-look="scene"] #hud button.on {
   opacity: 1;
   font-weight: 700;
   color: var(--paper);

@@ -2,14 +2,18 @@
 
 Personal site of Giuliano Gambacorta, for [giulianogambacorta.com](https://giulianogambacorta.com).
 
-The landing page is a single full-screen scene that keeps changing its look:
+The landing page is a single full-screen scene that keeps changing its look,
+always passing through a grid of characters (p5.js WebGL shaders):
 
 - **tunnel**: rectangles in riso inks turning on the inner wall of a cylinder (Canvas2D);
-- **ascii**: the same scene redrawn as a grid of characters (p5.js WebGL shaders);
-- **nuvole**: ascii clouds drifting across paper;
+- **scene**: ascii scenarios drawn cell by cell — a dinosaur in the desert (a
+  little game: space or a tap to jump), a boat at sea, a plane towing a banner;
+  each with its own times of day and weather, the links written inside them;
 - **shan shui**: an endless ink-landscape handscroll, with the links hidden in it.
 
-Keys `1`–`4` pick a mode, `space` a random one. There are a few easter eggs.
+Keys `1`–`3` pick a mode, `8` (八, which sounds like 发, "to prosper") opens the
+handscroll, `space` a random mode (in a scene: jump, or the next scene).
+`#dino`, `#mare` and `#aereo` open a scene directly. There are a few easter eggs.
 
 ## Structure
 
@@ -19,6 +23,7 @@ public/          the site, served as is (no build step)
   main.js        modes, transitions, links, the WebGL pipeline
   kaleido.js     the tunnel
   shanshui.js    the handscroll
+  scenes.js      the ascii scenes
   shaders.js     source and ascii shaders
   style.css
   _headers       Cloudflare Pages response headers
