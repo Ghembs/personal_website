@@ -1,15 +1,18 @@
 // 汉字 HSK 1–4: the characters as one cloud of billboards (Babylon.js thin
 // instances, a single draw call), arranged by level, radical or phonetic family.
-// The instances are the HSK characters followed by one node per radical: the
-// radicals view shows only those nodes, as a galaxy, and a clicked radical
-// raises a column of its characters across the galactic plane.
+// The instances are the HSK characters followed by one node per radical and one
+// per phonetic component: the radicals and phonetic views show only their own
+// nodes, as a galaxy, and a clicked node raises a column of its characters
+// across the galactic plane.
 // Data comes from scripts/build-hanzi.mjs (see data/ and the page footer).
 
 const COLORS = {
   level: { 1: '#f3e6c8', 2: '#e8b15a', 3: '#d9644a', 4: '#7fb0c9' },
   tone: { 1: '#5d9de6', 2: '#f0b34a', 3: '#6fbf73', 4: '#e8574a', 5: '#a8a8a8' },
-  radical: '#c4a6f0',
+  radicals: '#c4a6f0',
+  phonetic: '#6fd1c4',
 };
+const NODE_NAMES = { radicals: 'radicale', phonetic: 'componente fonetica' };
 const LEVEL_NAMES = { 1: 'HSK 1', 2: 'HSK 2', 3: 'HSK 3', 4: 'HSK 4' };
 const TONE_NAMES = { 1: '1° tono', 2: '2° tono', 3: '3° tono', 4: '4° tono', 5: 'neutro' };
 const TONES = { āēīōūǖ: 1, áéíóúǘ: 2, ǎěǐǒǔǚ: 3, àèìòùǜ: 4 };
@@ -37,12 +40,6 @@ function sphere(k, n, r) {
   return [Math.cos(a) * s * r, y * r, Math.sin(a) * s * r];
 }
 
-function ball(k, n, r) {
-  const [x, y, z] = sphere(k, n, 1);
-  const d = r * Math.cbrt((k + 0.5) / n);
-  return [x * d, y * d, z * d];
-}
-
 // Concentric shells, HSK 1 inside; each shell as wide as an even density needs.
 function layoutLevels(chars, out) {
   const byLevel = {};
@@ -54,35 +51,7 @@ function layoutLevels(chars, out) {
   }
 }
 
-// One ball per group, packed along a spiral that climbs and dips, biggest first;
-// `loose` members ring the whole thing.
-function layoutGroups(groups, loose, out) {
-  const sorted = [...groups.values()].sort((a, b) => b.length - a.length);
-  const placed = [];
-  let t = 0;
-  for (const g of sorted) {
-    const r = SPREAD * (0.85 * Math.sqrt(g.length) + 0.6);
-    let x, y, z;
-    for (;; t += 0.04) {
-      x = Math.cos(t) * 0.9 * t;
-      z = Math.sin(t) * 0.9 * t;
-      y = Math.sin(t * 1.7) * Math.min(10, t * 0.45);
-      if (placed.every((p) => Math.hypot(p.x - x, p.y - y, p.z - z) > p.r + r + 0.9)) break;
-    }
-    placed.push({ x, y, z, r });
-    g.forEach((i, k) => {
-      const [dx, dy, dz] = g.length === 1 ? [0, 0, 0] : ball(k, g.length, r);
-      out.set([x + dx, y + dy, z + dz], i * 3);
-    });
-  }
-  const R = Math.max(...placed.map((p) => Math.hypot(p.x, p.z) + p.r), 10) + 8;
-  loose.forEach((i, k) => {
-    const a = (k / loose.length) * Math.PI * 2;
-    out.set([Math.cos(a) * (R + 3 * Math.sin(k * 1.7)), Math.sin(k * 0.9) * 4, Math.sin(a) * (R + 3 * Math.sin(k * 1.7))], i * 3);
-  });
-}
-
-// Two-armed spiral of radical nodes, the busiest at the core.
+// Two-armed spiral of nodes, the busiest at the core.
 function layoutGalaxy(nodes, out, base) {
   nodes.forEach((n, k) => {
     const t = k / nodes.length;
@@ -118,20 +87,13 @@ async function main() {
   const wordsOf = new Map();
   for (const w of hsk.words) for (const ch of new Set(w.w)) if (index.has(ch)) (wordsOf.get(ch) || wordsOf.set(ch, []).get(ch)).push(w);
 
-  // Radicals: one node each, after the characters.
   const radicalOf = chars.map(({ c }) => dec[c]?.r || '?');
   const byRadical = new Map();
   radicalOf.forEach((r, i) => (byRadical.get(r) || byRadical.set(r, []).get(r)).push(i));
-  const radicals = [...byRadical.keys()].sort((a, b) => byRadical.get(b).length - byRadical.get(a).length);
-  const M = radicals.length, T = N + M;
-  const nodeOf = new Map(radicals.map((r, k) => [r, N + k]));
-  const glyphs = [...chars.map((x) => x.c), ...radicals];
-  // Other radicals a character contains, among its direct components.
-  const alsoContains = chars.map(({ c }, i) => [...new Set([...(dec[c]?.d || '')]
-    .filter((x) => !IDS.test(x) && x !== radicalOf[i] && nodeOf.has(x)))].map((x) => nodeOf.get(x)));
 
   // Phonetic families: characters sharing a phonetic component, plus that
-  // component itself when it is an HSK character (青 with 请 清 情 晴).
+  // component itself when it is an HSK character (青 with 请 清 情 晴). Each
+  // character joins its largest family; families need two members.
   const phon = new Map();
   chars.forEach(({ c }) => {
     const e = dec[c]?.e;
@@ -142,21 +104,39 @@ async function main() {
   [...phon.entries()].filter(([, s]) => s.size > 1).sort((a, b) => b[1].size - a[1].size)
     .forEach(([p, s]) => s.forEach((c) => { if (!familyOf.has(c)) familyOf.set(c, p); }));
   const families = new Map();
-  const loose = [];
   chars.forEach(({ c }, i) => {
     const p = familyOf.get(c);
     if (p) (families.get(p) || families.set(p, []).get(p)).push(i);
-    else loose.push(i);
   });
-  for (const [p, list] of families) if (list.length < 2) { families.delete(p); loose.push(...list); }
+  for (const [p, list] of families) if (list.length < 2) { families.delete(p); list.forEach((i) => familyOf.delete(chars[i].c)); }
 
-  // Layouts cover all T instances; radical nodes rest at the centre outside their view.
+  // Galaxy nodes, after the characters: radicals, then phonetic components.
+  const GROUPS = {
+    radicals: { members: byRadical, keyOf: (i) => radicalOf[i] },
+    phonetic: { members: families, keyOf: (i) => familyOf.get(chars[i].c) },
+  };
+  const nodes = [];                       // { view, key, list }
+  const nodeOf = { radicals: new Map(), phonetic: new Map() };
+  for (const [view, gdef] of Object.entries(GROUPS)) {
+    gdef.base = N + nodes.length;
+    gdef.keys = [...gdef.members.keys()].sort((a, b) => gdef.members.get(b).length - gdef.members.get(a).length);
+    gdef.keys.forEach((key) => {
+      nodeOf[view].set(key, N + nodes.length);
+      nodes.push({ view, key, list: gdef.members.get(key) });
+    });
+  }
+  const T = N + nodes.length;
+  const glyphs = [...chars.map((x) => x.c), ...nodes.map((n) => n.key)];
+  const nodeFor = (view, i) => nodeOf[view].get(GROUPS[view].keyOf(i)) ?? -1;
+  // Other radicals a character contains, among its direct components.
+  const alsoContains = chars.map(({ c }, i) => [...new Set([...(dec[c]?.d || '')]
+    .filter((x) => !IDS.test(x) && x !== radicalOf[i] && nodeOf.radicals.has(x)))].map((x) => nodeOf.radicals.get(x)));
+
+  // Layouts cover all T instances; nodes rest on their galaxy, hidden outside their view.
   const galaxy = new Float32Array(T * 3);
-  layoutGalaxy(radicals, galaxy, N);
-  const LAYOUTS = { levels: new Float32Array(T * 3), phonetic: new Float32Array(T * 3) };
+  for (const g of Object.values(GROUPS)) layoutGalaxy(g.keys, galaxy, g.base);
+  const LAYOUTS = { levels: new Float32Array(galaxy) };
   layoutLevels(chars, LAYOUTS.levels);
-  layoutGroups(families, loose, LAYOUTS.phonetic);
-  for (const L of Object.values(LAYOUTS)) L.set(galaxy.subarray(N * 3), N * 3);
 
   // ---------- Babylon ----------
 
@@ -270,36 +250,47 @@ async function main() {
   const target = BABYLON.Vector3.Zero();
 
   const isNode = (i) => i >= N;
+  const nodeView = (i) => nodes[i - N].view;
+  const galactic = () => view !== 'levels';
   const inLevel = (i) => chars[i].level <= maxLevel;
-  const members = (node) => byRadical.get(radicals[node - N]).filter(inLevel)
-    .sort((a, b) => chars[a].level - chars[b].level);
-  // Characters per radical within the level filter, refreshed when it changes.
-  const nodeCount = new Uint16Array(M);
-  const recount = () => radicals.forEach((r, k) => { nodeCount[k] = byRadical.get(r).filter(inLevel).length; });
+  // A family's members are ordered by reading, so tones line up in the column.
+  const members = (node) => nodes[node - N].list.filter(inLevel)
+    .sort((a, b) => (nodeView(node) === 'phonetic' ? plain(reading[a]).localeCompare(plain(reading[b])) || tone[a] - tone[b] : 0) ||
+      chars[a].level - chars[b].level);
+  // Characters per node within the level filter, refreshed when it changes.
+  const nodeCount = new Uint16Array(nodes.length);
+  const recount = () => nodes.forEach((n, k) => { nodeCount[k] = n.list.filter(inLevel).length; });
   recount();
 
   function setColors() {
     for (let i = 0; i < T; i++) {
-      const c = isNode(i) ? COLORS.radical : colorMode === 'level' ? COLORS.level[chars[i].level] : COLORS.tone[tone[i]];
+      const c = isNode(i) ? COLORS[nodeView(i)] : colorMode === 'level' ? COLORS.level[chars[i].level] : COLORS.tone[tone[i]];
       tints.set(hex(c), i * 4);
     }
     const names = colorMode === 'level' ? LEVEL_NAMES : TONE_NAMES;
     $('#legend').innerHTML = Object.entries(names)
       .map(([k, n]) => `<span style="--c:${COLORS[colorMode][k]}">${n}</span>`).join('') +
-      (view === 'radicals' ? `<span style="--c:${COLORS.radical}">radicale</span>` : '');
+      (galactic() ? `<span style="--c:${COLORS[view]}">${NODE_NAMES[view]}</span>` : '');
     mesh.thinInstanceBufferUpdated('tint');
   }
 
-  // The radicals layout: the galaxy, with the open radical's column raised and
-  // every other character folded into its own radical node.
-  function radicalsLayout() {
+  // A galaxy layout: the open node's column raised, every other character
+  // folded into its own node (a character with no family waits at the core,
+  // and stands there alone when selected).
+  let lonely = -1;
+  function galaxyLayout() {
     const out = new Float32Array(galaxy);
-    for (let i = 0; i < N; i++) out.set(galaxy.subarray(nodeOf.get(radicalOf[i]) * 3, nodeOf.get(radicalOf[i]) * 3 + 3), i * 3);
+    for (let i = 0; i < N; i++) {
+      const n = nodeFor(view, i);
+      out.set(n >= 0 ? galaxy.subarray(n * 3, n * 3 + 3) : [0, 0, 0], i * 3);
+    }
     column_ = new Set();
     if (open >= 0) {
       const list = members(open);
       column(list, galaxy[open * 3], galaxy[open * 3 + 1], galaxy[open * 3 + 2], out);
       column_ = new Set(list);
+    } else if (lonely >= 0) {
+      column_ = new Set([lonely]);
     }
     return out;
   }
@@ -315,19 +306,21 @@ async function main() {
   let betaGoal = null;
   function setView(v) {
     view = v;
-    betaGoal = v === 'radicals' ? 0.95 : Math.PI / 2.35;
-    if (v !== 'radicals') open = -1;
-    moveTo(v === 'radicals' ? radicalsLayout() : LAYOUTS[v]);
+    betaGoal = v === 'levels' ? Math.PI / 2.35 : 0.95;
+    open = -1;
+    lonely = -1;
+    moveTo(galactic() ? galaxyLayout() : LAYOUTS.levels);
     document.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
     setColors();
   }
 
   // An open column stands across the galaxy: turn to see it from the side.
-  function openRadical(node) {
-    if (open === node) return;
+  function openNode(node, alone = -1) {
+    if (open === node && lonely === alone) return;
     open = node;
+    lonely = alone;
     betaGoal = node >= 0 ? 1.3 : 0.95;
-    moveTo(radicalsLayout());
+    moveTo(galaxyLayout());
   }
 
   // Who is linked to the selection in the current view.
@@ -336,11 +329,11 @@ async function main() {
     if (isNode(i)) {
       members(i).forEach((j) => out.add(j));
     } else if (view === 'radicals') {
-      out.add(nodeOf.get(radicalOf[i]));
+      out.add(nodeFor('radicals', i));
       alsoContains[i].forEach((n) => out.add(n));
     } else if (view === 'phonetic') {
-      const p = familyOf.get(chars[i].c);
-      if (p) families.get(p)?.forEach((j) => out.add(j));
+      const n = nodeFor('phonetic', i);
+      if (n >= 0) { out.add(n); members(n).forEach((j) => out.add(j)); }
     } else {
       for (const w of wordsOf.get(chars[i].c) || []) if (w.level <= maxLevel) for (const ch of w.w) if (index.has(ch)) out.add(index.get(ch));
     }
@@ -353,8 +346,8 @@ async function main() {
     lines = null;
   }
 
-  // Selection links; in the radicals view also the open column: each character
-  // to its radical, and (in violet) to the other radicals it contains.
+  // Selection links; in a galaxy also the open column: each character to its
+  // node, and in the radicals view (in violet) to the other radicals it contains.
   function drawLines() {
     clearLines();
     const p = (i) => new BABYLON.Vector3(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
@@ -362,13 +355,13 @@ async function main() {
     const add = (a, b, c) => { segs.push([p(a), p(b)]); cols.push([c, c]); };
     const paper = new BABYLON.Color4(0.94, 0.9, 0.82, 0.2);
     const violet = new BABYLON.Color4(0.77, 0.65, 0.94, 0.28);
-    if (view === 'radicals' && open >= 0) {
+    if (galactic() && open >= 0) {
       for (const i of column_) {
         add(open, i, paper);
-        for (const n of alsoContains[i]) add(i, n, violet);
+        if (view === 'radicals') for (const n of alsoContains[i]) add(i, n, violet);
       }
     }
-    if (selected >= 0 && !(view === 'radicals' && isNode(selected))) {
+    if (selected >= 0 && !isNode(selected) && view !== 'phonetic') {
       const strong = new BABYLON.Color4(0.94, 0.9, 0.82, 0.45);
       for (const j of related) if (isNode(j) || inLevel(j)) add(selected, j, strong);
     }
@@ -387,24 +380,24 @@ async function main() {
       for (let k = 0; k < pos.length; k++) pos[k] = from[k] + (to[k] - from[k]) * e;
       if (t >= 1) { tStart = -1; drawLines(); }
     }
-    const rad = view === 'radicals';
+    const gal = galactic();
     const focus = selected >= 0 || highlight.size > 0;
     const k = 1 - Math.exp(-dt * 8);
     for (let i = 0; i < T; i++) {
       let s = 1, a = 1;
       if (isNode(i)) {
         const n = nodeCount[i - N];
-        if (!rad || !n) { s = 0; a = 0; }
+        if (nodeView(i) !== view || !n) { s = 0; a = 0; }
         else {
           s = 1 + 0.16 * Math.sqrt(n);
           if (i === selected || i === open) s *= 1.6;
           else if (open >= 0 && !related.has(i) && !alsoContainsOpen.has(i)) a = 0.4;
         }
-      } else if (rad && !column_.has(i)) { s = 0; a = 0; }
+      } else if (gal && !column_.has(i)) { s = 0; a = 0; }
       else if (!inLevel(i)) { s = 0.55; a = 0.07; }
       else if (i === selected) { s = 2.4; }
       else if (related.has(i) || highlight.has(i)) { s = 1.35; }
-      else if (focus && !rad) { a = 0.32; }
+      else if (focus && !gal) { a = 0.32; }
       if (i === hovered && a > 0.1) s *= 1.3;
       pickable[i] = a > 0.1 && s > 0.2 ? 1 : 0;
       scale[i] += (s - scale[i]) * k;
@@ -461,7 +454,7 @@ async function main() {
   }
 
   const label = (i) => (isNode(i)
-    ? `<span class="hz">${glyphs[i]}</span> radicale · ${members(i).length}`
+    ? `<span class="hz">${glyphs[i]}</span> ${NODE_NAMES[nodeView(i)]} · ${nodeCount[i - N]}`
     : `<span class="hz">${glyphs[i]}</span> ${reading[i]}`);
 
   const hoverEl = $('#hover');
@@ -491,7 +484,7 @@ async function main() {
   let writer = null;
 
   const chip = (c, extra = '') => {
-    const d = dec[c], go = index.has(c) || (view === 'radicals' && nodeOf.has(c));
+    const d = dec[c], go = index.has(c) || (galactic() && nodeOf[view].has(c));
     const py = index.has(c) ? reading[index.get(c)] : d?.py?.split(',')[0] || '';
     const def = (d?.def || '').split(/[;,]/)[0];
     return `<${go ? 'button' : 'span'} class="chip${go ? ' go' : ''}" ${go ? `data-go="${c}"` : ''}>` +
@@ -511,17 +504,35 @@ async function main() {
     writer?.animateCharacter();
   }
 
-  function renderRadicalCard(node) {
+  const tonePy = (py) => `<span style="color:${COLORS.tone[toneOf(py)]}">${py}</span>`;
+
+  function renderNodeCard(node) {
     const r = glyphs[node], d = dec[r] || {};
     const list = members(node);
+    const phonetic = nodeView(node) === 'phonetic';
+    const own = index.has(r) ? reading[index.get(r)] : (d.py || '').split(',')[0];
     card.querySelector('.big').textContent = r;
-    card.querySelector('.level').textContent = 'Radicale';
-    card.querySelector('.readings').innerHTML = `<span>${(d.py || '').split(',')[0]}</span>`;
+    card.querySelector('.level').textContent = phonetic ? 'Componente fonetica' : 'Radicale';
+    card.querySelector('.readings').innerHTML = own ? tonePy(own) : '';
     card.querySelector('.meanings').innerHTML = `<h2>Significato</h2><p>${d.def || '—'}</p>`;
-    const byLv = {};
-    list.forEach((i) => (byLv[chars[i].level] ||= []).push(i));
-    card.querySelector('.parts').innerHTML = `<h2>${list.length} caratteri fino a HSK ${maxLevel}</h2>` +
-      Object.entries(byLv).map(([lv, l]) => `<div class="ety">HSK ${lv}</div><div class="chips">${l.map((i) => chip(chars[i].c)).join('')}</div>`).join('');
+    if (phonetic) {
+      // How the family reads: syllables with their tones, the component's own first.
+      const bySyl = new Map();
+      list.forEach((i) => {
+        const syl = plain(reading[i]);
+        (bySyl.get(syl) || bySyl.set(syl, []).get(syl)).push(i);
+      });
+      const sylls = [...bySyl.entries()].sort((a, b) => (b[0] === plain(own)) - (a[0] === plain(own)) || b[1].length - a[1].length);
+      card.querySelector('.parts').innerHTML = `<h2>Come si legge la famiglia</h2>` +
+        sylls.map(([syl, l]) => `<div class="ety">${syl} · ${l.length}</div><div class="chips">` +
+          l.map((i) => `<button class="chip go" data-go="${chars[i].c}"><span class="hz">${chars[i].c}</span>${tonePy(reading[i])}</button>`).join('') +
+          `</div>`).join('');
+    } else {
+      const byLv = {};
+      list.forEach((i) => (byLv[chars[i].level] ||= []).push(i));
+      card.querySelector('.parts').innerHTML = `<h2>${list.length} caratteri fino a HSK ${maxLevel}</h2>` +
+        Object.entries(byLv).map(([lv, l]) => `<div class="ety">HSK ${lv}</div><div class="chips">${l.map((i) => chip(chars[i].c)).join('')}</div>`).join('');
+    }
     card.querySelector('.family').innerHTML = '';
     card.querySelector('.words').innerHTML = '';
     showWriter(r);
@@ -529,7 +540,7 @@ async function main() {
   }
 
   function renderCard(i) {
-    if (isNode(i)) { renderRadicalCard(i); return; }
+    if (isNode(i)) { renderNodeCard(i); return; }
     const { c, level } = chars[i];
     const entries = ced.chars[c] || [];
     const d = dec[c] || {};
@@ -578,11 +589,14 @@ async function main() {
   }
 
   function select(i) {
-    // In the radicals view a character needs its radical's column up.
-    if (view === 'radicals') openRadical(isNode(i) ? i : nodeOf.get(radicalOf[i]));
+    // In a galaxy a character needs its node's column up (or stands alone).
+    if (galactic()) {
+      const n = isNode(i) ? i : nodeFor(view, i);
+      openNode(n, n < 0 ? i : -1);
+    }
     selected = i;
     related = relatedTo(i);
-    alsoContainsOpen = new Set(open >= 0 ? [...column_].flatMap((j) => alsoContains[j]) : []);
+    alsoContainsOpen = new Set(open >= 0 && view === 'radicals' ? [...column_].flatMap((j) => alsoContains[j]) : []);
     highlight = new Set();
     renderCard(i);
     card.hidden = false;
@@ -595,14 +609,14 @@ async function main() {
     selected = -1;
     related = new Set();
     card.hidden = true;
-    if (view === 'radicals' && open >= 0) { alsoContainsOpen = new Set(); openRadical(-1); }
+    if (galactic() && (open >= 0 || lonely >= 0)) { alsoContainsOpen = new Set(); openNode(-1); }
     clearLines();
     history.replaceState(null, '', location.pathname);
   }
 
   card.addEventListener('click', (e) => {
     const go = e.target.closest('[data-go]');
-    if (go) select(index.has(go.dataset.go) ? index.get(go.dataset.go) : nodeOf.get(go.dataset.go));
+    if (go) select(index.has(go.dataset.go) ? index.get(go.dataset.go) : nodeOf[view].get(go.dataset.go));
     const w = e.target.closest('[data-writer]');
     if (w && writer) w.dataset.writer === 'quiz' ? writer.quiz() : writer.animateCharacter();
   });
@@ -622,7 +636,7 @@ async function main() {
     maxLevel = +b.dataset.level;
     recount();
     document.querySelectorAll('[data-level]').forEach((x) => x.classList.toggle('on', +x.dataset.level <= maxLevel));
-    if (view === 'radicals' && open >= 0) moveTo(radicalsLayout());
+    if (galactic() && open >= 0) moveTo(galaxyLayout());
     if (selected >= 0) select(selected);
   }));
   document.querySelectorAll('[data-level]').forEach((x) => x.classList.add('on'));
