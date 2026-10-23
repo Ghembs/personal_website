@@ -241,6 +241,7 @@ const Scenes = (() => {
         night: { bg: '#221d27', fg: '#d9cdbb', dim: '#5d5466', hl: '#ffffff', accent: '#d98d5f', green: '#6f7d4c', skyTop: '#0f0d1c', skyLow: '#2e2433', soil: '#2a2420', soilDeep: '#1c1714' },
       },
       far: 'mesa', trees: ['saguaroL', 'saguaro', 'joshuaL', 'joshua'], obstacles: ['cactusS', 'cactusL', 'cactusD', 'rock'],
+      ground: ".,'.`,..", props: ['bones', 'skull', 'pebbles', 'bush', 'pebbles', 'tuft'],
     },
     jungle: {
       palettes: {
@@ -248,6 +249,7 @@ const Scenes = (() => {
         night: { bg: '#121c16', fg: '#cfe0c6', dim: '#3d5a45', hl: '#ffffff', accent: '#d9874f', green: '#4f8a52', skyTop: '#07110d', skyLow: '#16261d', soil: '#14211a', soilDeep: '#0c1610' },
       },
       far: 'hills', trees: ['palmL', 'palm', 'canopyL', 'canopy', 'fern'], obstacles: ['log', 'rock', 'fern', 'logL'],
+      ground: '",;\'v.,"', props: ['tuft', 'flowers', 'tuft', 'mushrooms', 'grass', 'pebbles'],
     },
     volcano: {
       palettes: {
@@ -255,6 +257,7 @@ const Scenes = (() => {
         night: { bg: '#1a1213', fg: '#e3d3cf', dim: '#5c4446', hl: '#ffffff', accent: '#ff6a3a', green: '#5f5a44', skyTop: '#2a0c08', skyLow: '#3a1d1a', soil: '#24191a', soilDeep: '#160f10' },
       },
       far: 'volcano', trees: ['deadL', 'dead', 'fern'], obstacles: ['rock', 'rockL', 'lava'],
+      ground: '.:,.:o.', props: ['crack', 'pebbles', 'bones', 'crack', 'stones'],
     },
     ice: {
       palettes: {
@@ -262,6 +265,7 @@ const Scenes = (() => {
         night: { bg: '#0f1622', fg: '#d6e4ee', dim: '#3f5469', hl: '#ffffff', accent: '#e07a5a', green: '#4a7a6a', skyTop: '#050a14', skyLow: '#182436', soil: '#26364a', soilDeep: '#18222f' },
       },
       far: 'peaks', trees: ['pineXL', 'pineL', 'pine'], obstacles: ['ice', 'snowman', 'rock', 'iceL'],
+      ground: '*.*.,\'*', props: ['drift', 'pebbles', 'drift', 'tracks', 'stones'],
     },
   };
 
@@ -442,6 +446,21 @@ _| || |_
       |||`),
   };
   const PTERO = [[' \\   /', '--\\_/~<'], [' _   _', '--\\_/~<']];
+  // props scattered over the foreground
+  const PROPS = {
+    bones: ['o==o  _', '   o=o'],
+    skull: [' .-.', '(o.o)', " |=|"],
+    pebbles: ['o  .', ' . o .'],
+    stones: [' _', '(_) _', '   (_)'],
+    bush: ['\\|//', ' \\|/'],
+    tuft: ['\\|/'],
+    grass: ['\\ | /', ' \\|/'],
+    flowers: ['* @ *', '\\|/|'],
+    mushrooms: [' n  n', '(_)(_)'],
+    crack: ['~~-~~~'],
+    drift: ['  .--.', '.(    )-.'],
+    tracks: ['v  v', '  v  v'],
+  };
 
   const FAR = {
     mesa: (x) => (Math.sin(x * 0.02) > 0.3 ? 5 : Math.sin(x * 0.02) > -0.2 ? 2 : 0) + (Math.sin(x * 0.07) > 0.8 ? 1 : 0),
@@ -456,7 +475,7 @@ _| || |_
       const first = pick(Object.keys(BIOMES));
       Object.assign(s, {
         off: 0, speed: BASE_SPEED, y: 0, vy: 0, held: false, buffer: -1, game: false, over: false, score: 0, night: 0,
-        obstacles: [], trees: [], signs: [], pteros: [], clouds: [], far: [], nextObs: 40, nextTree: 0, nextSign: 20, nextFar: 60, hi: 0,
+        obstacles: [], trees: [], signs: [], pteros: [], clouds: [], far: [], props: [], nextObs: 40, nextTree: 0, nextSign: 20, nextFar: 60, nextProp: 0, hi: 0,
         zones: [{ x: -1e9, b: first }], palFrom: first, palTo: first, palT: 1, level: 0,
       });
       try { s.hi = +localStorage.getItem('dino-hi') || 0; } catch (e) { /* private mode */ }
@@ -533,6 +552,14 @@ _| || |_
         s.trees.push({ x: s.nextTree, k, i: Math.random() < 0.35 ? s.pickLink(this.live(s)) : -1 });
         s.nextTree += widthOf(TREES[k]) + 4 + Math.random() * 22;
       }
+      // foreground props, each at its own depth (and speed)
+      while (s.nextProp < s.off + s.cols + 30) {
+        const b = this.biomeAt(s, s.nextProp);
+        const d = 0.15 + Math.random() * 0.85;
+        s.props.push({ x: s.nextProp + s.off * d * 0.8, k: pick(BIOMES[b].props), d });
+        s.nextProp += rnd(4, 12);
+      }
+      s.props = s.props.filter((p) => p.x - s.off * (1 + p.d * 0.8) > -12);
       // now and then a landmark far away, keeping its link for itself
       while (s.nextFar < s.off * 0.15 + s.cols + 50) {
         if (Math.random() < 0.5) {
@@ -617,13 +644,24 @@ _| || |_
           label(g, s, Math.round(p.x) + 10, Math.round(p.y) + 1, p.i, C.hl);
         }
       }
+      // the ground: its line, then a textured foreground whose rows slide
+      // faster the closer they are, with the props of each land
       for (let x = 0; x < g.cols; x++) {
         const w = Math.floor(x + s.off);
         g.put(x, G, hash(w, 7) < 0.05 ? '-' : '_', C.fg, M.sand);
-        for (let y = 1; y <= 5; y++) {
-          const h = hash(w, y);
-          if (h < 0.09 / y) g.put(x, G + y, h < 0.02 ? "'" : h < 0.045 ? '.' : ',', C.dim, M.sand);
+      }
+      for (let y = G + 1; y < g.rows; y++) {
+        const d = (y - G) / Math.max(1, g.rows - G), sp = 1 + d * 0.8;
+        for (let x = 0; x < g.cols; x++) {
+          const w = Math.floor(x + s.off * sp);
+          const tex = BIOMES[this.biomeAt(s, s.off + x)].ground;
+          const h = hash(w, y * 7 + 3);
+          if (h < 0.07 + d * 0.18) g.put(x, y, tex[Math.floor(hash(w, y) * tex.length)], h < 0.02 ? C.fg : C.dim, M.sand);
         }
+      }
+      for (const p of s.props) {
+        const sp = 1 + p.d * 0.8, x = Math.round(p.x - s.off * sp), lines = PROPS[p.k];
+        g.sprite(x, G + 1 + Math.round(p.d * (g.rows - G - 2)) - lines.length + 1, lines, p.k === 'crack' ? C.accent : p.d > 0.5 ? C.fg : C.green, M.sand);
       }
       for (const o of s.signs) {
         const x = Math.round(o.x - s.off), n = len(s.labels[o.i]);
