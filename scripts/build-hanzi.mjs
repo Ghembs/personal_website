@@ -311,6 +311,11 @@ async function main() {
 
   // Font subset: every character the page can draw.
   const used = new Set(UI_CHARS);
+  // ...and every character written in the pages of the section (the introduction).
+  for (const page of ['index.html', 'introduzione/index.html']) {
+    const file = join(ROOT, 'public', 'cinese', page);
+    if (existsSync(file)) for (const ch of readFileSync(file, 'utf8')) if (HAN.test(ch)) used.add(ch);
+  }
   for (const { c } of hsk.chars) used.add(c);
   for (const { w } of hsk.words) for (const ch of w) if (HAN.test(ch)) used.add(ch);
   for (const c of Object.keys(dec)) used.add(c);

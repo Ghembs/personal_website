@@ -907,7 +907,7 @@ async function main() {
     let ety = '';
     if (e?.t === 'pictophonetic') ety = `Fonetico <span class="hz">${e.p || '?'}</span>, semantico <span class="hz">${e.s || '?'}</span>${e.h ? ` (${e.h})` : ''}.`;
     else if (e?.h) ety = `${e.t === 'pictographic' ? 'Pittogramma' : 'Ideogramma'}: ${e.h}.`;
-    card.querySelector('.parts').innerHTML = `<h2>Composizione</h2><div class="chips">` +
+    card.querySelector('.parts').innerHTML = `<h2>Composizione <a class="why" href="introduzione/#caratteri">cos'è?</a></h2><div class="chips">` +
       (d.r ? chip(d.r, ' <small>radicale</small>') : '') +
       parts.filter((x) => x !== d.r).map((x) => chip(x)).join('') + `</div>` +
       (ety ? `<div class="ety">${ety}</div>` : '');
@@ -1109,8 +1109,14 @@ async function main() {
 
   setColors();
   $('#loading').classList.add('done');
+  // ?vista=radicali|fonetica|livelli picks the view; #字 opens a character, or
+  // in a galaxy view a radical / phonetic component.
+  const VIEWS = { livelli: 'levels', radicali: 'radicals', fonetica: 'phonetic' };
+  const wanted = VIEWS[new URLSearchParams(location.search).get('vista')];
+  if (wanted && wanted !== view) setView(wanted);
   const fromHash = decodeURIComponent(location.hash.slice(1));
-  if (index.has(fromHash)) select(index.get(fromHash));
+  if (galactic() && nodeOf[view].has(fromHash)) select(nodeOf[view].get(fromHash));
+  else if (index.has(fromHash)) select(index.get(fromHash));
 }
 
 main().catch((e) => {

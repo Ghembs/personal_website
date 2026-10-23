@@ -42,7 +42,15 @@ Hanzi Writer). A 2D mode (default on phones) lays the levels out as flat discs
 and, on a click, shows only the clicked character, radical or phonetic component
 with what it connects to. Each HSK level can be shown or hidden on its own;
 radicals sit on orbits by stroke count; a switch toggles a light and a dark
-theme. `#字` in the URL opens a character directly.
+theme. `#字` in the URL opens a character directly, `?vista=radicali|fonetica`
+picks a view (then `#氵` opens a radical, `#青` a phonetic component).
+
+`public/cinese/introduzione/` is an introduction for complete beginners, in
+Italian: the tones (with their changes), pinyin and the sounds that trip up an
+Italian speaker, how characters are built (with links into the radicals and
+phonetic views) and stroke order, and ten points of basic grammar. Buttons read
+syllables and sentences aloud with the device's speech synthesis, when it has
+a Chinese voice.
 
 Its data and font subset are built by:
 

@@ -86,6 +86,9 @@ a { color: inherit; }
   letter-spacing: 0.06em;
 }
 #bar h1 .hz { color: var(--red); margin-right: 4px; }
+#bar .intro { font-style: italic; color: var(--dim); text-decoration-color: var(--red); text-underline-offset: 3px; }
+#bar .intro:hover { color: var(--paper); }
+#card h2 .why { margin-left: 6px; font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; font-style: italic; color: var(--dim); }
 #bar .group { display: flex; gap: 2px; }
 #bar .group button {
   padding: 2px 9px;
