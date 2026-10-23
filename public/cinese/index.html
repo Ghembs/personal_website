@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>汉字 · HSK 1–4 · Giuliano Gambacorta</title>
+  <meta name="description" content="I caratteri cinesi dei livelli HSK 1–4 in 3D: livelli, radicali e famiglie fonetiche, con significati, parole d'uso e ordine dei tratti.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="cinese.css">
+</head>
+<body>
+  <canvas id="scene" touch-action="none"></canvas>
+
+  <header id="bar">
+    <a class="home" href="../">← giulianogambacorta</a>
+    <h1><span class="hz">汉字</span> HSK 1–4</h1>
+    <div class="group" role="group" aria-label="Vista">
+      <button data-view="levels" class="on">livelli</button>
+      <button data-view="radicals">radicali</button>
+      <button data-view="phonetic">famiglie fonetiche</button>
+    </div>
+    <div class="group" role="group" aria-label="Livello massimo">
+      <button data-level="1">1</button>
+      <button data-level="2">2</button>
+      <button data-level="3">3</button>
+      <button data-level="4" class="on">4</button>
+    </div>
+    <div class="group" role="group" aria-label="Colore">
+      <button data-color="level" class="on">colore: livello</button>
+      <button data-color="tone">colore: tono</button>
+    </div>
+    <input id="search" type="search" placeholder="字 o pinyin" autocomplete="off" spellcheck="false">
+  </header>
+
+  <div id="legend"></div>
+  <div id="hover" hidden></div>
+  <div id="loading">caricamento…</div>
+
+  <aside id="card" hidden>
+    <button class="close" aria-label="Chiudi">×</button>
+    <div class="head">
+      <div class="big hz"></div>
+      <div class="meta">
+        <div class="level"></div>
+        <div class="readings"></div>
+      </div>
+      <div class="strokes">
+        <div id="writer"></div>
+        <div class="writer-tools">
+          <button data-writer="play">tratti</button>
+          <button data-writer="quiz">esercitati</button>
+        </div>
+      </div>
+    </div>
+    <section class="meanings"></section>
+    <section class="parts"></section>
+    <section class="family"></section>
+    <section class="words"></section>
+    <footer class="sources">
+      Dati: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0),
+      <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL),
+      sillabo HSK 2025. Tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.
+    </footer>
+  </aside>
+
+  <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.28.0/babylon.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7.2/dist/hanzi-writer.min.js"></script>
+  <script src="cinese.js"></script>
+</body>
+</html>

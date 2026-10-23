@@ -22,8 +22,28 @@ public/          the site, served as is (no build step)
   shaders.js     source and ascii shaders
   style.css
   _headers       Cloudflare Pages response headers
+  cinese/        the Chinese section: page, data/, fonts/
+scripts/         build-hanzi.mjs, the data pipeline for cinese/
 wrangler.toml    Cloudflare Pages project config
 ```
+
+## Chinese section (`public/cinese`)
+
+The HSK 1–4 characters in 3D (Babylon.js, one instanced mesh): arranged by level,
+by radical or by phonetic family, coloured by level or tone, with a card for each
+character (readings, meanings, composition, family, words up to the chosen level,
+stroke order with Hanzi Writer). `#字` in the URL opens a character directly.
+
+Its data and font subset are built by:
+
+```bash
+npm install
+npm run build:hanzi -- path/to/HSK-syllabus.pdf
+```
+
+which needs `pdftotext` (poppler-utils) and downloads CC-CEDICT, Make Me a Hanzi
+and Noto Serif SC into `data/raw/` (git-ignored). The syllabus PDF is read
+locally and not published. Data licences: [public/cinese/data/LICENSES.md](public/cinese/data/LICENSES.md).
 
 ## Run locally
 

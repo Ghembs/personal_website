@@ -61,8 +61,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Chinese section data and font
+
+`public/cinese/data` holds data derived from CC-CEDICT (CC BY-SA 4.0) and
+Make Me a Hanzi (LGPL-3.0), plus lists taken from the HSK syllabus; see
+[public/cinese/data/LICENSES.md](public/cinese/data/LICENSES.md).
+`public/cinese/fonts/hanzi.woff2` is a subset of Noto Serif SC
+(SIL Open Font License, [public/cinese/fonts/OFL.txt](public/cinese/fonts/OFL.txt)).
+
 ## Runtime dependencies
 
 - [p5.js](https://p5js.org) 1.11.1 (LGPL-2.1), loaded from cdnjs.
+- [Babylon.js](https://www.babylonjs.com) 9.28.0 (Apache-2.0), loaded from jsDelivr.
+- [Hanzi Writer](https://hanziwriter.org) 3.7.2 (MIT) and its stroke data
+  `hanzi-writer-data` (Arphic Public License), loaded from jsDelivr.
 - Fonts from Google Fonts (SIL Open Font License): JetBrains Mono, Space Grotesk,
   Unbounded, Cormorant Garamond, Ma Shan Zheng.
