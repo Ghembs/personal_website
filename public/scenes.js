@@ -1,9 +1,9 @@
 // ASCII scenes: a character grid drawn straight onto a 2D canvas, with a few
 // procedural scenarios (a dinosaur walking through changing lands, a boat at
 // sea, a plane over the countryside, a train). Every cell has a character, a
-// colour and optionally a "material": with the 你好 easter egg each material is
-// written with its own hanzi instead (水 for the sea, 云 for clouds, 龙 for the
-// dinosaur). Sprites that must move smoothly (a jump, a bird) are "floats",
+// colour and optionally a "material" (scenery, as opposed to text): with the
+// 你好 easter egg scenery cells are written with hanzi chosen for their shape
+// and weight, one per ascii mark (- 一, | 丨, / 丿, o 口, # 田). Sprites that must move smoothly (a jump, a bird) are "floats",
 // drawn at fractional positions over the grid.
 // Links are labels on objects of the scene; `spots` tells main.js where they
 // are. Two landmarks keep a link for themselves: the Duomo of Florence shows
@@ -11,16 +11,21 @@
 // links may appear on any carrier.
 
 const Scenes = (() => {
-  const HANZI = {
-    sand: '沙', dino: '龙', cactus: '刺', cloud: '云', sun: '日', moon: '月', star: '星',
-    wave: '水', foam: '浪', fish: '鱼', weed: '草', bubble: '泡', boat: '舟', sail: '帆',
-    gull: '鸟', buoy: '标', rain: '雨', plane: '机', balloon: '球', field: '田', hill: '山',
-    tree: '树', house: '屋', ptero: '翼', rope: '绳', river: '河', light: '光', rock: '石',
-    snow: '雪', fire: '火', smoke: '烟', train: '车', rail: '轨', bridge: '桥', station: '站',
-    duomo: '堂', pearl: '珠', mill: '风', castle: '堡', fence: '栏', chest: '宝',
-    leaf: '叶', ice: '冰', wood: '木',
+  const MATERIALS = [
+    'sand', 'dino', 'cactus', 'cloud', 'sun', 'moon', 'star', 'wave', 'foam', 'fish', 'weed', 'bubble', 'boat', 'sail',
+    'gull', 'buoy', 'rain', 'plane', 'balloon', 'field', 'hill', 'tree', 'house', 'ptero', 'rope', 'river', 'light', 'rock',
+    'snow', 'fire', 'smoke', 'train', 'rail', 'bridge', 'station', 'duomo', 'pearl', 'mill', 'castle', 'fence', 'chest',
+    'leaf', 'ice', 'wood', 'sky', 'soil',
+  ];
+  // 你好: a hanzi of similar shape and weight for each ascii mark.
+  const SHAPES = {
+    '.': '丶', ',': '丶', "'": '丶', '`': '丶', '°': '丶', '"': '丷', '-': '一', '_': '一', '=': '二', '~': '乙',
+    '^': '人', '|': '丨', '!': '丨', '/': '丿', '\\': '乀', 'o': '口', 'O': '回', '0': '回', '*': '米', '#': '田',
+    '+': '十', ':': '冫', ';': '冫', '(': '厂', ')': '了', '[': '匚', ']': '彐', '<': '乂', '>': '乂', 'x': '乂',
+    'X': '乂', 'v': '丷', 'V': '丷', 'Y': '丫', '$': '金', '%': '冖', '{': '彡', '}': '彡', '&': '丷',
   };
-  const MATS = [null, ...Object.keys(HANZI)];
+  const shape = (cp) => SHAPES[String.fromCodePoint(cp)] || '田';
+  const MATS = [null, ...MATERIALS];
   const M = Object.fromEntries(MATS.map((k, i) => [k, i]));
 
   const hash = (a, b = 0) => {
@@ -102,6 +107,10 @@ const Scenes = (() => {
       }
     }
     band(r0, r1, colour) { this.bands.push([r0, r1, colour]); }
+    // A vertical gradient from colour a (row r0) to b (row r1), one band per row.
+    gradient(r0, r1, a, b) {
+      for (let y = r0; y < r1; y++) this.bands.push([y, y + 1, mixHex(a, b, (y - r0) / Math.max(1, r1 - r0 - 1))]);
+    }
   }
 
   // ---------- shared pieces ----------
@@ -118,32 +127,45 @@ const Scenes = (() => {
 
   // Landmarks.
   const DUOMO = art(String.raw`
-                 |
-                /+\
-               (___)          _
-            .-'"""""'-.      |+|
-          .'  |  |  |  '.    |=|
-         /    |  |  |    \   |#|
-        /_____|__|__|_____\  |=|
-       |___________________| |#|
-    ___|  ||   ||   ||   ||  |___|
-   | ^ |  ||   ||   ||   ||  | ^ |
-   |___|__||___||___||___||__|___|`);
+                        |
+                       /^\
+                      (___)
+                      |||||                       _
+                  .-'"""""""'-.                  |+|
+               .-'   |   |   |  '-.              |=|
+             .'      |   |   |     '.            |#|
+            /        |   |   |       \           |=|
+           /_________|___|___|________\          |#|
+          |____________________________|         |=|
+          | /\  /\  /\  /\  /\  /\  /\ |         |#|
+     _____|/__\/__\/__\/__\/__\/__\/__\|_____    |=|
+    |  /\  |                            |  /\ |  |#|
+    | /  \ |  ||    ||    ||    ||    ||| /  \|  |=|
+    |/____\|  ||    ||    ||    ||    |||/____\| |#|
+    |______|__||____||____||____||____|||______|_|=|_ `);
   const PEARL = art(String.raw`
-         |
-         |
-        ( )
-        | |
-        | |
-       .---.
-      (     )
-       '---'
-       || ||
-       || ||
-      /|| ||\
-     ( || || )
-    /  || ||  \
-   /___||_||___\ `);
+            |
+            |
+            |
+           (o)
+           | |
+           | |
+           | |
+          .---.
+         (     )
+          '---'
+          || ||
+          || ||
+         .-----.
+        /       \
+       (    O    )
+        \       /
+         '-----'
+        /|| || ||\
+       / || || || \
+      (  || || ||  )
+     /   || || ||   \
+    /____||_||_||____\ `);
 
   // Picks the link for a carrier entering the stage: never one reserved by a
   // landmark, never one already shown (the carrier then goes without, -1),
@@ -207,35 +229,39 @@ const Scenes = (() => {
   ];
   const DINO_AIR = ['      |   |', '     _|  _|'];
   const DINO_FEET = [7, 12];       // columns of the sprite the feet span
+  const BASE_SPEED = 13;
 
+  // Each land: two palettes (day, night) with sky and ground gradients, a far
+  // silhouette, its trees and its obstacles. The dinosaur walks from one land
+  // into the next every few hundred metres.
   const BIOMES = {
     desert: {
       palettes: {
-        day: { bg: '#f6f1e7', fg: '#5a4c3c', dim: '#c2b29b', hl: '#2a2117', accent: '#b4683d', green: '#7f8f52' },
-        night: { bg: '#1f1b24', fg: '#d9cdbb', dim: '#5d5466', hl: '#ffffff', accent: '#d98d5f', green: '#6f7d4c' },
+        day: { bg: '#f6efe2', fg: '#5a4c3c', dim: '#c2b29b', hl: '#2a2117', accent: '#b4683d', green: '#7f8f52', skyTop: '#f2dcc0', skyLow: '#fbf5ea', soil: '#ead8bb', soilDeep: '#dcc39c' },
+        night: { bg: '#221d27', fg: '#d9cdbb', dim: '#5d5466', hl: '#ffffff', accent: '#d98d5f', green: '#6f7d4c', skyTop: '#0f0d1c', skyLow: '#2e2433', soil: '#2a2420', soilDeep: '#1c1714' },
       },
-      far: 'mesa', trees: ['saguaro', 'joshua'], obstacles: ['cactusS', 'cactusL', 'cactusD', 'rock'],
+      far: 'mesa', trees: ['saguaroL', 'saguaro', 'joshuaL', 'joshua'], obstacles: ['cactusS', 'cactusL', 'cactusD', 'rock'],
     },
     jungle: {
       palettes: {
-        day: { bg: '#eef4e6', fg: '#334a2c', dim: '#a9bf9a', hl: '#162212', accent: '#c46a3a', green: '#4f8a3c' },
-        night: { bg: '#121c16', fg: '#cfe0c6', dim: '#3d5a45', hl: '#ffffff', accent: '#d9874f', green: '#4f8a52' },
+        day: { bg: '#eef4e6', fg: '#334a2c', dim: '#a9bf9a', hl: '#162212', accent: '#c46a3a', green: '#4f8a3c', skyTop: '#cfe6d4', skyLow: '#f2f7ea', soil: '#c9dbb3', soilDeep: '#a9c492' },
+        night: { bg: '#121c16', fg: '#cfe0c6', dim: '#3d5a45', hl: '#ffffff', accent: '#d9874f', green: '#4f8a52', skyTop: '#07110d', skyLow: '#16261d', soil: '#14211a', soilDeep: '#0c1610' },
       },
-      far: 'hills', trees: ['palm', 'fern', 'canopy'], obstacles: ['log', 'rock', 'fern', 'logL'],
+      far: 'hills', trees: ['palmL', 'palm', 'canopyL', 'canopy', 'fern'], obstacles: ['log', 'rock', 'fern', 'logL'],
     },
     volcano: {
       palettes: {
-        day: { bg: '#ece4e0', fg: '#3c3335', dim: '#b6a7a3', hl: '#1c1617', accent: '#d2502e', green: '#6d6a4c' },
-        night: { bg: '#1a1213', fg: '#e3d3cf', dim: '#5c4446', hl: '#ffffff', accent: '#ff6a3a', green: '#5f5a44' },
+        day: { bg: '#efe4df', fg: '#3c3335', dim: '#b6a7a3', hl: '#1c1617', accent: '#d2502e', green: '#6d6a4c', skyTop: '#d9b8a8', skyLow: '#f4e8e2', soil: '#cbb8b0', soilDeep: '#a8928a' },
+        night: { bg: '#1a1213', fg: '#e3d3cf', dim: '#5c4446', hl: '#ffffff', accent: '#ff6a3a', green: '#5f5a44', skyTop: '#2a0c08', skyLow: '#3a1d1a', soil: '#24191a', soilDeep: '#160f10' },
       },
-      far: 'volcano', trees: ['dead', 'dead', 'fern'], obstacles: ['rock', 'rockL', 'lava'],
+      far: 'volcano', trees: ['deadL', 'dead', 'fern'], obstacles: ['rock', 'rockL', 'lava'],
     },
     ice: {
       palettes: {
-        day: { bg: '#eef3f7', fg: '#344a5c', dim: '#b3c4d1', hl: '#16222c', accent: '#c8553d', green: '#4d7f6e' },
-        night: { bg: '#0f1622', fg: '#d6e4ee', dim: '#3f5469', hl: '#ffffff', accent: '#e07a5a', green: '#4a7a6a' },
+        day: { bg: '#eef3f7', fg: '#344a5c', dim: '#b3c4d1', hl: '#16222c', accent: '#c8553d', green: '#4d7f6e', skyTop: '#c6dcec', skyLow: '#f3f7fa', soil: '#f7fafc', soilDeep: '#d8e4ec' },
+        night: { bg: '#0f1622', fg: '#d6e4ee', dim: '#3f5469', hl: '#ffffff', accent: '#e07a5a', green: '#4a7a6a', skyTop: '#050a14', skyLow: '#182436', soil: '#26364a', soilDeep: '#18222f' },
       },
-      far: 'peaks', trees: ['pine', 'pine', 'pineL'], obstacles: ['ice', 'snowman', 'rock', 'iceL'],
+      far: 'peaks', trees: ['pineXL', 'pineL', 'pine'], obstacles: ['ice', 'snowman', 'rock', 'iceL'],
     },
   };
 
@@ -301,6 +327,18 @@ _| || |_
   \_   _/
     | |
     | |`),
+    saguaroL: art(String.raw`
+        _
+       | |
+   _   | |
+  | |  | |   _
+  | |  | |  | |
+  | |__| |__| |
+   \___   ___/
+       | |
+       | |
+       | |
+       | |`),
     joshua: art(String.raw`
  \|/   \|/
   \     /
@@ -308,6 +346,16 @@ _| || |_
     \|/
      |
      |`),
+    joshuaL: art(String.raw`
+ \\|//     \\|//
+  \|/  \|/  \|/
+   \    |    /
+    \   |   /
+     \__|__/
+        |
+        |
+        |
+       /|\ `),
     palm: art(String.raw`
   __\ | /__
  /   \|/   \
@@ -315,6 +363,18 @@ _| || |_
       |
       |
       |`),
+    palmL: art(String.raw`
+     __ _.--._ __
+   .'  \  |  /  '.
+  /   .-\ | /-.   \
+       ' \|/ '
+          |
+          (
+           )
+          (
+           )
+          (
+           )`),
     fern: art(String.raw`
  \  |  /
   \ | /
@@ -327,12 +387,32 @@ _| || |_
       | |
       | |
       | |`),
+    canopyL: art(String.raw`
+       .-~~~~~~-.
+    .-(  oO  oO  )-.
+   (  oOo  Oo  oOo  )
+  (  Oo  oOOo  oO  oo)
+    '-(  oO  oO  )-'
+       '-.____.-'
+           ||
+           ||
+           ||
+          /||\ `),
     dead: art(String.raw`
  \  /
   \/ /
    \/
    |
    |`),
+    deadL: art(String.raw`
+   \   |   /
+    \  |  /_
+  \_ \ | / _/
+    \_\|/_/
+       |
+       |
+       |
+      /|\ `),
     pine: art(String.raw`
     ^
    /*\
@@ -347,6 +427,19 @@ _| || |_
  /*******\
      |
      |`),
+    pineXL: art(String.raw`
+       ^
+      /*\
+     /***\
+    /*****\
+     /***\
+    /*****\
+   /*******\
+    /*****\
+   /*******\
+  /*********\
+      |||
+      |||`),
   };
   const PTERO = [[' \\   /', '--\\_/~<'], [' _   _', '--\\_/~<']];
 
@@ -360,22 +453,28 @@ _| || |_
   const dino = {
     slug: 'dino',
     init(s) {
-      s.biome = pick(Object.keys(BIOMES));
+      const first = pick(Object.keys(BIOMES));
       Object.assign(s, {
-        off: 0, speed: 13, y: 0, vy: 0, held: false, buffer: -1, game: false, over: false, score: 0, night: 0,
-        obstacles: [], trees: [], signs: [], pteros: [], clouds: [], nextObs: 40, nextTree: 0, nextSign: 20, hi: 0,
+        off: 0, speed: BASE_SPEED, y: 0, vy: 0, held: false, buffer: -1, game: false, over: false, score: 0, night: 0,
+        obstacles: [], trees: [], signs: [], pteros: [], clouds: [], far: [], nextObs: 40, nextTree: 0, nextSign: 20, nextFar: 60, hi: 0,
+        zones: [{ x: -1e9, b: first }], palFrom: first, palTo: first, palT: 1, level: 0,
       });
       try { s.hi = +localStorage.getItem('dino-hi') || 0; } catch (e) { /* private mode */ }
       s.pickLink = picker(s);
-      for (let k = 0; k < 6; k++) s.clouds.push({ x: Math.random() * s.cols * 1.5, y: Math.random(), k: (Math.random() * 3) | 0 });
+      for (let k = 0; k < 6; k++) s.clouds.push({ x: Math.random() * s.cols * 1.5, y: Math.random(), k: (Math.random() * 4) | 0 });
     },
-    biome: (s) => BIOMES[s.biome],
+    // the land at a ground position
+    biomeAt(s, x) {
+      let b = s.zones[0].b;
+      for (const z of s.zones) if (z.x <= x) b = z.b;
+      return b;
+    },
     ground: (s) => Math.round(s.rows * (s.portrait ? 0.66 : 0.74)),
     dinoX: (s) => (s.portrait ? 1 : 8),
     live: (s) => [...s.trees, ...s.signs, ...s.pteros].map((o) => o.i).filter((i) => i >= 0),
     action(s) {
       if (!s.game || s.over) {
-        Object.assign(s, { game: true, over: false, score: 0, speed: 13, obstacles: [], nextObs: s.off + s.cols * 0.7 });
+        Object.assign(s, { game: true, over: false, score: 0, level: 0, speed: BASE_SPEED, obstacles: [], nextObs: s.off + s.cols * 0.7 });
       }
       s.held = true;
       if (s.y <= 0.01) this.jump(s); else s.buffer = s.t;
@@ -388,22 +487,35 @@ _| || |_
     busy: (s) => s.game && !s.over,
     update(s, dt) {
       if (s.over) return;
-      const dx = this.dinoX(s), B = this.biome(s);
+      const dx = this.dinoX(s);
       s.off += s.speed * dt;
-      if (s.game) { s.speed = Math.min(30, s.speed + dt * 0.2); s.score += dt * s.speed * 0.8; }
-      // Jump: a strong push, lighter gravity while the key is held on the way
-      // up, heavier on the way down: short taps hop, long presses fly.
+      if (s.game) {
+        s.score += dt * s.speed * 0.8;
+        // a little faster every 1000 points
+        s.level = Math.floor(s.score / 1000);
+        s.speed = BASE_SPEED * (1 + 0.1 * s.level);
+      }
       if (s.y > 0 || s.vy > 0) {
         const g = s.vy > 0 && s.held ? 45 : 90;
         s.vy -= g * dt;
         s.y = Math.max(0, s.y + s.vy * dt);
         if (s.y === 0) { s.vy = 0; if (s.buffer > 0 && s.t - s.buffer < 0.15) this.jump(s); }
       }
+      // lands ahead: a new one every 700-1100 columns
+      while (s.zones[s.zones.length - 1].x < s.off + s.cols * 3) {
+        const last = s.zones[s.zones.length - 1];
+        const next = pick(Object.keys(BIOMES).filter((b) => b !== last.b));
+        s.zones.push({ x: Math.max(last.x, s.off + s.cols) + rnd(700, 1100), b: next });
+      }
+      s.zones = s.zones.filter((z, k) => k === s.zones.length - 1 || s.zones[k + 1].x > s.off - s.cols);
+      const here = this.biomeAt(s, s.off + dx + 10);
+      if (here !== s.palTo) { s.palFrom = s.palTo; s.palTo = here; s.palT = 0; }
+      s.palT = Math.min(1, s.palT + dt / 2.5);
       // obstacles and signs from one spawner, so they never overlap
       const ahead = s.off + s.cols + 15;
       while (Math.min(s.nextObs, s.nextSign) < ahead) {
         if (s.nextObs <= s.nextSign) {
-          const k = pick(B.obstacles);
+          const k = pick(BIOMES[this.biomeAt(s, s.nextObs)].obstacles);
           s.obstacles.push({ x: s.nextObs, k, ...OBST[k] });
           s.nextObs += OBST[k].w + 20 + Math.random() * 38 + s.speed * 0.9;
           if (Math.abs(s.nextSign - s.nextObs) < 16) s.nextSign = s.nextObs + 16;
@@ -416,18 +528,30 @@ _| || |_
       }
       // trees on a slower layer, a third of them with a sign
       while (s.nextTree < s.off * 0.4 + s.cols + 20) {
-        const carrier = Math.random() < 0.35;
-        s.trees.push({ x: s.nextTree, k: pick(B.trees), i: carrier ? s.pickLink(this.live(s)) : -1 });
-        s.nextTree += 10 + Math.random() * 26;
+        const b = this.biomeAt(s, s.off + (s.nextTree - s.off * 0.4));
+        const k = pick(BIOMES[b].trees);
+        s.trees.push({ x: s.nextTree, k, i: Math.random() < 0.35 ? s.pickLink(this.live(s)) : -1 });
+        s.nextTree += widthOf(TREES[k]) + 4 + Math.random() * 22;
       }
+      // now and then a landmark far away, keeping its link for itself
+      while (s.nextFar < s.off * 0.15 + s.cols + 50) {
+        if (Math.random() < 0.5) {
+          const k = pick(['duomo', 'pearl']), lm = k === 'duomo' ? 'stf' : 'zh';
+          if (s.special[lm] >= 0) s.far.push({ x: s.nextFar, k, i: s.special[lm] });
+        }
+        s.nextFar += rnd(220, 420);
+      }
+      s.far = s.far.filter((o) => o.x - s.off * 0.15 > -60);
+      s.reserved = new Set(s.far.map((o) => o.i));
+      for (const list of [s.trees, s.signs, s.pteros]) for (const o of list) if (s.reserved.has(o.i)) o.i = s.pickLink(this.live(s));
       const G = this.ground(s);
       if (Math.random() < dt * 0.07 && s.pteros.length < 2) {
         const banner = Math.random() < 0.6;
-        s.pteros.push({ x: s.cols + 6, y: 3 + Math.random() * Math.max(1, G - 20), v: rnd(4, 8), i: banner ? s.pickLink(this.live(s)) : -1 });
+        s.pteros.push({ x: s.cols + 6, y: 3 + Math.random() * Math.max(1, G - 22), v: rnd(4, 8), i: banner ? s.pickLink(this.live(s)) : -1 });
       }
       s.obstacles = s.obstacles.filter((o) => o.x - s.off > -14);
-      s.signs = s.signs.filter((o) => o.x - s.off > -20);
-      s.trees = s.trees.filter((o) => o.x - s.off * 0.4 > -24);
+      s.signs = s.signs.filter((o) => o.x - s.off > -20 && o.i >= 0);
+      s.trees = s.trees.filter((o) => o.x - s.off * 0.4 > -30);
       for (const p of s.pteros) p.x -= p.v * dt;
       s.pteros = s.pteros.filter((p) => p.x > -30);
       // the demo jumps by itself, timed so the apex sits over the obstacle
@@ -451,24 +575,35 @@ _| || |_
       const phase = s.game ? Math.floor(s.score / 700) : Math.floor(s.t / 45);
       s.night += ((phase % 2) - s.night) * Math.min(1, dt * 1.5);
     },
-    palette(s) { const P = this.biome(s).palettes; return mixPalette(P.day, P.night, s.night); },
+    palette(s) {
+      const at = (b) => mixPalette(BIOMES[b].palettes.day, BIOMES[b].palettes.night, s.night);
+      return s.palT >= 1 ? at(s.palTo) : mixPalette(at(s.palFrom), at(s.palTo), ease(s.palT));
+    },
     draw(g, s) {
-      const G = this.ground(s), dx = this.dinoX(s), B = this.biome(s);
+      const G = this.ground(s), dx = this.dinoX(s);
       const C = { fg: 1, dim: 2, hl: 3, accent: 4, green: 5 };
-      if (s.night > 0.5) { stars(g, s, G - 10, C.dim); g.sprite(g.cols - 14, 3, MOON, C.accent, M.moon); }
-      clouds(g, s, s.clouds, 0.15, C.dim, 3, Math.max(1, G - 24));
-      // far silhouettes, with a smoking volcano in its biome
-      const far = FAR[B.far];
+      const pal = this.palette(s);
+      g.gradient(0, G + 1, pal.skyTop, pal.skyLow);
+      g.gradient(G + 1, g.rows, pal.soil, pal.soilDeep);
+      if (s.night > 0.5) { stars(g, s, G - 12, C.dim); g.sprite(g.cols - 14, 3, MOON, C.accent, M.moon); }
+      clouds(g, s, s.clouds, 0.15, C.dim, 3, Math.max(1, G - 26));
+      // far silhouettes: each column shows the land it stands in
       for (let x = 0; x < g.cols; x++) {
-        const w = x + s.off * 0.1, h = far(w), dh = far(w + 1) - h;
+        const b = BIOMES[this.biomeAt(s, s.off + x)];
+        const far = FAR[b.far], w = x + s.off * 0.1, h = far(w), dh = far(w + 1) - h;
         if (h <= 0) continue;
-        g.put(x, G - 1 - h - (dh > 0 ? 1 : 0), dh > 0 ? '/' : dh < 0 ? '\\' : '_', C.dim, B.far === 'peaks' ? M.snow : M.hill);
-        if (B.far === 'volcano' && h >= 9 && far(w - 1) >= 9 && far(w + 2) < 9) {
+        g.put(x, G - 1 - h - (dh > 0 ? 1 : 0), dh > 0 ? '/' : dh < 0 ? '\\' : '_', C.dim, b.far === 'peaks' ? M.snow : M.hill);
+        if (b.far === 'volcano' && h >= 9 && far(w - 1) >= 9 && far(w + 2) < 9) {
           for (let k = 1; k < 8; k++) {
             const sx = x - 3 + Math.round(Math.sin(s.t * 0.8 + k) * k * 0.5);
             if (hash(k, Math.floor(s.t * 3)) < 0.75) g.put(sx, G - 11 - k, k < 3 ? '*' : 'o', k < 3 ? C.accent : C.dim, k < 3 ? M.fire : M.smoke);
           }
         }
+      }
+      for (const o of s.far) {
+        const lines = o.k === 'duomo' ? DUOMO : PEARL, x = Math.round(o.x - s.off * 0.15), top = G - lines.length;
+        g.sprite(x, top, lines, C.dim, M[o.k], true);
+        labelC(g, s, x + (widthOf(lines) >> 1), top - 1, o.i, C.hl);
       }
       for (const t of s.trees) {
         const lines = TREES[t.k], x = Math.round(t.x - s.off * 0.4), top = G - lines.length;
@@ -482,13 +617,12 @@ _| || |_
           label(g, s, Math.round(p.x) + 10, Math.round(p.y) + 1, p.i, C.hl);
         }
       }
-      // ground: a line, then pebbles and tufts
       for (let x = 0; x < g.cols; x++) {
         const w = Math.floor(x + s.off);
         g.put(x, G, hash(w, 7) < 0.05 ? '-' : '_', C.fg, M.sand);
-        for (let y = 1; y <= 4; y++) {
+        for (let y = 1; y <= 5; y++) {
           const h = hash(w, y);
-          if (h < 0.07 / y) g.put(x, G + y, h < 0.02 ? "'" : h < 0.045 ? '.' : ',', C.dim, M.sand);
+          if (h < 0.09 / y) g.put(x, G + y, h < 0.02 ? "'" : h < 0.045 ? '.' : ',', C.dim, M.sand);
         }
       }
       for (const o of s.signs) {
@@ -736,6 +870,33 @@ _| || |_
  (  )
  (  )
   ||`), mat: 'tree', green: true },
+    oak: { lines: art(String.raw`
+     .-~~~-.
+  .-(  oOo  )-.
+ (  oOo  oOo  )
+  '-(  oOo  )-'
+     '-._.-'
+       | |
+       | |`), mat: 'tree', green: true },
+    cypressL: { lines: art(String.raw`
+   /\
+  (  )
+ (    )
+ (    )
+ (    )
+  (  )
+  (  )
+   ||
+   ||`), mat: 'tree', green: true },
+    pineL: { lines: art(String.raw`
+     ^
+    /*\
+   /***\
+    /*\
+   /***\
+  /*****\
+ /*******\
+    |||`), mat: 'tree', green: true },
     duomo: { lines: DUOMO, mat: 'duomo', landmark: 'stf' },
     pearl: { lines: PEARL, mat: 'pearl', landmark: 'zh' },
   };
@@ -744,7 +905,7 @@ _| || |_
     [' \\   /', '  \\ /', '   o', '  / \\', ' /   \\'],
     ['   |', '   |', '---o---', '   |', '   |'],
   ];
-  const GENERIC = ['house', 'house', 'tower', 'church', 'castle', 'factory', 'mill', 'treeR', 'treeR', 'pine', 'cypress', 'cypress'];
+  const GENERIC = ['house', 'house', 'tower', 'church', 'castle', 'factory', 'mill', 'treeR', 'oak', 'oak', 'pineL', 'cypress', 'cypressL', 'cypressL'];
 
   // Spawns an object of a ground layer: landmarks now and then, one of each at most.
   // A carrier gets i = -2 until settleLinks picks its link.
@@ -821,7 +982,7 @@ _| || |_
     update(s, dt) {
       s.off += s.speed * dt;
       while (s.nextG < s.off * 0.45 + s.cols + 40) s.nextG = spawnGround(s, s.ground, s.nextG, { landmarkChance: 0.14, carrierChance: 0.35, gap: [4, 16] });
-      while (s.nextN < s.off * 0.9 + s.cols + 20) { s.near.push({ x: s.nextN, k: pick(['treeR', 'pine', 'cypress']) }); s.nextN += rnd(14, 40); }
+      while (s.nextN < s.off * 0.9 + s.cols + 20) { s.near.push({ x: s.nextN, k: pick(['oak', 'pineL', 'cypressL', 'treeR']) }); s.nextN += rnd(14, 40); }
       s.ground = s.ground.filter((o) => o.x - s.off * 0.45 > -40);
       s.near = s.near.filter((o) => o.x - s.off * 0.9 > -12);
       settleLinks(s, [[s.ground, 0.45]], () => this.live(s));
@@ -954,7 +1115,7 @@ __|_________________|__`);
       // the far layer: landmarks and towns
       while (s.nextSky < s.off * 0.12 + s.cols + 40) s.nextSky = spawnGround(s, s.skyline, s.nextSky, { landmarkChance: 0.3, carrierChance: 0.25, gap: [6, 22] });
       s.skyline = s.skyline.filter((o) => o.x - s.off * 0.12 > -40);
-      while (s.nextMid < s.off * 0.35 + s.cols + 20) { s.mid.push({ x: s.nextMid, k: pick(['treeR', 'cypress', 'pine', 'house', 'treeR']) }); s.nextMid += rnd(6, 20); }
+      while (s.nextMid < s.off * 0.35 + s.cols + 20) { s.mid.push({ x: s.nextMid, k: pick(['oak', 'cypressL', 'pineL', 'house', 'treeR', 'cypress']) }); s.nextMid += rnd(6, 20); }
       s.mid = s.mid.filter((o) => o.x - s.off * 0.35 > -20);
       while (s.nextPole < s.off * 1.3 + s.cols + 10) { s.poles.push({ x: s.nextPole }); s.nextPole += 34; }
       s.poles = s.poles.filter((p) => p.x - s.off * 1.3 > -5);
@@ -1148,7 +1309,7 @@ __|_________________|__`);
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.fillStyle = pal.bg;
       c.fillRect(0, 0, this.w, this.h);
-      for (const [r0, r1, k] of g.bands) { c.fillStyle = colours[k]; c.fillRect(0, r0 * cellH, this.w, (r1 - r0) * cellH); }
+      for (const [r0, r1, k] of g.bands) { c.fillStyle = typeof k === 'string' ? k : colours[k]; c.fillRect(0, r0 * cellH, this.w, (r1 - r0) * cellH + 1); }
       for (let i = 0; i < g.bg.length; i++) {
         if (!g.bg[i]) continue;
         c.fillStyle = colours[g.bg[i]];
@@ -1186,8 +1347,8 @@ __|_________________|__`);
       [...str].forEach((ch, k) => { if (ch !== ' ') c.fillText(ch, (x + k) * cellW, (y + 0.55) * cellH); });
     }
 
-    // 你好: material cells are written with their hanzi, one every two cells
-    // along a run, so that shapes keep their width.
+    // 你好: scenery cells are written with hanzi of matching shape, one every
+    // two cells along a run, so that shapes keep their width.
     renderHanzi(colours) {
       const { grid: g, ctx: c, cellW, cellH } = this;
       c.letterSpacing = '0px';
@@ -1201,7 +1362,7 @@ __|_________________|__`);
           if (start < 0 || g.mat[i - 1] !== m) start = x;
           if ((x - start) % 2) continue;
           c.fillStyle = colours[g.fg[i]];
-          c.fillText(HANZI[MATS[m]], (x + 1) * cellW, (y + 0.55) * cellH);
+          c.fillText(shape(g.ch[i]), (x + 1) * cellW, (y + 0.55) * cellH);
         }
       }
       for (const f of g.floats) {
@@ -1213,7 +1374,7 @@ __|_________________|__`);
             if (ch === ' ') { start = -1; return; }
             if (start < 0) start = k;
             if ((k - start) % 2) return;
-            c.fillText(HANZI[MATS[f.mat]], (f.x + k + 1) * cellW, (f.y + r + 0.55) * cellH);
+            c.fillText(shape(ch.codePointAt(0)), (f.x + k + 1) * cellW, (f.y + r + 0.55) * cellH);
           });
         });
       }

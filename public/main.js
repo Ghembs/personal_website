@@ -521,6 +521,9 @@ function sketch(p) {
   // The tunnel's tiles carry their words in the drawing: switching language reloads.
   const langBtn = document.getElementById('lang');
   langBtn.querySelector('.t').textContent = t('lang');
+  // in shan shui the buttons are written in Chinese: 英文 English, 意文 Italian
+  langBtn.querySelector('.t').dataset.zh = I18N.lang === 'it' ? '英文' : '意文';
+  langBtn.querySelector('.n').dataset.zh = '';
   langBtn.title = t('langName');
   langBtn.addEventListener('click', () => { I18N.set(I18N.other); location.reload(); });
 
