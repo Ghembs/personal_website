@@ -1,0 +1,56 @@
+# Deploys public/ to the Cloudflare Pages project giuliano-gambacorta-website.
+# Pushes to main go to production; a manual run deploys the chosen branch,
+# which Cloudflare publishes as a preview unless it is main.
+#
+# Repository secrets:
+#   CLOUDFLARE_API_TOKEN   API token with "Account > Cloudflare Pages > Edit"
+#   CLOUDFLARE_ACCOUNT_ID  the Cloudflare account id
+
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: pages-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROJECT: giuliano-gambacorta-website
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The first deploy needs the project to exist: create it if it is missing.
+      - name: Ensure the Pages project exists
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project list
+        id: list
+
+      - name: Create the Pages project
+        if: ${{ !contains(steps.list.outputs.command-output, env.PROJECT) }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create ${{ env.PROJECT }} --production-branch main
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: pages deploy public --project-name ${{ env.PROJECT }} --branch ${{ github.ref_name }} --commit-hash ${{ github.sha }}

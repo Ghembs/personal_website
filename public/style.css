@@ -106,7 +106,7 @@ canvas { display: block; }
 }
 /* A barely-there red halo, like a faded vermilion mark, gives the links away. */
 .node.s:not(.title):not(.seal) {
-  background: radial-gradient(closest-side, rgba(179, 54, 43, 0.06), rgba(179, 54, 43, 0));
+  background: radial-gradient(closest-side, rgba(179, 54, 43, 0.1), rgba(179, 54, 43, 0));
   mix-blend-mode: multiply;
 }
 .node.s:not(.title):not(.seal):hover {

@@ -37,12 +37,28 @@ Then open <http://localhost:5173>.
 
 The Cloudflare Pages project is `giuliano-gambacorta-website`, serving `public/`.
 
-Either connect this repository in the Cloudflare dashboard (Workers & Pages →
-Create → Pages → Connect to Git) with **no build command** and **`public`** as
-the output directory, or deploy from the command line:
+Deploys run from GitHub Actions ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)):
+every push to `main` goes to production, and a manual run (Actions → Deploy to
+Cloudflare Pages → Run workflow) deploys the chosen branch as a preview. The first
+run creates the Pages project if it does not exist yet.
+
+It needs two repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | an API token with the **Account → Cloudflare Pages → Edit** permission |
+| `CLOUDFLARE_ACCOUNT_ID` | the Cloudflare account id |
+
+Or set them from the command line:
 
 ```bash
-npx wrangler pages project create giuliano-gambacorta-website --production-branch main
+gh secret set CLOUDFLARE_API_TOKEN
+gh secret set CLOUDFLARE_ACCOUNT_ID
+```
+
+A manual deploy from a local checkout also works:
+
+```bash
 npx wrangler pages deploy
 ```
 
