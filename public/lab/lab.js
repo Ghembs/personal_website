@@ -1,19 +1,19 @@
-// The lab notebook: one card per experiment, pinned to graph paper. Cards of
-// experiments that exist link to them and may show a live preview; the
+// The toy box ("cesta dei giochi"): one card per toy, pinned to graph paper.
+// Cards of toys that exist link to them and may show a live preview; the
 // others are notes of what is coming.
 
 const TEXT = {
   it: {
-    back: '← giulianogambacorta', title: 'quaderno di laboratorio', lang: 'EN',
-    sub: 'esperimenti, prototipi, piccoli strumenti. alcuni finiti, altri a metà.',
-    foot: 'Ogni esperimento ha la sua pagina e il suo aspetto.', open: 'apri →', soon: 'in preparazione',
-    docTitle: 'Laboratorio · Giuliano Gambacorta',
+    back: '← giulianogambacorta', title: 'Cesta dei giochi', lang: 'EN',
+    sub: "Un'alternativa sana ed estetica al doomscrolling.",
+    foot: 'Non si vince nulla ma fa stare bene lo stesso.', open: 'apri →', soon: 'in preparazione', building: 'in costruzione →',
+    docTitle: 'Cesta dei giochi · Giuliano Gambacorta',
   },
   en: {
-    back: '← giulianogambacorta', title: 'lab notebook', lang: 'IT',
-    sub: 'experiments, prototypes, small tools. some finished, some halfway.',
-    foot: 'Every experiment has its own page and its own look.', open: 'open →', soon: 'in the works',
-    docTitle: 'Lab · Giuliano Gambacorta',
+    back: '← giulianogambacorta', title: 'The toy box', lang: 'IT',
+    sub: 'A healthy, good-looking alternative to doomscrolling.',
+    foot: 'Nothing to win, but it feels good all the same.', open: 'open →', soon: 'in the works', building: 'under construction →',
+    docTitle: 'The toy box · Giuliano Gambacorta',
   },
 };
 const t = (k) => I18N.t(TEXT, k);
@@ -22,30 +22,12 @@ const t = (k) => I18N.t(TEXT, k);
 // ascii scene engine live in the card; `sketch` is a drawing for the others.
 const EXPERIMENTS = [
   {
-    id: 'scene', href: 'scene/', date: '2026-10', preview: 'scenes', tags: ['ascii', 'generativo'],
-    title: { it: 'Catalogo delle scene', en: 'Scene catalogue' },
-    text: {
-      it: 'Tutti i pezzi delle scene ASCII della home, divisi per categoria: ambienti, ore, mezzi, monumenti, alberi, animali. Si scelgono e si mettono in fila.',
-      en: 'Every piece of the home page ascii scenes, by category: lands, times, vehicles, landmarks, trees, animals. Pick them and line them up.',
-    },
-  },
-  {
-    id: 'composer', date: '…', tags: ['ascii', 'generativo'],
+    id: 'composer', href: 'scene/', status: 'building', preview: 'scenes', tags: ['ascii', 'generativo'],
     title: { it: 'Compositore di scene', en: 'Scene composer' },
     text: {
-      it: 'Dal catalogo a una scena animata: ambiente, meteo e protagonista a scelta, da condividere con un link.',
-      en: 'From the catalogue to a moving scene: land, weather and hero of your choice, shared with a link.',
+      it: 'Le scene ASCII della home, da comporre a piacere: ambiente, meteo, protagonista e paesaggio. Per ora c\'è il catalogo dei pezzi, da sfogliare e mettere in fila.',
+      en: 'The home page ascii scenes, to put together as you like: land, weather, hero and scenery. For now there is the catalogue of pieces, to browse and line up.',
     },
-    sketch: ['  .--.     ~v~', ' (    )-.', '(______)', '    ____|[]__', '   |  o  o  |>', '___(O)(O)(O)___'],
-  },
-  {
-    id: 'house', date: '…', tags: ['domotica', 'Vesta Laris'],
-    title: { it: 'Una casa che si accende', en: 'A house that lights up' },
-    text: {
-      it: 'Una casa in sezione con luci, sensori e termostato da toccare: l\'idea di Vesta Laris, in piccolo.',
-      en: 'A house in cross-section with lights, sensors and a thermostat to touch: the idea of Vesta Laris, in small.',
-    },
-    sketch: ['      /\\', '     /  \\', '    /____\\', '    |[*]#|', '    |[ ]o|', '    |____|'],
   },
   {
     id: 'shanshui', date: '…', tags: ['generativo', '山水'],
@@ -83,7 +65,7 @@ function render() {
       <div class="view">${x.preview ? `<canvas data-preview="${x.preview}"></canvas>` : `<pre>${esc(x.sketch.join('\n'))}</pre>`}</div>
       <h2>${x.title[L]}</h2>
       <p>${x.text[L]}</p>
-      <div class="meta"><span>${x.tags.map((g) => `#${TAGS[L]?.[g] || g}`).join(' ')}</span><span class="when">${x.href ? t('open') : t('soon')}</span></div>`;
+      <div class="meta"><span>${x.tags.map((g) => `#${TAGS[L]?.[g] || g}`).join(' ')}</span><span class="when">${x.href ? t(x.status || 'open') : t('soon')}</span></div>`;
     return x.href
       ? `<a class="card" href="${x.href}" style="--tilt:${tilt}deg">${body}</a>`
       : `<div class="card soon" style="--tilt:${tilt}deg">${body}</div>`;

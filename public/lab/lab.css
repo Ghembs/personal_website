@@ -16,6 +16,7 @@ html { background: var(--paper); }
 body {
   margin: 0;
   color: var(--ink);
+  min-height: 100vh;
   font: 15px/1.5 var(--mono);
   background-color: var(--paper);
   background-image:
