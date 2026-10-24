@@ -5,7 +5,8 @@
 const TEXT = {
   it: {
     back: '[ ← cesta dei giochi ]', title: 'compositore di scene', yours: 'la tua scena',
-    hint: 'scegli un ambiente, un\'ora e quello che vuoi vederci dentro: ogni cosa trova il suo posto',
+    hint: 'scegli un ambiente, un\'ora, il tempo e quello che vuoi vederci dentro: ogni cosa trova il suo posto',
+    open: '[ ≡ elementi ]', close: '[ × ]', closeLabel: 'chiudi',
     clear: '[ svuota ]', random: '[ a caso ]', lang: 'EN', count: '{n} elementi',
     speed: 'velocità', density: 'densità', pause: '[ pausa ]', play: '[ riprendi ]',
     png: '[ salva immagine ]', txt: '[ copia testo ]', copied: '[ copiato ]',
@@ -14,7 +15,8 @@ const TEXT = {
   },
   en: {
     back: '[ ← the toy box ]', title: 'scene composer', yours: 'your scene',
-    hint: 'pick a land, a time and whatever you want in it: everything finds its place',
+    hint: 'pick a land, a time, the weather and whatever you want in it: everything finds its place',
+    open: '[ ≡ elements ]', close: '[ × ]', closeLabel: 'close',
     clear: '[ clear ]', random: '[ random ]', lang: 'IT', count: '{n} elements',
     speed: 'speed', density: 'density', pause: '[ pause ]', play: '[ play ]',
     png: '[ save image ]', txt: '[ copy text ]', copied: '[ copied ]',
@@ -28,8 +30,8 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
 const { categories } = SceneCatalog;
 const byKey = new Map(categories.flatMap((c) => c.items.map((it) => [`${c.id}.${it.id}`, { cat: c, item: it }])));
-// one land and one time at most; the rest is a list
-const SINGLE = new Set(['lands', 'times']);
+// one land, one time and one weather at most; the rest is a list
+const SINGLE = new Set(['lands', 'times', 'weather']);
 
 const q = new URLSearchParams(location.search);
 let picked = q.get('s')?.split(',').filter((k) => byKey.has(k)) || ['lands.countryside', 'times.day', 'vehicles.train'];
@@ -67,17 +69,16 @@ function recipe() {
   return {
     land: one('lands') || 'countryside',
     time: one('times') || 'day',
+    weather: one('weather') || null,
     picks: picked.filter((k) => !SINGLE.has(byKey.get(k).cat.id)),
     speed: +$('#speed').value,
     density: +$('#density').value,
   };
 }
 
+// the whole window, with the same cells as the home page
 function size() {
-  const box = $('#view');
-  // cells small enough for about 36 rows: the tallest landmarks fit in the sky
-  const cellH = Math.max(8, Math.min(15, Math.floor(box.clientHeight / 36)));
-  scenes.resize(box.clientWidth, box.clientHeight, window.devicePixelRatio || 1, cellH);
+  scenes.resize(innerWidth, innerHeight, window.devicePixelRatio || 1);
 }
 
 function compose() {
@@ -125,12 +126,10 @@ document.addEventListener('click', (e) => {
   if (b) toggle(b.dataset.key);
 });
 $('#clear').addEventListener('click', () => { picked = []; save(); compose(); catalog(); });
+// the same dice the home page throws
 $('#random').addEventListener('click', () => {
-  const one = (id) => { const c = categories.find((x) => x.id === id); return `${id}.${c.items[(Math.random() * c.items.length) | 0].id}`; };
-  picked = [one('lands'), one('times'), one('vehicles'), one('trees'), one('trees'), one('buildings'), one('animals'), one('sky'), one('ground')];
-  if (Math.random() < 0.6) picked.push(one('landmarks'));
-  if (Math.random() < 0.5) picked.push(one('obstacles'));
-  picked = [...new Set(picked)];
+  const r = Scenes.random();
+  picked = [`lands.${r.land}`, `times.${r.time}`, ...(r.weather ? [`weather.${r.weather}`] : []), ...r.picks].filter((k) => byKey.has(k));
   save();
   compose();
   catalog();
@@ -155,6 +154,15 @@ $('#txt').addEventListener('click', async () => {
     setTimeout(() => { $('#txt').textContent = t('txt'); }, 1500);
   } catch (e) { /* no clipboard: nothing to do */ }
 });
+// the drawer: open on wide screens, closed on phones
+const drawer = (on) => {
+  document.body.classList.toggle('open', on);
+  $('#open').setAttribute('aria-expanded', on);
+};
+drawer(innerWidth > 700);
+$('#open').addEventListener('click', () => drawer(true));
+$('#close').addEventListener('click', () => drawer(false));
+addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(!document.body.classList.contains('open')); });
 $('#lang').addEventListener('click', () => { I18N.set(I18N.other); render(); });
 window.addEventListener('resize', () => { size(); compose(); });
 

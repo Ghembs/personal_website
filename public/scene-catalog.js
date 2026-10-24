@@ -167,7 +167,8 @@ _| || |_
 \ | /
  \|/
 --+--`), mat: 'leaf' },
-    lava: { lines: ['~~~~~~~~~'], mat: 'fire', flat: true },
+    // a pool sunk into the ground: its top row sits on the ground line
+    lava: { lines: [' .~~~~~~~~~.', '(~*~~o~~~*~~)', " '~~~~~~~~~'"], mat: 'fire', pool: true },
     ice: { lines: art(String.raw`
  ____
 |    |
@@ -182,7 +183,7 @@ _| || |_
 (   )
 (___)`), mat: 'snow' },
   };
-  for (const o of Object.values(OBST)) { o.w = widthOf(o.lines); o.h = o.flat ? 1 : o.lines.length; }
+  for (const o of Object.values(OBST)) { o.w = widthOf(o.lines); o.h = o.pool ? 1 : o.lines.length; }
 
   const TREES = {
     saguaro: art(String.raw`
@@ -516,11 +517,14 @@ __|_________________|__`);
       item('countryside', 'Campagna', 'Countryside', side(GROUND.house.lines, GROUND.cypressL.lines, GROUND.mill.lines), { palette: PLANE_PALETTES.day, land: 'countryside' }),
       item('sea', 'Mare', 'Sea', side(BOAT, ['~~~~~~~~~~', '  ><>  <><']), { palette: SEA_PALETTES.day, land: 'sea' }),
     ] },
-    { id: 'times', name: { it: 'Ora e clima', en: 'Time and weather' }, items: [
+    { id: 'times', name: { it: 'Ora', en: 'Time of day' }, items: [
       item('day', 'Giorno', 'Day', SUN, { palette: PLANE_PALETTES.day }),
       item('dusk', 'Tramonto', 'Dusk', DUSK_SUN, { palette: PLANE_PALETTES.dusk }),
       item('night', 'Notte', 'Night', MOON, { palette: PLANE_PALETTES.night }),
-      item('storm', 'Tempesta', 'Storm', [' / / /', '/ / / ', ' / / /'], { palette: SEA_PALETTES.storm }),
+    ] },
+    { id: 'weather', name: { it: 'Clima', en: 'Weather' }, items: [
+      item('rain', 'Pioggia', 'Rain', ['  .--.', ' (    )-.', '(______)', ' / / / /', '/ / / /'], { palette: SEA_PALETTES.storm }),
+      item('snow', 'Neve', 'Snow', ['  .--.', ' (    )-.', '(______)', ' *  .  *', '.  *  . '], { palette: { bg: '#eef2f5', fg: '#3b4a57', dim: '#a9b8c4', accent: '#c8553d', green: '#6f8f86' } }),
     ] },
     { id: 'vehicles', name: { it: 'Mezzi e protagonisti', en: 'Vehicles and heroes' }, items: [
       item('dino', 'Dinosauro', 'Dinosaur', [...DINO, ...DINO_LEGS[0]]),

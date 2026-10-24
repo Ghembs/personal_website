@@ -29,7 +29,6 @@ const TEXT = {
     about: 'chi sono', 'about.ascii': '[ chi sono ]', lab: 'laboratorio', 'lab.ascii': '[ lab ]', write: 'scrivimi', 'write.ascii': '[ @ ]',
     boring: 'Modalità noiosa attivata.', inks: 'inchiostri: {name}', ascii: 'ascii, di nuovo',
     flight: 'volo: il tunnel ti viene incontro', orbit: 'orbita: il tunnel gira su se stesso',
-    dino: 'il dinosauro', mare: 'il mare', aereo: "l'aereo", treno: 'il treno',
     space: 'premi spazio per giocare', tap: 'tocca per giocare', spaceAgain: 'spazio per ricominciare', tapAgain: 'tocca per ricominciare',
     console: 'Prova a digitare "nihao" o "boring", o clicca sullo sfondo.', lang: 'EN', langName: 'English',
   },
@@ -37,7 +36,6 @@ const TEXT = {
     about: 'about', 'about.ascii': '[ about ]', lab: 'lab', 'lab.ascii': '[ lab ]', write: 'write me', 'write.ascii': '[ @ ]',
     boring: 'Boring mode on.', inks: 'inks: {name}', ascii: 'ascii again',
     flight: 'flight: the tunnel comes at you', orbit: 'orbit: the tunnel turns on itself',
-    dino: 'the dinosaur', mare: 'the sea', aereo: 'the plane', treno: 'the train',
     space: 'press space to play', tap: 'tap to play', spaceAgain: 'space to start again', tapAgain: 'tap to start again',
     console: 'Try typing "nihao" or "boring", or click the background.', lang: 'IT', langName: 'Italiano',
   },
@@ -355,7 +353,7 @@ function sketch(p) {
     // A new ascii scene each time; the page takes its colours.
     if (MODES[i].name === 'scene' && modeIndex !== i) {
       scenes.pick(scene);
-      toastSoon = t(scenes.slug);
+      toastSoon = scenes.describe(I18N.lang);
     }
     from = { ...cur, paper: [...cur.paper], ink: [...cur.ink], hl: [...cur.hl] };
     to = MODES[i].name === 'scene' ? sceneLook() : MODES[i];
@@ -539,7 +537,7 @@ function sketch(p) {
     if (scenes.action()) return;
     scenes.pick();
     Object.assign(to, sceneLook());
-    toast(t(scenes.slug));
+    toast(scenes.describe(I18N.lang));
   }
   const inScene = () => modeIndex === 1 && cur.ascii < 0.5 && cur.mix > 0.5;
 
