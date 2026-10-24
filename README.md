@@ -32,7 +32,8 @@ public/          the site, served as is (no build step)
   scenes.js      the ascii scenes (behaviour)
   scene-catalog.js  their drawings, lands and palettes, by category
   lab/           the lab notebook: one card per experiment (lab.js)
-  lab/scene/     the scene catalogue: browse and combine the elements
+  lab/scene/     the scene composer: pick from the catalogue, the engine composes a
+                 moving scene (Scenes.compose); save as image or text
   img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders
   style.css

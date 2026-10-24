@@ -1,37 +1,47 @@
-// The scene catalogue: every element of the ascii scenes by category, to pick
-// from. Picked elements line up on the stage, in the colours of the picked
-// land and time; the selection lives in the URL (?s=lands.desert,vehicles.dino).
+// The scene composer: pick elements from the catalogue and the ascii scene
+// engine composes them into a moving scene (Scenes.compose). The recipe lives
+// in the URL: ?s=lands.desert,vehicles.dino&v=1.2&d=0.8
 
 const TEXT = {
   it: {
-    back: '[ ← giulianogambacorta ]', title: 'catalogo delle scene', yours: 'la tua scena',
-    hint: 'scegli gli elementi qui sotto: ambiente e ora danno i colori, il resto si mette in fila',
-    clear: '[ svuota ]', random: '[ a caso ]', empty: '(vuota)', lang: 'EN', count: '{n} elementi',
+    back: '[ ← cesta dei giochi ]', title: 'compositore di scene', yours: 'la tua scena',
+    hint: 'scegli un ambiente, un\'ora e quello che vuoi vederci dentro: ogni cosa trova il suo posto',
+    clear: '[ svuota ]', random: '[ a caso ]', lang: 'EN', count: '{n} elementi',
+    speed: 'velocità', density: 'densità', pause: '[ pausa ]', play: '[ riprendi ]',
+    png: '[ salva immagine ]', txt: '[ copia testo ]', copied: '[ copiato ]',
     foot: 'Gli stessi disegni delle scene della home, letti da <code>scene-catalog.js</code>.',
-    docTitle: 'Catalogo delle scene · Giuliano Gambacorta',
+    docTitle: 'Compositore di scene · Giuliano Gambacorta',
   },
   en: {
-    back: '[ ← giulianogambacorta ]', title: 'scene catalogue', yours: 'your scene',
-    hint: 'pick elements below: land and time set the colours, the rest lines up',
-    clear: '[ clear ]', random: '[ random ]', empty: '(empty)', lang: 'IT', count: '{n} elements',
+    back: '[ ← the toy box ]', title: 'scene composer', yours: 'your scene',
+    hint: 'pick a land, a time and whatever you want in it: everything finds its place',
+    clear: '[ clear ]', random: '[ random ]', lang: 'IT', count: '{n} elements',
+    speed: 'speed', density: 'density', pause: '[ pause ]', play: '[ play ]',
+    png: '[ save image ]', txt: '[ copy text ]', copied: '[ copied ]',
     foot: 'The same drawings as the home page scenes, read from <code>scene-catalog.js</code>.',
-    docTitle: 'Scene catalogue · Giuliano Gambacorta',
+    docTitle: 'Scene composer · Giuliano Gambacorta',
   },
 };
 const t = (k, v) => I18N.t(TEXT, k, v);
 const $ = (s) => document.querySelector(s);
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-const { categories, widthOf } = SceneCatalog;
+const { categories } = SceneCatalog;
 const byKey = new Map(categories.flatMap((c) => c.items.map((it) => [`${c.id}.${it.id}`, { cat: c, item: it }])));
 // one land and one time at most; the rest is a list
 const SINGLE = new Set(['lands', 'times']);
 
-let picked = new URLSearchParams(location.search).get('s')?.split(',').filter((k) => byKey.has(k)) || [];
+const q = new URLSearchParams(location.search);
+let picked = q.get('s')?.split(',').filter((k) => byKey.has(k)) || ['lands.countryside', 'times.day', 'vehicles.train'];
+$('#speed').value = q.get('v') || 1;
+$('#density').value = q.get('d') || 1;
 
 function save() {
-  const q = picked.length ? `?s=${picked.join(',')}` : location.pathname;
-  history.replaceState(null, '', q);
+  const p = new URLSearchParams();
+  if (picked.length) p.set('s', picked.join(','));
+  if (+$('#speed').value !== 1) p.set('v', $('#speed').value);
+  if (+$('#density').value !== 1) p.set('d', $('#density').value);
+  history.replaceState(null, '', `${location.pathname}${p.toString() ? `?${p.toString().replace(/%2C/g, ',')}` : ''}`);
 }
 
 function toggle(key) {
@@ -42,58 +52,48 @@ function toggle(key) {
     picked.push(key);
   }
   save();
-  render();
+  compose();
+  catalog();
 }
 
-// The colours: the picked land's, then the picked time's on top.
-const BASE = { bg: '#f4f1ea', fg: '#2f2b26', dim: '#9d968a', accent: '#c4553f', green: '#4f7a48', hl: '#151311' };
-function palette() {
-  let p = { ...BASE };
-  for (const key of picked) {
-    const { cat, item } = byKey.get(key);
-    if (cat.id === 'lands') p = { ...p, ...item.palette };
-  }
-  for (const key of picked) {
-    const { cat, item } = byKey.get(key);
-    if (cat.id === 'times') p = { ...p, bg: item.palette.bg, fg: item.palette.fg, dim: item.palette.dim, accent: item.palette.accent };
-  }
-  return p;
+// ---------- the live scene ----------
+
+const canvas = $('#stage');
+const scenes = new Scenes(canvas, [], '', {});
+let paused = false, last = 0;
+
+function recipe() {
+  const one = (cat) => picked.find((k) => k.startsWith(`${cat}.`))?.split('.')[1];
+  return {
+    land: one('lands') || 'countryside',
+    time: one('times') || 'day',
+    picks: picked.filter((k) => !SINGLE.has(byKey.get(k).cat.id)),
+    speed: +$('#speed').value,
+    density: +$('#density').value,
+  };
 }
 
-// The stage: drawings side by side on one baseline, wrapped to the width.
-function stage() {
-  const pal = palette();
-  const el = $('#stage');
-  el.style.background = pal.bg;
-  el.style.color = pal.fg;
-  const things = picked.map((k) => byKey.get(k)).filter(({ cat }) => !SINGLE.has(cat.id) || cat.id === 'times');
-  if (!things.length) { el.innerHTML = `<span style="color:${pal.dim}">${t('empty')}</span>`; return; }
-  const cols = Math.max(30, Math.floor(el.clientWidth / 8.4) - 2);
-  const rows = [];
-  let line = [];
-  let w = 0;
-  for (const th of things) {
-    const tw = widthOf(th.item.lines) + 3;
-    if (w + tw > cols && line.length) { rows.push(line); line = []; w = 0; }
-    line.push(th);
-    w += tw;
-  }
-  rows.push(line);
-  const colour = (it) => pal[it.role || 'fg'] || pal.fg;
-  el.innerHTML = rows.map((ln) => {
-    const h = Math.max(...ln.map((th) => th.item.lines.length));
-    const out = [];
-    for (let r = 0; r < h; r++) {
-      out.push(ln.map((th) => {
-        const lines = th.item.lines, pad = h - lines.length;
-        const txt = r < pad ? '' : lines[r - pad];
-        return `<span style="color:${colour(th.item)}">${esc(txt.padEnd(widthOf(lines) + 3))}</span>`;
-      }).join(''));
-    }
-    out.push(`<span style="color:${pal.dim}">${'_'.repeat(Math.min(cols, ln.reduce((a, th) => a + widthOf(th.item.lines) + 3, 0)))}</span>`);
-    return out.join('\n');
-  }).join('\n\n');
+function size() {
+  const box = $('#view');
+  // cells small enough for about 36 rows: the tallest landmarks fit in the sky
+  const cellH = Math.max(8, Math.min(15, Math.floor(box.clientHeight / 36)));
+  scenes.resize(box.clientWidth, box.clientHeight, window.devicePixelRatio || 1, cellH);
 }
+
+function compose() {
+  scenes.compose(recipe());
+  scenes.update(0);
+  scenes.render();
+}
+
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000 || 0);
+  last = now;
+  if (!paused) { scenes.update(dt); scenes.render(); }
+  requestAnimationFrame(frame);
+}
+
+// ---------- the catalogue ----------
 
 function catalog() {
   $('#catalog').innerHTML = categories.map((c) => `
@@ -114,22 +114,53 @@ function render() {
   I18N.apply(TEXT);
   document.title = t('docTitle');
   $('#lang').textContent = t('lang');
+  $('#pause').textContent = paused ? t('play') : t('pause');
   catalog();
-  stage();
 }
+
+// ---------- controls ----------
 
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-key]');
   if (b) toggle(b.dataset.key);
 });
-$('#clear').addEventListener('click', () => { picked = []; save(); render(); });
+$('#clear').addEventListener('click', () => { picked = []; save(); compose(); catalog(); });
 $('#random').addEventListener('click', () => {
   const one = (id) => { const c = categories.find((x) => x.id === id); return `${id}.${c.items[(Math.random() * c.items.length) | 0].id}`; };
-  picked = [one('lands'), one('times'), one('vehicles'), one('trees'), one('buildings'), one('animals'), one('sky')];
-  if (Math.random() < 0.5) picked.push(one('landmarks'));
+  picked = [one('lands'), one('times'), one('vehicles'), one('trees'), one('trees'), one('buildings'), one('animals'), one('sky'), one('ground')];
+  if (Math.random() < 0.6) picked.push(one('landmarks'));
+  if (Math.random() < 0.5) picked.push(one('obstacles'));
+  picked = [...new Set(picked)];
   save();
-  render();
+  compose();
+  catalog();
+});
+for (const id of ['speed', 'density']) {
+  $(`#${id}`).addEventListener('input', () => { save(); if (id === 'density') compose(); else scenes.s.speed = 10 * +$('#speed').value; });
+}
+$('#pause').addEventListener('click', () => { paused = !paused; $('#pause').textContent = paused ? t('play') : t('pause'); });
+$('#png').addEventListener('click', () => {
+  canvas.toBlob((blob) => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `scena-${recipe().land}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+});
+$('#txt').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(scenes.asText());
+    $('#txt').textContent = t('copied');
+    setTimeout(() => { $('#txt').textContent = t('txt'); }, 1500);
+  } catch (e) { /* no clipboard: nothing to do */ }
 });
 $('#lang').addEventListener('click', () => { I18N.set(I18N.other); render(); });
-window.addEventListener('resize', stage);
-render();
+window.addEventListener('resize', () => { size(); compose(); });
+
+document.fonts.load('400 13px "JetBrains Mono"').finally(() => {
+  render();
+  size();
+  compose();
+  requestAnimationFrame(frame);
+});

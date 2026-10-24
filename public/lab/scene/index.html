@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Catalogo delle scene · Giuliano Gambacorta</title>
-  <meta name="description" content="Gli elementi delle scene ASCII del sito: ambienti, orari, mezzi, monumenti, alberi, animali. Scegli e combina.">
+  <title>Compositore di scene · Giuliano Gambacorta</title>
+  <meta name="description" content="Componi una scena ASCII animata: ambiente, ora, meteo, mezzi, monumenti, alberi, animali.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -12,8 +12,8 @@
 </head>
 <body>
   <header id="top">
-    <a class="back" href="../../" data-i18n="back">[ ← giulianogambacorta ]</a>
-    <h1 data-i18n="title">catalogo delle scene</h1>
+    <a class="back" href="../" data-i18n="back">[ ← cesta dei giochi ]</a>
+    <h1 data-i18n="title">compositore di scene</h1>
     <button id="lang">EN</button>
   </header>
 
@@ -24,7 +24,14 @@
       <button id="clear" data-i18n="clear">[ svuota ]</button>
       <button id="random" data-i18n="random">[ a caso ]</button>
     </div>
-    <pre id="stage"></pre>
+    <div id="view"><canvas id="stage"></canvas></div>
+    <div class="controls">
+      <label><span data-i18n="speed">velocità</span> <input id="speed" type="range" min="0" max="3" step="0.1" value="1"></label>
+      <label><span data-i18n="density">densità</span> <input id="density" type="range" min="0.3" max="2.5" step="0.1" value="1"></label>
+      <button id="pause" data-i18n="pause">[ pausa ]</button>
+      <button id="png" data-i18n="png">[ salva immagine ]</button>
+      <button id="txt" data-i18n="txt">[ copia testo ]</button>
+    </div>
   </section>
 
   <main id="catalog"></main>
@@ -33,6 +40,7 @@
 
   <script src="../../i18n.js"></script>
   <script src="../../scene-catalog.js"></script>
+  <script src="../../scenes.js"></script>
   <script src="scene.js"></script>
 </body>
 </html>

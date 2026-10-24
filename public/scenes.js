@@ -11,6 +11,7 @@
 // links may appear on any carrier.
 
 const Scenes = (() => {
+  const ease = (t) => t * t * (3 - 2 * t);
   const MATERIALS = [
     'sand', 'dino', 'cactus', 'cloud', 'sun', 'moon', 'star', 'wave', 'foam', 'fish', 'weed', 'bubble', 'boat', 'sail',
     'gull', 'buoy', 'rain', 'plane', 'balloon', 'field', 'hill', 'tree', 'house', 'ptero', 'rope', 'river', 'light', 'rock',
@@ -810,6 +811,258 @@ const Scenes = (() => {
     },
   };
 
+  // ---------- the composed scene (lab/scene) ----------
+  // A scene built from a recipe: { land, time, picks: ['cat.id', ...], speed,
+  // density }. Each catalogue category has its place: sky (clouds, sun, moon,
+  // stars, flying animals and vehicles), far layer (landmarks), middle layer
+  // (trees, buildings, logos on boards), ground (obstacles, props), water
+  // (sea, or a river when a boat sails a land), and the vehicles in theirs.
+
+  const ITEM = new Map(SceneCatalog.categories.flatMap((c) => c.items.map((it) => [`${c.id}.${it.id}`, { cat: c.id, ...it }])));
+  // the fixed order of palette keys: C below indexes into it
+  const PAL_KEYS = ['bg', 'fg', 'dim', 'hl', 'accent', 'green', 'skyTop', 'skyLow', 'soil', 'soilDeep', 'wave', 'foam', 'deep', 'under', 'gold'];
+  const CC = Object.fromEntries(PAL_KEYS.map((k, i) => [k, i]));
+  const complete = (p) => {
+    const q = {
+      bg: p.bg, fg: p.fg, dim: p.dim, hl: p.hl, accent: p.accent, green: p.green || p.dim,
+      skyTop: p.skyTop || mixHex(p.bg, p.dim, 0.35), skyLow: p.skyLow || p.bg,
+      soil: p.soil || mixHex(p.bg, p.green || p.dim, 0.25), soilDeep: p.soilDeep || mixHex(p.soil || p.bg, p.fg, 0.18),
+      wave: p.wave || mixHex(p.fg, '#2f7ea3', 0.7), foam: p.foam || mixHex(p.bg, '#6fb3cf', 0.6),
+      deep: p.deep || mixHex(p.fg, '#123a52', 0.6), under: p.under || mixHex(p.bg, '#5ea3c1', 0.5),
+      gold: p.gold || p.sun || '#e2a03a',
+    };
+    return Object.fromEntries(PAL_KEYS.map((k) => [k, q[k]]));
+  };
+  const LANDS = {
+    desert: { far: 'mesa' }, jungle: { far: 'hills' }, volcano: { far: 'volcano' }, ice: { far: 'peaks' },
+    countryside: {
+      far: 'hills', trees: ['oak', 'cypressL', 'pineL', 'treeR'], ground: ".,'.,`", props: ['grass', 'flowers', 'stones', 'pebbles'],
+      palettes: { day: PLANE_PALETTES.day, night: PLANE_PALETTES.night, dusk: PLANE_PALETTES.dusk },
+    },
+    sea: { sea: true, palettes: { day: SEA_PALETTES.day, night: SEA_PALETTES.night, storm: SEA_PALETTES.storm } },
+  };
+  for (const [k, b] of Object.entries(BIOMES)) Object.assign(LANDS[k], { trees: b.trees, ground: b.ground, props: b.props, palettes: b.palettes });
+
+  // the palette of a land at a time; dusk and storm are mixed when the land has none
+  function composedPalette(land, time) {
+    const P = LANDS[land].palettes, day = complete(P.day), night = complete(P.night);
+    if (time === 'night') return night;
+    if (time === 'dusk') {
+      if (P.dusk) return complete(P.dusk);
+      const d = mixPalette(day, night, 0.3);
+      return { ...d, skyTop: mixHex(d.skyTop, '#e98d6b', 0.45), skyLow: mixHex(d.skyLow, '#f6c79a', 0.5), bg: mixHex(d.bg, '#f2c9a6', 0.35) };
+    }
+    if (time === 'storm') {
+      if (P.storm) return complete(P.storm);
+      const grey = complete({ bg: '#9aa3a8', fg: '#1d262b', dim: '#5d6b73', hl: '#10171b', accent: day.accent, green: '#4c5d55', skyTop: '#6f7b82', skyLow: '#a7b0b4', soil: '#8a908c', soilDeep: '#6c726e' });
+      return mixPalette(day, grey, 0.65);
+    }
+    return day;
+  }
+
+  const SLOT = {
+    'vehicles.dino': 'walk', 'vehicles.train': 'rails', 'vehicles.boat': 'water',
+    'vehicles.plane': 'fly', 'vehicles.miniplane': 'flyer', 'vehicles.balloon': 'drift', 'vehicles.kite': 'kite',
+  };
+
+  const composed = {
+    slug: 'composta',
+    init(s) {
+      const r = s.recipe;
+      const has = (k) => r.picks.includes(k);
+      const of = (cat) => r.picks.filter((k) => ITEM.get(k)?.cat === cat);
+      const land = LANDS[r.land] ? r.land : 'countryside';
+      s.land = land;
+      s.time = r.time || 'day';
+      s.speed = 10 * (r.speed || 1);
+      s.dens = r.density || 1;
+      const L = LANDS[land];
+      // pools of drawings for each layer; a land brings its own when none is picked
+      const lines = (k) => ITEM.get(k).lines;
+      const mid = [...of('trees'), ...of('buildings')].map((k) => ({ k, lines: lines(k), green: ITEM.get(k).cat === 'trees' }));
+      if (!mid.length && L.trees) for (const id of L.trees) { const k = [...ITEM.keys()].find((x) => x.endsWith(`.${id}`)); mid.push({ k, lines: k ? lines(k) : (TREES[id] || GROUND[id]?.lines), green: true }); }
+      s.midPool = mid.filter((m) => m.lines);
+      s.logos = of('logos').map((k) => lines(k));
+      s.farPool = of('landmarks').map(lines);
+      s.obstPool = of('obstacles').map((k) => ({ lines: lines(k), lava: k.endsWith('lava') }));
+      s.propPool = of('ground').map(lines);
+      if (!s.propPool.length && L.props) s.propPool = L.props.map((id) => PROPS[id]);
+      const cl = of('sky').filter((k) => k.includes('cloud')).map(lines);
+      s.cloudPool = cl.length ? cl : CLOUDS;
+      s.sun = has('sky.sun') ? 'sun' : has('sky.moon') ? 'moon' : s.time === 'night' ? 'moon' : s.time === 'dusk' ? 'dusk' : s.time === 'storm' ? null : 'sun';
+      s.stars = has('sky.stars') || s.time === 'night';
+      s.flyKinds = [...(has('animals.ptero') ? ['ptero'] : []), ...(has('animals.gull') ? ['gull'] : [])];
+      s.fishOn = has('animals.fish');
+      // vehicles, each in its slot
+      s.heroes = r.picks.filter((k) => SLOT[k]).map((k) => ({ k, slot: SLOT[k], lines: lines(k) }));
+      s.water = L.sea || s.heroes.some((h) => h.slot === 'water') || s.fishOn;
+      Object.assign(s, {
+        off: 0, flash: 0, nextFlash: 4, y: 0, vy: 0,
+        clouds: Array.from({ length: Math.round(5 * s.dens) + (s.time === 'storm' ? 5 : 0) }, () => ({ x: Math.random() * 300, y: Math.random(), k: (Math.random() * s.cloudPool.length) | 0, z: Math.random() })),
+        mid: [], far: [], obst: [], props: [], flyers: [], fish: [],
+        nextMid: 0, nextFar: 20, nextObst: 60, nextProp: 0,
+      });
+    },
+    action() { return false; },
+    horizon(s) { return Math.round(s.rows * (s.portrait ? 0.62 : 0.68)); },
+    update(s, dt) {
+      const d = s.dens, G = this.horizon(s);
+      s.off += s.speed * dt;
+      const fill = (list, nextKey, speed, make, gap) => {
+        while (s[nextKey] < s.off * speed + s.cols + 30) { const o = make(); if (o) list.push({ x: s[nextKey], ...o }); s[nextKey] += gap(o); }
+        for (let k = list.length - 1; k >= 0; k--) if (list[k].x - s.off * speed < -60) list.splice(k, 1);
+      };
+      if (s.midPool.length || s.logos.length) fill(s.mid, 'nextMid', 0.4, () => {
+        if (s.logos.length && Math.random() < 0.12) return { lines: pick(s.logos), logo: true };
+        const m = pick(s.midPool); return { lines: m.lines, green: m.green };
+      }, (o) => (widthOf(o.lines) + rnd(3, 18)) / d);
+      if (s.farPool.length) fill(s.far, 'nextFar', 0.12, () => ({ lines: pick(s.farPool) }), (o) => widthOf(o.lines) + rnd(40, 140) / d);
+      if (s.obstPool.length) fill(s.obst, 'nextObst', 1, () => pick(s.obstPool), (o) => widthOf(o.lines) + rnd(24, 60) / d + s.speed * 0.8);
+      if (s.propPool.length && !LANDS[s.land].sea) fill(s.props, 'nextProp', 1.4, () => ({ lines: pick(s.propPool), depth: Math.random() }), () => rnd(5, 16) / d);
+      // flying animals and small planes cross the sky
+      const flyers = [...s.flyKinds, ...s.heroes.filter((h) => h.slot === 'flyer').map(() => 'mini')];
+      if (flyers.length && Math.random() < dt * 0.25 * d && s.flyers.length < 2 + Math.round(2 * d)) {
+        const kind = pick(flyers);
+        s.flyers.push({ kind, x: s.cols + 8, y: 2 + Math.random() * Math.max(1, G * 0.55), v: rnd(4, 9) });
+      }
+      for (const f of s.flyers) f.x -= (f.v + s.speed * 0.2) * dt;
+      s.flyers = s.flyers.filter((f) => f.x > -20);
+      // fish under the water
+      if (s.fishOn && s.water) {
+        const want = Math.round(4 * d);
+        if (s.fish.length < want && Math.random() < dt * 2) {
+          const right = Math.random() < 0.5;
+          s.fish.push({ x: right ? -8 : s.cols + 8, y: Math.random(), v: (right ? 1 : -1) * rnd(2, 5), k: (right ? 0 : 1) + (Math.random() < 0.3 ? 2 : 0) });
+        }
+        for (const f of s.fish) f.x += (f.v - s.speed * 0.2) * dt;
+        s.fish = s.fish.filter((f) => f.x > -10 && f.x < s.cols + 10);
+      }
+      // the walker jumps whatever stands in its way
+      const walker = s.heroes.find((h) => h.slot === 'walk');
+      if (walker) {
+        const wx = 6 + 7;
+        const next = s.obst.find((o) => o.x - s.off + widthOf(o.lines) > wx);
+        if (next && s.y === 0 && next.x - s.off - wx < 0.55 * s.speed && next.x - s.off - wx > 0) s.vy = 30;
+        if (s.y > 0 || s.vy > 0) { s.vy -= 70 * dt; s.y = Math.max(0, s.y + s.vy * dt); if (s.y === 0) s.vy = 0; }
+      }
+      if (s.time === 'storm') {
+        s.flash = Math.max(0, s.flash - dt * 6);
+        if ((s.nextFlash -= dt) < 0) { s.flash = 1; s.nextFlash = 5 + Math.random() * 7; }
+      }
+    },
+    palette(s) {
+      const p = composedPalette(s.land, s.time);
+      return s.flash > 0 ? mixPalette(p, { ...p, bg: '#f4f7f9', skyTop: '#dde6ea', skyLow: '#f4f7f9' }, s.flash) : p;
+    },
+    draw(g, s) {
+      const C = CC, pal = this.palette(s), G = this.horizon(s), sea = LANDS[s.land].sea;
+      const S = sea ? Math.round(s.rows * (s.portrait ? 0.45 : 0.52)) : G;   // the waterline or the ground line
+      g.gradient(0, S + 1, pal.skyTop, pal.skyLow);
+      if (sea) g.gradient(S + 2, g.rows, pal.deep, mixHex(pal.deep, '#000000', 0.3));
+      else g.gradient(G + 1, g.rows, pal.soil, pal.soilDeep);
+      if (s.stars) stars(g, s, S - 4, C.dim);
+      if (s.sun === 'sun') g.sprite(g.cols - 16, 2, SUN, C.gold, M.sun);
+      else if (s.sun === 'moon') g.sprite(g.cols - 14, 2, MOON, C.gold, M.moon);
+      else if (s.sun === 'dusk') g.sprite(g.cols - 14, Math.round(S * 0.45), DUSK_SUN, C.accent, M.sun);
+      const span = g.cols + 40;
+      for (const c of s.clouds) {
+        g.sprite(wrap(c.x - s.off * (0.1 + c.z * 0.2), span) - 20, 2 + c.y * Math.max(1, S * 0.4), s.cloudPool[c.k % s.cloudPool.length], s.time === 'storm' ? C.fg : C.dim, M.cloud);
+      }
+      if (s.time === 'storm') {
+        const snow = s.land === 'ice';
+        for (let x = 0; x < g.cols; x++) for (let y = 3; y < S; y++) {
+          if (hash(x + Math.floor(s.t * (snow ? 5 : 14)) * 3, y - Math.floor(s.t * (snow ? 5 : 14))) < (snow ? 0.02 : 0.035)) g.put(x, y, snow ? '*' : '/', C.dim, snow ? M.snow : M.rain);
+        }
+      }
+      // far silhouettes and landmarks
+      const far = FAR[LANDS[s.land].far];
+      if (far) for (let x = 0; x < g.cols; x++) {
+        const w = x + s.off * 0.1, h = far(w), dh = far(w + 1) - h;
+        if (h > 0) g.put(x, S - 1 - h - (dh > 0 ? 1 : 0), dh > 0 ? '/' : dh < 0 ? '\\' : '_', C.dim, M.hill);
+      }
+      for (const o of s.far) g.sprite(Math.round(o.x - s.off * 0.12), S - o.lines.length, o.lines, C.dim, M.duomo, true);
+      // middle layer: trees, buildings, logos on boards
+      for (const o of s.mid) {
+        const x = Math.round(o.x - s.off * 0.4), top = S - o.lines.length - (o.logo ? 2 : 0);
+        g.sprite(x, top, o.lines, o.green ? C.green : C.fg, o.green ? M.tree : M.house, !o.green);
+        if (o.logo) { const mx = x + (widthOf(o.lines) >> 1); g.put(mx, S - 1, '|', C.fg, M.wood); g.put(mx, S - 2, '|', C.fg, M.wood); }
+      }
+      // the water, or the ground
+      if (sea) {
+        for (let x = 0; x < g.cols; x++) {
+          const w = x + s.off, v = Math.sin(w * 0.18 + s.t * 1.6) + 0.5 * Math.sin(w * 0.07 - s.t * 0.9) * (s.time === 'storm' ? 2 : 1);
+          if (v > 1.05) g.put(x, S - 1, '^', C.foam, M.foam);
+          g.put(x, S, v > 0.3 ? '~' : '-', C.wave, M.wave);
+          if (hash(Math.floor(w), 5) < 0.5) g.put(x, S + 1, '~', C.foam, M.wave);
+        }
+      } else {
+        const tex = LANDS[s.land].ground || '.,';
+        for (let x = 0; x < g.cols; x++) g.put(x, G, hash(Math.floor(x + s.off), 7) < 0.05 ? '-' : '_', C.fg, M.sand);
+        for (let y = G + 1; y < g.rows; y++) {
+          const dd = (y - G) / Math.max(1, g.rows - G);
+          for (let x = 0; x < g.cols; x++) {
+            const w = Math.floor(x + s.off * (1 + dd * 0.8));
+            if (hash(w, y * 7 + 3) < (0.06 + dd * 0.16) * s.dens) g.put(x, y, tex[Math.floor(hash(w, y) * tex.length)], C.dim, M.sand);
+          }
+        }
+        for (const p of s.props) {
+          const x = Math.round(p.x - s.off * 1.4), y = G + 2 + Math.round(p.depth * Math.max(0, g.rows - G - 4));
+          g.sprite(x, y - p.lines.length + 1, p.lines, p.depth > 0.5 ? C.fg : C.green, M.sand);
+        }
+        // a river for a boat that sails a land
+        if (s.water) {
+          const r0 = G + 2, r1 = Math.min(g.rows - 1, G + 5);
+          for (let y = r0; y <= r1; y++) for (let x = 0; x < g.cols; x++) g.put(x, y, (x + y + Math.floor(s.off * 0.6)) % 4 ? '~' : '-', C.wave, M.river);
+        }
+      }
+      // fish in the sea, or in the river
+      if (s.fishOn && s.water) {
+        const top = sea ? S + 3 : G + 2, bottom = sea ? g.rows - 2 : Math.min(g.rows - 1, G + 5);
+        for (const f of s.fish) g.float(f.x, top + f.y * Math.max(0, bottom - top), [FISH[f.k]], C.foam, M.fish);
+      }
+      for (const o of s.obst) {
+        const x = Math.round(o.x - s.off);
+        if (o.lava) g.sprite(x, G, o.lines, C.accent, M.fire);
+        else g.sprite(x, (sea ? S : G) - o.lines.length + 1, o.lines, C.fg, M.rock);
+      }
+      // vehicles
+      let groundX = s.portrait ? 2 : Math.round(g.cols * 0.08);
+      for (const h of s.heroes) {
+        if (h.slot === 'walk') {
+          const top = (sea ? S - 3 : G) - DINO.length - 1 - s.y;
+          g.float(groundX, top, DINO, C.fg, M.dino, true);
+          g.float(groundX, top + DINO.length, s.y > 0.2 ? DINO_AIR : DINO_LEGS[Math.floor(s.off / 1.6) % 2], C.fg, M.dino, true);
+          groundX += widthOf(DINO) + 6;
+        } else if (h.slot === 'rails') {
+          for (let x = 0; x < g.cols; x++) g.put(x, G, '=', C.fg, M.rail);
+          const top = G - LOCO.length, lx = Math.min(g.cols - widthOf(LOCO) - 1, Math.round(g.cols * 0.62));
+          g.sprite(lx, top, LOCO, C.accent, M.train, true);
+          for (let k = 1; k < 5; k++) g.put(lx + 7 - k * 2, top - k, k % 2 ? 'o' : 'O', C.dim, M.smoke);
+          let wx = lx;
+          for (let k = 0; k < 3; k++) { wx -= widthOf(WAGON) + 1; g.sprite(wx, top + 2, WAGON, k % 2 ? C.accent : C.fg, M.train, true); }
+        } else if (h.slot === 'water') {
+          const line = sea ? S : G + 2, bx = Math.round(g.cols * (s.portrait ? 0.2 : 0.34));
+          const bob = Math.sin(s.t * 1.6 + bx * 0.18) > 0.5 ? -1 : 0;
+          g.sprite(bx, line - BOAT.length + 2 + bob, BOAT.slice(0, 4), C.fg, M.sail, true);
+          g.sprite(bx, line - BOAT.length + 6 + bob, BOAT.slice(4), C.fg, M.boat, true);
+        } else if (h.slot === 'fly') {
+          g.float(Math.round(g.cols * (s.portrait ? 0.3 : 0.5)), Math.round(S * 0.35) + Math.sin(s.t * 0.9) * 0.6, PLANE, C.fg, M.plane, true);
+        } else if (h.slot === 'drift') {
+          g.float(g.cols * 0.75 + Math.sin(s.t * 0.3) * 6, S * 0.15 + Math.sin(s.t * 0.5) * 1.5, BALLOON, C.accent, M.balloon, true);
+        } else if (h.slot === 'kite') {
+          const x = Math.round(g.cols * 0.82), y = Math.round(S * 0.3 + Math.sin(s.t) * 1.5);
+          g.sprite(x, y, KITE, C.accent, M.balloon);
+          for (let r = 1; r < S - y - 6; r++) g.put(x + 3 + Math.round(r * 0.3), y + 6 + r, ':', C.dim, M.rope);
+        }
+      }
+      for (const f of s.flyers) {
+        if (f.kind === 'ptero') g.float(f.x, f.y, PTERO[Math.floor(s.t * 4) % 2], C.fg, M.ptero);
+        else if (f.kind === 'gull') g.float(f.x, f.y, [Math.sin(s.t * 5 + f.v) > 0 ? '~v~' : '-v-'], C.fg, M.gull);
+        else g.float(f.x, f.y, MINIPLANE, C.fg, M.plane);
+      }
+    },
+  };
+
   const SCENARIOS = [dino, sea, plane, train];
 
   // ---------- the scene player ----------
@@ -830,7 +1083,7 @@ const Scenes = (() => {
 
     static icon(name) { return ICONS[name]; }
     static indexOf(slug) { const i = SCENARIOS.findIndex((x) => x.slug === slug); return i < 0 ? null : i; }
-    get scenario() { return SCENARIOS[this.index]; }
+    get scenario() { return this.custom || SCENARIOS[this.index]; }
     get slug() { return this.scenario?.slug || ''; }
 
     // Labels and strings for the current language.
@@ -841,9 +1094,10 @@ const Scenes = (() => {
       if (this.s) Object.assign(this.s, { labels, title: titleText, str: this.str });
     }
 
-    resize(w, h, dpr) {
+    // cellH, if given, fixes the size of a character cell (in css px).
+    resize(w, h, dpr, cellH) {
       this.w = w; this.h = h; this.dpr = Math.min(dpr, 2);
-      this.cellH = w < 600 ? 13 : 15;
+      this.cellH = cellH || (w < 600 ? 13 : 15);
       this.cellW = Math.round(this.cellH * 0.6);
       this.canvas.width = Math.ceil(w * this.dpr);
       this.canvas.height = Math.ceil(h * this.dpr);
@@ -862,14 +1116,33 @@ const Scenes = (() => {
       let i = index ?? (Math.random() * SCENARIOS.length) | 0;
       if (index == null && SCENARIOS.length > 1) while (i === this.index) i = (Math.random() * SCENARIOS.length) | 0;
       this.index = i;
-      this.s = {
+      this.custom = null;
+      this.s = this.fresh();
+      this.scenario.init(this.s);
+      return this.scenario;
+    }
+
+    // A scene composed from a recipe (see `composed`): the lab's composer.
+    compose(recipe) {
+      this.custom = composed;
+      this.s = { ...this.fresh(), recipe };
+      composed.init(this.s);
+    }
+
+    fresh() {
+      return {
         t: 0, cols: this.grid.cols, rows: this.grid.rows, portrait: this.h > this.w * 1.1,
         labels: this.labels, title: this.titleText, str: this.str, spots: [], hover: -1, hlBg: 3,
         special: this.special, reserved: new Set(),
         touch: matchMedia('(pointer: coarse)').matches,
       };
-      this.scenario.init(this.s);
-      return this.scenario;
+    }
+
+    // The grid as plain text, one line per row.
+    asText() {
+      const g = this.grid, out = [];
+      for (let y = 0; y < g.rows; y++) out.push(String.fromCodePoint(...g.ch.subarray(y * g.cols, (y + 1) * g.cols)).replace(/\s+$/, ''));
+      return out.join('\n').replace(/\n+$/, '');
     }
 
     // Space or a tap: the dinosaur jumps; elsewhere it means "next scene".

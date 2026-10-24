@@ -22,11 +22,11 @@ const t = (k) => I18N.t(TEXT, k);
 // ascii scene engine live in the card; `sketch` is a drawing for the others.
 const EXPERIMENTS = [
   {
-    id: 'composer', href: 'scene/', status: 'building', preview: 'scenes', tags: ['ascii', 'generativo'],
+    id: 'composer', href: 'scene/', preview: 'scenes', tags: ['ascii', 'generativo'],
     title: { it: 'Compositore di scene', en: 'Scene composer' },
     text: {
-      it: 'Le scene ASCII della home, da comporre a piacere: ambiente, meteo, protagonista e paesaggio. Per ora c\'è il catalogo dei pezzi, da sfogliare e mettere in fila.',
-      en: 'The home page ascii scenes, to put together as you like: land, weather, hero and scenery. For now there is the catalogue of pieces, to browse and line up.',
+      it: 'Le scene ASCII della home, da comporre a piacere: ambiente, ora, meteo, mezzi, monumenti, alberi e animali, ognuno al suo posto. Si salva come immagine o come testo.',
+      en: 'The home page ascii scenes, to put together as you like: land, time, weather, vehicles, landmarks, trees and animals, each in its place. Save it as an image or as text.',
     },
   },
   {
