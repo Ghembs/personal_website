@@ -31,6 +31,7 @@ public/          the site, served as is (no build step)
   shanshui.js    the handscroll
   scenes.js      the ascii scenes (behaviour)
   scene-catalog.js  their drawings, lands and palettes, by category
+  lab/           the lab notebook: one card per experiment (lab.js)
   lab/scene/     the scene catalogue: browse and combine the elements
   img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders

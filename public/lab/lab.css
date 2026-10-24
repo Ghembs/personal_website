@@ -1,0 +1,120 @@
+/* The lab: a notebook on graph paper, experiments pinned as taped cards. */
+:root {
+  --paper: #f6f3ea;
+  --grid: rgba(60, 110, 160, 0.13);
+  --grid-strong: rgba(60, 110, 160, 0.22);
+  --ink: #23272e;
+  --pencil: #6b6f76;
+  --red: #c4553f;
+  --tape: rgba(240, 214, 140, 0.75);
+  --hand: "Caveat", "Comic Sans MS", cursive;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--paper); }
+body {
+  margin: 0;
+  color: var(--ink);
+  font: 15px/1.5 var(--mono);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+}
+/* the notebook margin */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 64px;
+  width: 2px;
+  background: rgba(196, 85, 63, 0.35);
+  pointer-events: none;
+}
+a { color: inherit; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+
+#top { display: flex; justify-content: space-between; padding: 16px 22px 0 84px; }
+#top .back, #lang { font-family: var(--hand); font-size: 22px; color: var(--pencil); text-decoration: none; }
+#top .back:hover, #lang:hover { color: var(--ink); }
+
+main { padding: 0 22px 40px 84px; max-width: 1240px; }
+.cover h1 {
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 58px;
+  line-height: 1;
+  margin: 26px 0 4px;
+}
+.cover h1::after {
+  content: "";
+  display: block;
+  width: 260px;
+  height: 6px;
+  margin-top: 6px;
+  background: var(--red);
+  opacity: 0.5;
+  border-radius: 3px;
+  transform: rotate(-1deg);
+}
+.cover .sub { font-family: var(--hand); font-size: 24px; color: var(--pencil); margin: 12px 0 30px; }
+
+#bench {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 38px 30px;
+}
+.card {
+  position: relative;
+  display: block;
+  padding: 14px 14px 12px;
+  background: #fffdf7;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 10px 24px rgba(40, 50, 60, 0.12);
+  transform: rotate(var(--tilt, 0deg));
+  text-decoration: none;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+a.card:hover { transform: rotate(0deg) translateY(-4px); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 18px 34px rgba(40, 50, 60, 0.18); }
+.tape {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 96px;
+  height: 24px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: var(--tape);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.view {
+  height: 190px;
+  overflow: hidden;
+  background: #f2efe6;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: grid;
+  place-items: center;
+}
+.view canvas { width: 100%; height: 100%; display: block; }
+.view pre { margin: 0; font: 13px/1.15 var(--mono); color: var(--pencil); }
+.card h2 { font-family: var(--hand); font-size: 30px; font-weight: 700; line-height: 1.1; margin: 12px 0 4px; }
+.card p { margin: 0 0 10px; font-size: 13px; color: #3c4048; }
+.meta { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--pencil); }
+.meta .when { font-family: var(--hand); font-size: 20px; color: var(--red); line-height: 1; }
+.card.soon { opacity: 0.82; }
+.card.soon .view pre { opacity: 0.7; }
+.card.soon .meta .when { color: var(--pencil); }
+
+footer { padding: 16px 22px 30px 84px; font-family: var(--hand); font-size: 20px; color: var(--pencil); }
+
+@media (max-width: 600px) {
+  body::before { left: 24px; }
+  #top { padding-left: 40px; }
+  main { padding: 0 16px 30px 40px; }
+  footer { padding-left: 40px; }
+  .cover h1 { font-size: 44px; }
+  #bench { grid-template-columns: 1fr; }
+}
