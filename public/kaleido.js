@@ -79,7 +79,8 @@ class Kaleido {
   build() {
     const count = COUNT_MIN + Math.floor(Math.random() * (COUNT_MAX - COUNT_MIN + 1));
     this.rects = Array.from({ length: count }, () => this.spawn({}, true));
-    this.links = this.labels.map((label, i) => this.spawn({ link: i, label }, true));
+    this.links = [];
+    this.labels.forEach((label, i) => this.links.push(this.placeLink({ link: i, label }, true)));
     this.linkOrder = [...this.links];
     this.dirty = true;
   }
@@ -122,6 +123,29 @@ class Kaleido {
   // Recycled only once even the inner (far) edge is well past the screen corners.
   gone(z, d) { return this.radius(z + d) > this.R * EXIT_MARGIN; }
 
+  // Do two tiles overlap on screen? Angular spans and radial spans both cross,
+  // with a little margin so that links never touch.
+  overlaps(a, b) {
+    const da = Math.abs(Math.atan2(Math.sin(a.theta - b.theta), Math.cos(a.theta - b.theta)));
+    if (da > (a.aw + b.aw) / 2 + 0.05) return false;
+    const a0 = this.radius(a.z), a1 = this.radius(a.z + a.d);
+    const b0 = this.radius(b.z), b1 = this.radius(b.z + b.d);
+    return a1 < b0 + 8 && b1 < a0 + 8;
+  }
+
+  // A link tile placed where no other link is; after a few tries the one
+  // overlapping the fewest. Links all move together, so it stays clear.
+  placeLink(r, initial) {
+    let best = null, fewest = Infinity;
+    for (let k = 0; k < 60; k++) {
+      this.spawn(r, initial);
+      const hits = this.links.filter((o) => o !== r && this.overlaps(r, o)).length;
+      if (hits < fewest) { fewest = hits; best = { theta: r.theta, aw: r.aw, d: r.d, z: r.z }; }
+      if (!hits) break;
+    }
+    return Object.assign(r, best);
+  }
+
   update(dt) {
     if (!this.flight) return;
     for (const r of this.rects) {
@@ -130,7 +154,7 @@ class Kaleido {
     }
     for (const r of this.links) {
       r.z -= SPEED * dt;
-      if (this.gone(r.z, r.d)) this.spawn(r, false);
+      if (this.gone(r.z, r.d)) this.placeLink(r, false);
     }
     this.dirty = true;
   }
