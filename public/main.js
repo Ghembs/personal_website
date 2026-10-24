@@ -98,7 +98,7 @@ function sketch(p) {
     kc = document.createElement('canvas');
     kc.id = 'kaleido';
     document.getElementById('stage').insertBefore(kc, document.getElementById('links'));
-    kaleido = new Kaleido(kc, links.map((el) => el.textContent.toUpperCase()));
+    kaleido = new Kaleido(kc, links.map((el) => (el.dataset.icon ? { icon: `img/${el.dataset.icon}.svg` } : (el.querySelector('.txt') || el).textContent.toUpperCase())));
     snap = p.createImage(SNAP_SIZE, SNAP_SIZE);
     shan = new Shanshui(shanEl, links.map((el) => (el.dataset.shan === 'seal' ? null : el.dataset.shan)));
     shan.resize(p.width, p.height, density);
@@ -111,8 +111,10 @@ function sketch(p) {
       stf: links.findIndex((el) => el.href.includes('stairwaytoflorence')),
       zh: links.findIndex((el) => el.dataset.shan === 'seal'),
     };
-    scenes = new Scenes(sceneEl, links.map((el) => el.dataset.ascii), titleEl.dataset.ascii, special);
-    scenes.setText(links.map((el) => el.dataset.ascii), titleEl.dataset.ascii,
+    // in the scenes a link is its ascii label, or its logo drawn in characters
+    const sceneLabels = links.map((el) => (el.dataset.icon ? Scenes.icon(el.dataset.icon) : el.dataset.ascii));
+    scenes = new Scenes(sceneEl, sceneLabels, titleEl.dataset.ascii, special);
+    scenes.setText(sceneLabels, titleEl.dataset.ascii,
       { space: t('space'), tap: t('tap'), spaceAgain: t('spaceAgain'), tapAgain: t('tapAgain') });
     scenes.resize(p.width, p.height, density);
     scenes.pick();
@@ -173,8 +175,8 @@ function sketch(p) {
       el.style.fontSize = 'var(--cell-fs)';
       el.style.lineHeight = 'var(--cell-h)';
       el.style.letterSpacing = 'var(--cell-ls)';
-      el._w = [...el.dataset.ascii].length * cellW;
-      el._h = cellH;
+      el._w = el.dataset.icon ? cellH * 2.4 : [...el.dataset.ascii].length * cellW;
+      el._h = el.dataset.icon ? cellH * 2 : cellH;
     }
   }
 
@@ -192,7 +194,7 @@ function sketch(p) {
   // an invisible hit area laid over its tile, and the label in ascii modes.
   function initLinks() {
     links.forEach((el) => {
-      el.dataset.label = el.textContent;
+      el.dataset.label = (el.querySelector('.txt') || el).textContent;
       el.addEventListener('pointerenter', () => { el._hover = true; targetScale = 0.08; });
       el.addEventListener('pointerleave', () => { el._hover = false; targetScale = 1; });
     });
@@ -211,7 +213,7 @@ function sketch(p) {
       if (style === 'a') {
         scramble(el);
       } else {
-        el.textContent = el.dataset.label;
+        setText(el, el.dataset.label);
         el.style.fontSize = el.style.lineHeight = el.style.letterSpacing = '';
       }
     }
@@ -233,6 +235,9 @@ function sketch(p) {
     }
   }
 
+  // Links with a logo keep their name in a .txt span, next to the image.
+  const setText = (el, txt) => { (el.querySelector('.txt') || el).textContent = txt; };
+
   function scramble(el) {
     el._scrambleStart = performance.now();
   }
@@ -240,18 +245,19 @@ function sketch(p) {
   const NOISE_CHARS = '#%@*+=-:01<>/\\|';
   function updateScramble(el, now) {
     if (el._scrambleStart == null) return;
+    if (el.dataset.icon) { el._scrambleStart = null; return; }
     const target = el.dataset.ascii;
     const k = (now - el._scrambleStart) / 700;
     if (k >= 1) {
-      el.textContent = target;
+      setText(el, target);
       el._scrambleStart = null;
       return;
     }
     const chars = [...target];
     const done = Math.floor(k * chars.length);
-    el.textContent = chars
+    setText(el, chars
       .map((c, i) => (i < done || c === ' ' ? c : NOISE_CHARS[(Math.random() * NOISE_CHARS.length) | 0]))
-      .join('');
+      .join(''));
   }
 
   // Hit areas laid over the painted elements; the seal is placed by CSS.
@@ -278,7 +284,7 @@ function sketch(p) {
       if (el._hover) hover = i;
       if (!r) return;
       el.style.width = `${r.len * cw}px`;
-      el.style.height = `${ch}px`;
+      el.style.height = `${(r.h || 1) * ch}px`;
       el.style.transform = `translate(${r.col * cw}px, ${r.row * ch}px)`;
     });
     scenes.hover = hover;
@@ -308,7 +314,7 @@ function sketch(p) {
       // Away from the tunnel, head for the link's place in the ascii scene, then
       // for its painted element in shan shui (the seal: top right).
       const sp = spots[i];
-      const inScene = sp ? { x: (sp.col + sp.len / 2) * scenes.cellW, y: (sp.row + 0.5) * scenes.cellH } : null;
+      const inScene = sp ? { x: (sp.col + sp.len / 2) * scenes.cellW, y: (sp.row + (sp.h || 1) / 2) * scenes.cellH } : null;
       const sr = shanRects[i];
       const inShan = sr ? { x: sr.x + sr.w / 2, y: sr.y + sr.h / 2 }
         : el.dataset.shan === 'seal' ? { x: W * 0.9, y: H * 0.5 } : null;

@@ -183,18 +183,39 @@ const Scenes = (() => {
     };
   }
 
+  // Logos drawn in characters, for links that show an icon instead of a name.
+  const ICONS = {
+    'vesta-laris': [
+      '   /\\',
+      '  //\\\\',
+      ' o-o-o-o',
+      ' |_|_|_|',
+    ],
+    stf: [
+      '     +',
+      '    /|\\',
+      '  _/_|_\\',
+      '_|',
+    ],
+  };
+  // Width of a link label, in cells: a word, or an icon's widest row.
+  const labelWidth = (s, i) => { const l = s.labels[i]; return l == null ? 0 : Array.isArray(l) ? widthOf(l) : len(l); };
+
   // A link label drawn in the grid, inverted when hovered; records its spot.
+  // Icons (several rows) stand on row y, growing upwards.
   function label(g, s, x, y, i, fg) {
     if (i == null || i < 0) return;
-    const txt = s.labels[i], n = len(txt);
-    x = Math.round(x); y = Math.round(y);
-    if (x + n < 0 || x >= g.cols || y < 0 || y >= g.rows) return;
-    if (s.hover === i) { g.fillBg(x, y, n, s.hlBg); g.text(x, y, txt, 0); }
-    else g.text(x, y, txt, fg);
-    if (x >= 0 && x + n <= g.cols) s.spots[i] = { col: x, row: y, len: n };
+    const lab = s.labels[i], lines = Array.isArray(lab) ? lab : [lab], n = labelWidth(s, i);
+    x = Math.round(x); y = Math.round(y) - lines.length + 1;
+    if (x + n < 0 || x >= g.cols || y + lines.length <= 0 || y >= g.rows) return;
+    lines.forEach((line, r) => {
+      if (s.hover === i) { g.fillBg(x, y + r, n, s.hlBg); g.text(x, y + r, line, 0); }
+      else g.text(x, y + r, line, fg);
+    });
+    if (x >= 0 && x + n <= g.cols && y >= 0) s.spots[i] = { col: x, row: y, len: n, h: lines.length };
   }
   // A label centred on x.
-  const labelC = (g, s, x, y, i, fg) => label(g, s, x - (len(s.labels[i] ?? '') >> 1), y, i, fg);
+  const labelC = (g, s, x, y, i, fg) => label(g, s, x - (labelWidth(s, i) >> 1), y, i, fg);
 
   function title(g, s, fg, x = 2, y = 1) { g.text(x, y, s.title, fg); }
 
@@ -664,7 +685,7 @@ _| || |_
         g.sprite(x, G + 1 + Math.round(p.d * (g.rows - G - 2)) - lines.length + 1, lines, p.k === 'crack' ? C.accent : p.d > 0.5 ? C.fg : C.green, M.sand);
       }
       for (const o of s.signs) {
-        const x = Math.round(o.x - s.off), n = len(s.labels[o.i]);
+        const x = Math.round(o.x - s.off), n = labelWidth(s, o.i);
         g.put(x + (n >> 1), G - 1, '|', C.fg, M.wood);
         g.put(x + (n >> 1), G - 2, '|', C.fg, M.wood);
         label(g, s, x, G - 3, o.i, C.hl);
@@ -826,7 +847,7 @@ _| || |_
       g.sprite(bx, S - BOAT.length + 6 + bob, BOAT.slice(4), C.fg, M.boat, true);
       if (s.time === 'night') [0, 1, 2].forEach((k) => g.put(bx + 4 + k * 3, S + bob, 'o', C.sun, M.light));
       for (const c of s.carriers) {
-        const x = Math.round(c.x), y = Math.round(c.y), n = len(s.labels[c.i] ?? '');
+        const x = Math.round(c.x), y = Math.round(c.y), n = labelWidth(s, c.i);
         if (c.kind === 'gull') {
           g.float(c.x, c.y, [Math.sin(s.t * 5) > 0 ? '~v~' : '-v-'], C.fg, M.gull);
           g.put(x + 1, y + 1, '|', C.dim, M.rope);
@@ -1093,7 +1114,7 @@ _| || |_
       const px = Math.round(g.cols * (s.portrait ? 0.42 : 0.58));
       const py = Math.round(H * 0.42) + Math.sin(s.t * 0.9) * 0.6, ry = Math.round(py) + 2;
       if (s.banner >= 0) {
-        const n = len(s.labels[s.banner]), rope = 6, bx = px + 2 - rope - n - 2;
+        const n = labelWidth(s, s.banner), rope = 6, bx = px + 2 - rope - n - 2;
         for (let k = 0; k < rope; k++) g.put(px + 2 - rope + k, ry, (k + Math.floor(s.t * 6)) % 2 ? '~' : '-', C.dim, M.rope);
         g.put(bx, ry, '|', C.fg);
         label(g, s, bx + 1, ry, s.banner, C.hl);
@@ -1273,6 +1294,7 @@ __|_________________|__`);
       this.s = null;
     }
 
+    static icon(name) { return ICONS[name]; }
     static indexOf(slug) { const i = SCENARIOS.findIndex((x) => x.slug === slug); return i < 0 ? null : i; }
     get scenario() { return SCENARIOS[this.index]; }
     get slug() { return this.scenario?.slug || ''; }

@@ -60,7 +60,15 @@ class Kaleido {
     this.paletteIndex = (Math.random() * PALETTES.length) | 0;
     // Label widths at 100px, to fit the text in its tile without measuring every frame.
     this.ctx.font = LINK_FONT.replace('{s}', 100);
-    this.labelWidths = labels.map((l) => this.ctx.measureText(l).width);
+    // Labels are words or icons ({ icon: url }); icons are carved from their image.
+    this.labelWidths = labels.map((l) => (typeof l === 'string' ? this.ctx.measureText(l).width : 0));
+    this.icons = labels.map((l) => {
+      if (typeof l === 'string') return null;
+      const img = new Image();
+      img.onload = () => { this.dirty = true; };
+      img.src = l.icon;
+      return img;
+    });
   }
 
   get palette() { return PALETTES[this.paletteIndex]; }
@@ -294,8 +302,22 @@ class Kaleido {
   // The label is set straight along the tile's tangent, as large as it fits.
   drawLabel(c, r, rot) {
     const g = this.geometry(r, 0);
-    const size = Math.min((g.width * 0.78 * 100) / this.labelWidths[r.link], g.height * 0.5);
     r.flip = this.flipFor(r, rot);
+    const img = this.icons[r.link];
+    if (img) {
+      if (!img.complete || !img.naturalWidth) return;
+      // as large as fits, keeping the image's proportions
+      const ar = img.naturalWidth / img.naturalHeight;
+      const h = Math.min(g.height * 0.78, (g.width * 0.7) / ar);
+      if (h < 6) return;
+      c.save();
+      c.translate(g.x - this.w / 2, g.y - this.h / 2);
+      c.rotate(g.angle + (r.flip ? Math.PI : 0));
+      c.drawImage(img, (-h * ar) / 2, -h / 2, h * ar, h);
+      c.restore();
+      return;
+    }
+    const size = Math.min((g.width * 0.78 * 100) / this.labelWidths[r.link], g.height * 0.5);
     if (size < 3) return;
     c.save();
     c.translate(g.x - this.w / 2, g.y - this.h / 2);

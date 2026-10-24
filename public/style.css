@@ -287,3 +287,10 @@ body[data-look="shan"] #hud button.on .n::before {
   .node.k { font-size: 12px; padding: 8px 14px; }
   .node.k.title { font-size: 13px; }
 }
+
+/* Links with a logo: the image shows only during the ascii transition, the
+   tunnel carves it, the scenes draw it in characters, shan shui hides it. */
+.node .logo { display: none; height: 100%; width: auto; pointer-events: none; }
+.node.a[data-icon] .txt { display: none; }
+.node.a[data-icon] .logo { display: block; }
+.node.a[data-icon] { background: var(--paper); padding: 0; height: calc(var(--cell-h) * 2); }
