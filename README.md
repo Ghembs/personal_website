@@ -29,7 +29,10 @@ public/          the site, served as is (no build step)
   main.js        modes, transitions, links, the WebGL pipeline
   kaleido.js     the tunnel
   shanshui.js    the handscroll
-  scenes.js      the ascii scenes
+  scenes.js      the ascii scenes (behaviour)
+  scene-catalog.js  their drawings, lands and palettes, by category
+  lab/scene/     the scene catalogue: browse and combine the elements
+  img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders
   style.css
   _headers       Cloudflare Pages response headers

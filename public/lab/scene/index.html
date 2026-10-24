@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catalogo delle scene · Giuliano Gambacorta</title>
+  <meta name="description" content="Gli elementi delle scene ASCII del sito: ambienti, orari, mezzi, monumenti, alberi, animali. Scegli e combina.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="scene.css">
+</head>
+<body>
+  <header id="top">
+    <a class="back" href="../../" data-i18n="back">[ ← giulianogambacorta ]</a>
+    <h1 data-i18n="title">catalogo delle scene</h1>
+    <button id="lang">EN</button>
+  </header>
+
+  <section id="mix">
+    <div class="mixhead">
+      <h2 data-i18n="yours">la tua scena</h2>
+      <span class="hint" data-i18n="hint">scegli gli elementi qui sotto: ambiente e ora danno i colori, il resto si mette in fila</span>
+      <button id="clear" data-i18n="clear">[ svuota ]</button>
+      <button id="random" data-i18n="random">[ a caso ]</button>
+    </div>
+    <pre id="stage"></pre>
+  </section>
+
+  <main id="catalog"></main>
+
+  <footer data-i18n="foot">Gli stessi disegni delle scene della home, letti da <code>scene-catalog.js</code>.</footer>
+
+  <script src="../../i18n.js"></script>
+  <script src="../../scene-catalog.js"></script>
+  <script src="scene.js"></script>
+</body>
+</html>

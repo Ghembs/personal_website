@@ -52,6 +52,11 @@ const Scenes = (() => {
   const wrap = (x, span) => ((x % span) + span) % span;
   const len = (str) => [...str].length;
 
+  // Every drawing and palette comes from the catalogue (scene-catalog.js).
+  const {
+    CLOUDS, SUN, DUSK_SUN, MOON, DUOMO, PEARL, ICONS, DINO, DINO_LEGS, DINO_AIR, BIOMES, OBST, TREES, PTERO, PROPS, FAR, BOAT, BUOY, FISH, CHEST, MINIPLANE, GROUND, BLADES, GENERIC, PLANE, BALLOON, KITE, LOCO, WAGON, STATION, TUNNEL_IN, TUNNEL_OUT, SEA_PALETTES, PLANE_PALETTES, TRAIN_PALETTES,
+  } = SceneCatalog.parts;
+
   // ---------- the grid ----------
 
   class Grid {
@@ -115,58 +120,6 @@ const Scenes = (() => {
 
   // ---------- shared pieces ----------
 
-  const CLOUDS = [
-    ['   .--.', '.-(    ).', '(___.____)'],
-    ['  .-~~-.', ' (      )-.', '(____.____)'],
-    ['   _', ' _( )_', '(_____)'],
-    ['       .--.', '  .-~~(    )-.', ' (            )', "  '-.______.-'"],
-  ];
-  const SUN = ['  \\ | /', '-- ( ) --', '  / | \\'];
-  const DUSK_SUN = [' .--.', '(    )', " '--'"];
-  const MOON = [' .-.', '(  (', " '-'"];
-
-  // Landmarks.
-  const DUOMO = art(String.raw`
-                        |
-                       /^\
-                      (___)
-                      |||||                       _
-                  .-'"""""""'-.                  |+|
-               .-'   |   |   |  '-.              |=|
-             .'      |   |   |     '.            |#|
-            /        |   |   |       \           |=|
-           /_________|___|___|________\          |#|
-          |____________________________|         |=|
-          | /\  /\  /\  /\  /\  /\  /\ |         |#|
-     _____|/__\/__\/__\/__\/__\/__\/__\|_____    |=|
-    |  /\  |                            |  /\ |  |#|
-    | /  \ |  ||    ||    ||    ||    ||| /  \|  |=|
-    |/____\|  ||    ||    ||    ||    |||/____\| |#|
-    |______|__||____||____||____||____|||______|_|=|_ `);
-  const PEARL = art(String.raw`
-            |
-            |
-            |
-           (o)
-           | |
-           | |
-           | |
-          .---.
-         (     )
-          '---'
-          || ||
-          || ||
-         .-----.
-        /       \
-       (    O    )
-        \       /
-         '-----'
-        /|| || ||\
-       / || || || \
-      (  || || ||  )
-     /   || || ||   \
-    /____||_||_||____\ `);
-
   // Picks the link for a carrier entering the stage: never one reserved by a
   // landmark, never one already shown (the carrier then goes without, -1),
   // and among the others the one shown least recently.
@@ -183,21 +136,6 @@ const Scenes = (() => {
     };
   }
 
-  // Logos drawn in characters, for links that show an icon instead of a name.
-  const ICONS = {
-    'vesta-laris': [
-      '   /\\',
-      '  //\\\\',
-      ' o-o-o-o',
-      ' |_|_|_|',
-    ],
-    stf: [
-      '     +',
-      '    /|\\',
-      '  _/_|_\\',
-      '_|',
-    ],
-  };
   // Width of a link label, in cells: a word, or an icon's widest row.
   const labelWidth = (s, i) => { const l = s.labels[i]; return l == null ? 0 : Array.isArray(l) ? widthOf(l) : len(l); };
 
@@ -235,260 +173,8 @@ const Scenes = (() => {
 
   // ---------- scenario: the dinosaur ----------
 
-  const DINO = art(String.raw`
-              ______
-             / o    \
-             |   ____|
-             |  |__
- \          /   |_,
-  \________/    |
-   \            /
-    \__      __/`);
-  const DINO_LEGS = [
-    ['      |  \\  |', '     _|   \\_|_'],
-    ['      /  |  /', '     /_   |_/_'],
-  ];
-  const DINO_AIR = ['      |   |', '     _|  _|'];
   const DINO_FEET = [7, 12];       // columns of the sprite the feet span
   const BASE_SPEED = 13;
-
-  // Each land: two palettes (day, night) with sky and ground gradients, a far
-  // silhouette, its trees and its obstacles. The dinosaur walks from one land
-  // into the next every few hundred metres.
-  const BIOMES = {
-    desert: {
-      palettes: {
-        day: { bg: '#f6efe2', fg: '#5a4c3c', dim: '#c2b29b', hl: '#2a2117', accent: '#b4683d', green: '#7f8f52', skyTop: '#f2dcc0', skyLow: '#fbf5ea', soil: '#ead8bb', soilDeep: '#dcc39c' },
-        night: { bg: '#221d27', fg: '#d9cdbb', dim: '#5d5466', hl: '#ffffff', accent: '#d98d5f', green: '#6f7d4c', skyTop: '#0f0d1c', skyLow: '#2e2433', soil: '#2a2420', soilDeep: '#1c1714' },
-      },
-      far: 'mesa', trees: ['saguaroL', 'saguaro', 'joshuaL', 'joshua'], obstacles: ['cactusS', 'cactusL', 'cactusD', 'rock'],
-      ground: ".,'.`,..", props: ['bones', 'skull', 'pebbles', 'bush', 'pebbles', 'tuft'],
-    },
-    jungle: {
-      palettes: {
-        day: { bg: '#eef4e6', fg: '#334a2c', dim: '#a9bf9a', hl: '#162212', accent: '#c46a3a', green: '#4f8a3c', skyTop: '#cfe6d4', skyLow: '#f2f7ea', soil: '#c9dbb3', soilDeep: '#a9c492' },
-        night: { bg: '#121c16', fg: '#cfe0c6', dim: '#3d5a45', hl: '#ffffff', accent: '#d9874f', green: '#4f8a52', skyTop: '#07110d', skyLow: '#16261d', soil: '#14211a', soilDeep: '#0c1610' },
-      },
-      far: 'hills', trees: ['palmL', 'palm', 'canopyL', 'canopy', 'fern'], obstacles: ['log', 'rock', 'fern', 'logL'],
-      ground: '",;\'v.,"', props: ['tuft', 'flowers', 'tuft', 'mushrooms', 'grass', 'pebbles'],
-    },
-    volcano: {
-      palettes: {
-        day: { bg: '#efe4df', fg: '#3c3335', dim: '#b6a7a3', hl: '#1c1617', accent: '#d2502e', green: '#6d6a4c', skyTop: '#d9b8a8', skyLow: '#f4e8e2', soil: '#cbb8b0', soilDeep: '#a8928a' },
-        night: { bg: '#1a1213', fg: '#e3d3cf', dim: '#5c4446', hl: '#ffffff', accent: '#ff6a3a', green: '#5f5a44', skyTop: '#2a0c08', skyLow: '#3a1d1a', soil: '#24191a', soilDeep: '#160f10' },
-      },
-      far: 'volcano', trees: ['deadL', 'dead', 'fern'], obstacles: ['rock', 'rockL', 'lava'],
-      ground: '.:,.:o.', props: ['crack', 'pebbles', 'bones', 'crack', 'stones'],
-    },
-    ice: {
-      palettes: {
-        day: { bg: '#eef3f7', fg: '#344a5c', dim: '#b3c4d1', hl: '#16222c', accent: '#c8553d', green: '#4d7f6e', skyTop: '#c6dcec', skyLow: '#f3f7fa', soil: '#f7fafc', soilDeep: '#d8e4ec' },
-        night: { bg: '#0f1622', fg: '#d6e4ee', dim: '#3f5469', hl: '#ffffff', accent: '#e07a5a', green: '#4a7a6a', skyTop: '#050a14', skyLow: '#182436', soil: '#26364a', soilDeep: '#18222f' },
-      },
-      far: 'peaks', trees: ['pineXL', 'pineL', 'pine'], obstacles: ['ice', 'snowman', 'rock', 'iceL'],
-      ground: '*.*.,\'*', props: ['drift', 'pebbles', 'drift', 'tracks', 'stones'],
-    },
-  };
-
-  const OBST = {
-    cactusS: { lines: art(String.raw`
-  _
- | |
-_| |_
- | |`), mat: 'cactus' },
-    cactusL: { lines: art(String.raw`
-   _
-  | | _
-_ | || |
-| || |_/
-\_   |
-  |  |`), mat: 'cactus' },
-    cactusD: { lines: art(String.raw`
-  _  _
- | || |
-_| || |_
- |    |`), mat: 'cactus' },
-    rock: { lines: art(String.raw`
-  .--.
- /    \
-(______)`), mat: 'rock' },
-    rockL: { lines: art(String.raw`
-  .----._
- /       \
-(_________)`), mat: 'rock' },
-    log: { lines: art(String.raw`
- ______
-(______)`), mat: 'wood' },
-    logL: { lines: art(String.raw`
- ________
-(________)`), mat: 'wood' },
-    fern: { lines: art(String.raw`
-\ | /
- \|/
---+--`), mat: 'leaf' },
-    lava: { lines: ['~~~~~~~~~'], mat: 'fire', flat: true },
-    ice: { lines: art(String.raw`
- ____
-|    |
-|____|`), mat: 'ice' },
-    iceL: { lines: art(String.raw`
- ____ __
-|    |  |
-|____|__|`), mat: 'ice' },
-    snowman: { lines: art(String.raw`
-  _
- (_)
-(   )
-(___)`), mat: 'snow' },
-  };
-  for (const o of Object.values(OBST)) { o.w = widthOf(o.lines); o.h = o.flat ? 1 : o.lines.length; }
-
-  const TREES = {
-    saguaro: art(String.raw`
-     _
-  _ | |
- | || | _
- | || || |
-  \_   _/
-    | |
-    | |`),
-    saguaroL: art(String.raw`
-        _
-       | |
-   _   | |
-  | |  | |   _
-  | |  | |  | |
-  | |__| |__| |
-   \___   ___/
-       | |
-       | |
-       | |
-       | |`),
-    joshua: art(String.raw`
- \|/   \|/
-  \     /
-   \ | /
-    \|/
-     |
-     |`),
-    joshuaL: art(String.raw`
- \\|//     \\|//
-  \|/  \|/  \|/
-   \    |    /
-    \   |   /
-     \__|__/
-        |
-        |
-        |
-       /|\ `),
-    palm: art(String.raw`
-  __\ | /__
- /   \|/   \
-      |
-      |
-      |
-      |`),
-    palmL: art(String.raw`
-     __ _.--._ __
-   .'  \  |  /  '.
-  /   .-\ | /-.   \
-       ' \|/ '
-          |
-          (
-           )
-          (
-           )
-          (
-           )`),
-    fern: art(String.raw`
- \  |  /
-  \ | /
- --\|/--
-    |`),
-    canopy: art(String.raw`
-   .-ooOOoo-.
-  (oOoOoOoOoo)
-   '-oOOOoo-'
-      | |
-      | |
-      | |`),
-    canopyL: art(String.raw`
-       .-~~~~~~-.
-    .-(  oO  oO  )-.
-   (  oOo  Oo  oOo  )
-  (  Oo  oOOo  oO  oo)
-    '-(  oO  oO  )-'
-       '-.____.-'
-           ||
-           ||
-           ||
-          /||\ `),
-    dead: art(String.raw`
- \  /
-  \/ /
-   \/
-   |
-   |`),
-    deadL: art(String.raw`
-   \   |   /
-    \  |  /_
-  \_ \ | / _/
-    \_\|/_/
-       |
-       |
-       |
-      /|\ `),
-    pine: art(String.raw`
-    ^
-   /*\
-  /***\
- /*****\
-    |`),
-    pineL: art(String.raw`
-     ^
-    /*\
-   /***\
-  /*****\
- /*******\
-     |
-     |`),
-    pineXL: art(String.raw`
-       ^
-      /*\
-     /***\
-    /*****\
-     /***\
-    /*****\
-   /*******\
-    /*****\
-   /*******\
-  /*********\
-      |||
-      |||`),
-  };
-  const PTERO = [[' \\   /', '--\\_/~<'], [' _   _', '--\\_/~<']];
-  // props scattered over the foreground
-  const PROPS = {
-    bones: ['o==o  _', '   o=o'],
-    skull: [' .-.', '(o.o)', " |=|"],
-    pebbles: ['o  .', ' . o .'],
-    stones: [' _', '(_) _', '   (_)'],
-    bush: ['\\|//', ' \\|/'],
-    tuft: ['\\|/'],
-    grass: ['\\ | /', ' \\|/'],
-    flowers: ['* @ *', '\\|/|'],
-    mushrooms: [' n  n', '(_)(_)'],
-    crack: ['~~-~~~'],
-    drift: ['  .--.', '.(    )-.'],
-    tracks: ['v  v', '  v  v'],
-  };
-
-  const FAR = {
-    mesa: (x) => (Math.sin(x * 0.02) > 0.3 ? 5 : Math.sin(x * 0.02) > -0.2 ? 2 : 0) + (Math.sin(x * 0.07) > 0.8 ? 1 : 0),
-    hills: (x) => Math.round(3 + 2 * Math.sin(x * 0.03) + Math.sin(x * 0.11)),
-    peaks: (x) => Math.round(Math.max(0, 7 - Math.abs(((x * 0.15) % 14) - 7)) + Math.sin(x * 0.05) * 1.5),
-    volcano: (x) => { const d = Math.abs(wrap(x, 160) - 80); return d < 6 ? 9 : Math.max(0, Math.round(9 - (d - 6) * 0.35)); },
-  };
 
   const dino = {
     slug: 'dino',
@@ -711,27 +397,9 @@ _| || |_
 
   // ---------- scenario: the boat at sea ----------
 
-  const BOAT = [
-    '       |\\',
-    '       | \\',
-    '       |  \\',
-    '       |___\\',
-    '  _____|_____',
-    '  \\ o  o  o /',
-    '   \\_______/',
-  ];
-  const BUOY = ['  _|_', ' (___)'];
-  const FISH = ['><>', '<><', '><((°>', '<°))><'];
-  const CHEST = [' ____', '[_$__]'];
-  const MINIPLANE = ['_|_', '=[_]>'];
-
   const sea = {
     slug: 'mare',
-    palettes: {
-      day: { bg: '#dbe9ef', fg: '#22323a', dim: '#8ba5b2', hl: '#152229', accent: '#c4553f', wave: '#2f7ea3', foam: '#6fb3cf', deep: '#123a52', under: '#5ea3c1', sun: '#e2a03a', lite: '#cfe6f0' },
-      night: { bg: '#0b1523', fg: '#d6e2e9', dim: '#4e6475', hl: '#ffffff', accent: '#e06a4f', wave: '#3f84ad', foam: '#7cb6d2', deep: '#050d16', under: '#2d6c8c', sun: '#ece5c6', lite: '#cfe6f0' },
-      storm: { bg: '#9aa7ae', fg: '#1d262b', dim: '#5d6b73', hl: '#10171b', accent: '#c4553f', wave: '#2c5f78', foam: '#d6e3e8', deep: '#0e2635', under: '#3e7891', sun: '#9aa7ae', lite: '#d6e3e8' },
-    },
+    palettes: SEA_PALETTES,
     init(s) {
       s.time = pick(['day', 'day', 'night', 'storm']);
       Object.assign(s, {
@@ -871,101 +539,6 @@ _| || |_
 
   // ---------- the countryside (plane and train share it) ----------
 
-  const GROUND = {
-    house: { lines: art(String.raw`
-    __
-   /  \__
-  /      \
- /________\
- | []  [] |
- |   __   |
- |__|  |__|`), mat: 'house' },
-    tower: { lines: art(String.raw`
-   ___
-  /___\
-  |[]|
-  |  |
-  |__|`), mat: 'house' },
-    church: { lines: art(String.raw`
-     +
-    /_\
-    | |
-   _|_|_
-  /     \
- /_______\
- |  ___  |
- | |   | |
- |_|___|_|`), mat: 'house' },
-    castle: { lines: art(String.raw`
-  |>
-  |
- []_[]_[]
- |      |
- |  __  |
- |_|  |_|`), mat: 'castle' },
-    factory: { lines: art(String.raw`
-       []
-       ||
- /|/|/|||
- |  [] ||
- |_____||`), mat: 'house', smoke: [7, -1] },
-    mill: { lines: art(String.raw`
-   /|\
-  / | \
- /__|__\ `), mat: 'mill', blades: true },
-    treeR: { lines: art(String.raw`
-  .oOo.
- (oOoOo)
-  'oOo'
-    |`), mat: 'tree', green: true },
-    pine: { lines: art(String.raw`
-   ^
-  /*\
- /***\
-   |`), mat: 'tree', green: true },
-    cypress: { lines: art(String.raw`
-  ()
- (  )
- (  )
- (  )
-  ||`), mat: 'tree', green: true },
-    oak: { lines: art(String.raw`
-     .-~~~-.
-  .-(  oOo  )-.
- (  oOo  oOo  )
-  '-(  oOo  )-'
-     '-._.-'
-       | |
-       | |`), mat: 'tree', green: true },
-    cypressL: { lines: art(String.raw`
-   /\
-  (  )
- (    )
- (    )
- (    )
-  (  )
-  (  )
-   ||
-   ||`), mat: 'tree', green: true },
-    pineL: { lines: art(String.raw`
-     ^
-    /*\
-   /***\
-    /*\
-   /***\
-  /*****\
- /*******\
-    |||`), mat: 'tree', green: true },
-    duomo: { lines: DUOMO, mat: 'duomo', landmark: 'stf' },
-    pearl: { lines: PEARL, mat: 'pearl', landmark: 'zh' },
-  };
-  for (const o of Object.values(GROUND)) o.w = widthOf(o.lines);
-  const BLADES = [
-    [' \\   /', '  \\ /', '   o', '  / \\', ' /   \\'],
-    ['   |', '   |', '---o---', '   |', '   |'],
-  ];
-  const GENERIC = ['house', 'house', 'tower', 'church', 'castle', 'factory', 'mill', 'treeR', 'oak', 'oak', 'pineL', 'cypress', 'cypressL', 'cypressL'];
-
   // Spawns an object of a ground layer: landmarks now and then, one of each at most.
   // A carrier gets i = -2 until settleLinks picks its link.
   function spawnGround(s, list, at, opts) {
@@ -1012,23 +585,9 @@ _| || |_
 
   // ---------- scenario: the plane ----------
 
-  const PLANE = [
-    '   __',
-    '   \\ \\_____________',
-    '   [==  o o o o o   \\___',
-    '   /_/_____________ ___/',
-    '        \\_\\',
-  ];
-  const BALLOON = ['  .-~~-.', ' /      \\', '|        |', ' \\      /', "  '.__.'", '   \\  /', '    []'];
-  const KITE = ['  /\\', ' /  \\', ' \\  /', '  \\/', '   }', '   {'];
-
   const plane = {
     slug: 'aereo',
-    palettes: {
-      day: { bg: '#d9e8f2', fg: '#2a3340', dim: '#93a9b9', hl: '#18202a', accent: '#c4553f', gold: '#d99a2b', cloud: '#7f97a8', green: '#4f7f46', field: '#a39a45', soil: '#cbd9c2' },
-      dusk: { bg: '#f2d4bd', fg: '#3a2b34', dim: '#c39a8e', hl: '#24171e', accent: '#b5443a', gold: '#d98a2f', cloud: '#cc9f92', green: '#5e5a4a', field: '#a8755a', soil: '#e6c3ab' },
-      night: { bg: '#0c1120', fg: '#d6dde6', dim: '#46536b', hl: '#ffffff', accent: '#d86a50', gold: '#e8c36a', cloud: '#4f5d76', green: '#2f4a3a', field: '#4a4f34', soil: '#141c2a' },
-    },
+    palettes: PLANE_PALETTES,
     init(s) {
       s.time = pick(['day', 'day', 'dusk', 'night']);
       Object.assign(s, { off: 0, speed: 10, clouds: [], balloons: [], kites: [], ground: [], near: [], nextG: -10, nextN: 0, nextBalloon: 25, banner: -1, bannerAt: -99 });
@@ -1129,34 +688,9 @@ _| || |_
 
   // ---------- scenario: the train ----------
 
-  const LOCO = art(String.raw`
-       ____
-  ____|[] |______
- |  ____________ \__
- | |  ||  ||  | |   \
- |_|__||__||__|_|___/
-   (O)(O)    (O)(O)`);
-  const WAGON = art(String.raw`
- ______________________
-| []  []  []  []  []  |
-|_____________________|
-  (O)(O)        (O)(O)`);
-  const STATION = art(String.raw`
- _____________________
-/_____________________\
-  |                 |
-  |                 |
-__|_________________|__`);
-  const TUNNEL_IN = ['  ___', ' /', '/', '|', '|', '|', '|'];
-  const TUNNEL_OUT = ['___', '   \\', '    \\', '    |', '    |', '    |', '    |'];
-
   const train = {
     slug: 'treno',
-    palettes: {
-      day: { bg: '#e6edf0', fg: '#2c333b', dim: '#9aa8b3', hl: '#171c22', accent: '#b8463a', gold: '#d89a2c', cloud: '#8a9fae', green: '#4f7a48', field: '#a5a052', soil: '#d3dccb', rock: '#6f6a64' },
-      dusk: { bg: '#f0d2c0', fg: '#3b2b31', dim: '#c79e94', hl: '#23161c', accent: '#a83f37', gold: '#d98a2f', cloud: '#cfa296', green: '#5f5b4a', field: '#a8765a', soil: '#e7c6b2', rock: '#6a5458' },
-      night: { bg: '#0d1220', fg: '#d5dce5', dim: '#45526a', hl: '#ffffff', accent: '#d8664d', gold: '#ffd27a', cloud: '#4c5a72', green: '#2c4636', field: '#454a33', soil: '#121a26', rock: '#3a3f4c' },
-    },
+    palettes: TRAIN_PALETTES,
     init(s) {
       s.time = pick(['day', 'day', 'dusk', 'night']);
       Object.assign(s, {
