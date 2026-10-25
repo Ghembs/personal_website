@@ -5,25 +5,25 @@
 
 const TEXT = {
   it: {
-    back: '[ ← cesta dei giochi ]', section: '[ 汉字 la sezione di cinese → ]', theme: 'Tema chiaro / scuro', lang: 'EN', title: 'allenamento sui toni', docTitle: 'Allenamento sui toni · Giuliano Gambacorta',
+    back: '← cesta dei giochi', section: 'la sezione di cinese', theme: 'Tema chiaro / scuro', lang: 'EN', title: 'allenamento sui toni', docTitle: 'Allenamento sui toni · Giuliano Gambacorta',
     hint: 'ascolta un carattere che non vedi e indovinane il tono', upTo: 'fino a', listen: 'ascolta',
     start: 'premi ▶ (o spazio) per ascoltare', loading: 'carico i caratteri…', listening: 'quale tono è? (1–4)',
     right: 'giusto: {n}° tono', wrong: 'no: era il {n}° tono, non il {g}°', compare: 'tocca un tono per sentire la stessa sillaba',
-    reveal: '[ mostra la scheda ]', next: '[ prossimo → ]', reset: '[ azzera ]',
+    reveal: 'mostra la scheda', next: 'prossimo →', reset: 'azzera',
     score: 'giuste {ok} su {n} · di fila {streak} · record {best}', none: 'ancora nessuna risposta',
     meanings: 'significati', words: 'parole', open: 'apri nella sezione di cinese →',
-    tone: '{n}° tono', d1: 'alto e piatto', d2: 'sale', d3: 'scende e risale', d4: 'scende deciso',
+    langName: 'English', tone: '{n}° tono', d1: 'alto e piatto', d2: 'sale', d3: 'scende e risale', d4: 'scende deciso',
     foot: 'Registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Caratteri e significati dalla <a href="../../cinese/">sezione di cinese</a> (HSK 2025, CC-CEDICT).',
   },
   en: {
-    back: '[ ← the toy box ]', section: '[ 汉字 the Chinese section → ]', theme: 'Light / dark theme', lang: 'IT', title: 'tone trainer', docTitle: 'Tone trainer · Giuliano Gambacorta',
+    back: '← the toy box', section: 'the Chinese section', theme: 'Light / dark theme', lang: 'IT', title: 'tone trainer', docTitle: 'Tone trainer · Giuliano Gambacorta',
     hint: 'listen to a character you can\'t see and guess its tone', upTo: 'up to', listen: 'listen',
     start: 'press ▶ (or space) to listen', loading: 'loading the characters…', listening: 'which tone is it? (1–4)',
     right: 'right: tone {n}', wrong: 'no: it was tone {n}, not {g}', compare: 'tap a tone to hear the same syllable in it',
-    reveal: '[ show the card ]', next: '[ next → ]', reset: '[ reset ]',
+    reveal: 'show the card', next: 'next →', reset: 'reset',
     score: '{ok} right out of {n} · streak {streak} · best {best}', none: 'no answers yet',
     meanings: 'meanings', words: 'words', open: 'open in the Chinese section →',
-    tone: 'tone {n}', d1: 'high and level', d2: 'rising', d3: 'dips and rises', d4: 'falling',
+    langName: 'Italiano', tone: 'tone {n}', d1: 'high and level', d2: 'rising', d3: 'dips and rises', d4: 'falling',
     foot: 'Recordings from <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Characters and meanings from the <a href="../../cinese/">Chinese section</a> (HSK 2025, CC-CEDICT).',
   },
 };
@@ -161,6 +161,7 @@ function render() {
   I18N.apply(TEXT);
   document.title = t('docTitle');
   $('#lang').textContent = t('lang');
+  $('#lang').title = t('langName');
   $('#tones').innerHTML = [1, 2, 3, 4].map((k) =>
     `<button class="tone" data-tone="${k}">${contourSvg(k)}<span class="n" style="color:var(--t${k})">${t('tone', { n: k })}</span>` +
     `<span class="d">${t(`d${k}`)}</span><kbd>${k}</kbd></button>`).join('');

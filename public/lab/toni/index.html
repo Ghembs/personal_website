@@ -7,7 +7,7 @@
   <meta name="description" content="Ascolta un carattere cinese, nascosto, e indovinane il tono: registrazioni di madrelingua, livelli HSK 1–4.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="toni.css">
   <script>
     // the same theme as the Chinese section
@@ -19,10 +19,10 @@
 </head>
 <body>
   <header id="top">
-    <a class="back" href="../" data-i18n="back">[ ← cesta dei giochi ]</a>
-    <a href="../../cinese/" data-i18n="section">[ 汉字 la sezione di cinese → ]</a>
-    <button id="lang">EN</button>
-    <button id="theme" data-i18n-attr="title:theme;aria-label:theme">◐</button>
+    <a class="back" href="../" data-i18n="back">← cesta dei giochi</a>
+    <a class="zh hz" href="../../cinese/" data-i18n-attr="title:section">中文</a>
+    <button id="theme" aria-label="Tema chiaro o scuro" title="Tema chiaro / scuro" data-i18n-attr="title:theme;aria-label:theme">◐</button>
+    <button id="lang" title="English">EN</button>
   </header>
 
   <main>
@@ -45,8 +45,8 @@
         <div>
           <div id="reading" class="reading"></div>
           <div class="acts">
-            <button id="reveal" data-i18n="reveal">[ mostra la scheda ]</button>
-            <button id="next" class="primary" data-i18n="next">[ prossimo → ]</button>
+            <button id="reveal" data-i18n="reveal">mostra la scheda</button>
+            <button id="next" class="primary" data-i18n="next">prossimo →</button>
           </div>
         </div>
       </div>
@@ -56,7 +56,7 @@
     <section class="stats">
       <div id="score" class="score"></div>
       <div id="bars" class="bars"></div>
-      <button id="reset" data-i18n="reset">[ azzera ]</button>
+      <button id="reset" data-i18n="reset">azzera</button>
     </section>
   </main>
 
