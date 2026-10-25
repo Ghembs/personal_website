@@ -16,7 +16,7 @@ const Scenes = (() => {
     'sand', 'dino', 'cactus', 'cloud', 'sun', 'moon', 'star', 'wave', 'foam', 'fish', 'weed', 'bubble', 'boat', 'sail',
     'gull', 'buoy', 'rain', 'plane', 'balloon', 'field', 'hill', 'tree', 'house', 'ptero', 'rope', 'river', 'light', 'rock',
     'snow', 'fire', 'smoke', 'train', 'rail', 'bridge', 'station', 'duomo', 'pearl', 'mill', 'castle', 'fence', 'chest',
-    'leaf', 'ice', 'wood', 'sky', 'soil',
+    'leaf', 'ice', 'wood', 'sky', 'soil', 'crab',
   ];
   // 你好: a hanzi of similar shape and weight for each ascii mark.
   const SHAPES = {
@@ -55,7 +55,7 @@ const Scenes = (() => {
 
   // Every drawing and palette comes from the catalogue (scene-catalog.js).
   const {
-    CLOUDS, SUN, DUSK_SUN, MOON, DUOMO, PEARL, ICONS, DINO, DINO_LEGS, DINO_AIR, BIOMES, OBST, TREES, PTERO, PROPS, FAR, BOAT, BUOY, FISH, CHEST, MINIPLANE, GROUND, BLADES, GENERIC, PLANE, BALLOON, KITE, LOCO, WAGON, STATION, TUNNEL_IN, TUNNEL_OUT, SEA_PALETTES, PLANE_PALETTES, TRAIN_PALETTES,
+    CLOUDS, SUN, DUSK_SUN, MOON, DUOMO, PEARL, ICONS, DINO, DINO_LEGS, DINO_AIR, BIOMES, OBST, TREES, PTERO, PROPS, FAR, BOAT, BUOY, FISH, CHEST, MINIPLANE, CRAB, GROUND, BLADES, GENERIC, PLANE, BALLOON, KITE, LOCO, WAGON, STATION, TUNNEL_IN, TUNNEL_OUT, SEA_PALETTES, PLANE_PALETTES, TRAIN_PALETTES,
   } = SceneCatalog.parts;
 
   // ---------- the grid ----------
@@ -158,11 +158,11 @@ const Scenes = (() => {
 
   function title(g, s, fg, x = 2, y = 1) { g.text(x, y, s.title, fg); }
 
-  function stars(g, s, rows, fg) {
+  function stars(g, s, rows, fg, dens = 0.012) {
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < g.cols; x++) {
         const h = hash(x, y + 999);
-        if (h < 0.012) g.put(x, y, hash(x, y) < 0.3 + 0.25 * Math.sin(s.t * 2 + h * 900) ? '*' : '.', fg, M.star);
+        if (h < dens) g.put(x, y, hash(x, y) < 0.3 + 0.25 * Math.sin(s.t * 2 + h * 900) ? '*' : '.', fg, M.star);
       }
     }
   }
@@ -234,6 +234,8 @@ const Scenes = (() => {
     return p;
   }
 
+  // the heroes in drawing order: the train behind, the dinosaur chasing it, the
+  // boat in front
   const SLOT = {
     'vehicles.dino': 'walk', 'vehicles.train': 'rails', 'vehicles.boat': 'water',
     'vehicles.plane': 'fly', 'vehicles.miniplane': 'flyer', 'vehicles.balloon': 'drift', 'vehicles.kite': 'kite',
@@ -266,6 +268,11 @@ const Scenes = (() => {
       picks.add(hero);
       if (land === 'sea') { picks.add('animals.gull'); picks.add('animals.fish'); if (Math.random() < 0.4) picks.add('vehicles.miniplane'); }
       else if (land !== 'countryside') picks.add('animals.ptero');
+      // two heroes now and then: a train on the sea (Spirited Away), a dinosaur chasing a train
+      if (land === 'sea' && Math.random() < 0.25) { picks.add('vehicles.train'); if (Math.random() < 0.5) picks.delete('vehicles.boat'); }
+      if (hero === 'vehicles.dino' && Math.random() < 0.2) picks.add('vehicles.train');
+      if (Math.random() < (land === 'sea' ? 0.45 : 0.2)) picks.add('animals.crab');
+      if (Math.random() < 0.15) picks.add('sky.moon');
       if (land === 'countryside') someOf('buildings', 2 + ((Math.random() * 3) | 0)).filter((k) => k !== 'buildings.station').forEach((k) => picks.add(k));
       if (Math.random() < 0.3) picks.add(pick(['vehicles.balloon', 'vehicles.kite']));
     }
@@ -273,7 +280,7 @@ const Scenes = (() => {
     if (Math.random() < 0.25) picks.add(pick(['landmarks.duomo', 'landmarks.pearl']));
     const time = pick(['day', 'day', 'dusk', 'night']);
     const weather = Math.random() < 0.22 ? (land === 'ice' ? 'snow' : land === 'desert' || land === 'volcano' ? null : land === 'jungle' ? 'rain' : pick(['rain', 'rain', 'snow'])) : null;
-    return { land, time, weather, picks: [...picks], speed: 1, density: 1, roam: picks.has('vehicles.dino') && BIOME_LANDS.includes(land), game: true, preset };
+    return { land, time, weather, picks: SceneCatalog.fit({ land, time, picks: [...picks] }), speed: 1, density: 1, roam: picks.has('vehicles.dino') && BIOME_LANDS.includes(land), game: true, preset };
   }
 
   // ---------- the scene itself ----------
@@ -297,34 +304,41 @@ const Scenes = (() => {
       s.logos = of('logos').map(lines);
       s.farPool = of('landmarks').map((k) => ({ lines: lines(k), lm: k.endsWith('duomo') ? 'stf' : 'zh' }));
       s.pickedObst = of('obstacles').map((k) => ({ id: k.split('.')[1] }));
-      s.pickedProps = of('ground').map(lines);
+      s.pickedProps = of('ground').filter((k) => k !== 'ground.buoy' && k !== 'ground.chest').map(lines);
       const cl = of('sky').filter((k) => k.includes('cloud')).map(lines);
       s.cloudPool = cl.length ? cl : CLOUDS;
       const has = (k) => r.picks.includes(k);
-      s.sunOverride = has('sky.sun') ? 'sun' : has('sky.moon') ? 'moon' : null;
+      s.sunPicked = has('sky.sun');
+      s.moonPicked = has('sky.moon');
       s.starsPicked = has('sky.stars');
       s.flyKinds = [...(has('animals.ptero') ? ['ptero'] : []), ...(has('animals.gull') ? ['gull'] : []), ...(has('vehicles.miniplane') ? ['mini'] : [])];
-      s.fishOn = has('animals.fish');
-      s.heroes = r.picks.filter((k) => SLOT[k]).map((k) => ({ k, slot: SLOT[k], i: -2 }));
+      s.crabsOn = has('animals.crab');
+      s.buoysPicked = has('ground.buoy');
+      s.chestsPicked = has('ground.chest');
+      const order = Object.values(SLOT);
+      s.heroes = r.picks.filter((k) => SLOT[k]).map((k) => ({ k, slot: SLOT[k], i: -2 }))
+        .sort((a, b) => order.indexOf(a.slot) - order.indexOf(b.slot));
       s.walker = s.heroes.some((h) => h.slot === 'walk');
       s.rails = s.heroes.some((h) => h.slot === 'rails');
       s.stationsOn = s.rails || has('buildings.station');
       Object.assign(s, {
         off: 0, flash: 0, nextFlash: 4, y: 0, vy: 0, held: false, buffer: -1,
         game: false, over: false, score: 0, hi: 0, nightMix: s.time === 'night' ? 1 : 0, nightGoal: null,
-        clouds: [], mid: [], far: [], obst: [], props: [], signs: [], buoys: [], chests: [], flyers: [], fish: [], bubbles: [],
+        clouds: [], mid: [], far: [], obst: [], props: [], signs: [], buoys: [], chests: [], flyers: [], fish: [], crabs: [], bubbles: [],
         stations: [], tunnels: [], poles: [],
         nextMid: 0, nextFar: 30, nextObst: 60, nextProp: 0, nextSign: 25, nextBuoy: 25, nextChest: 30,
         nextStation: 90, nextTunnel: 240, nextPole: 5, nextRoam: 700 + Math.random() * 400,
         palFrom: null, palT: 1, banner: -1, bannerAt: -99,
-        wagons: [{ i: -1 }, { i: -2 }, { i: -1 }, { i: -2 }],
       });
+      // fewer wagons when the dinosaur runs behind the train, or a boat sails behind it on the sea
+      s.chase = s.walker || (LANDS[s.land].sea && s.heroes.some((h) => h.slot === 'water'));
+      s.wagons = [{ i: -1 }, { i: -2 }, { i: -1 }, { i: -2 }].slice(0, s.chase ? (s.portrait ? 0 : 2) : 4);
       try { s.hi = +localStorage.getItem('dino-hi') || 0; } catch (e) { /* private mode */ }
       this.setLand(s, s.land);
       const nClouds = Math.round(5 * s.dens) + (s.weather ? 5 : 0);
       for (let k = 0; k < nClouds; k++) s.clouds.push({ x: Math.random() * 300, y: Math.random(), k: (Math.random() * s.cloudPool.length) | 0, z: Math.random() });
       if (s.links && LANDS[s.land].sea) s.flyers.push({ kind: 'gull', x: s.cols * 0.55, y: 5, v: rnd(4, 7), i: s.pickLink([]) });
-      for (let k = 0; k < (this.water(s) && (s.fishOn || LANDS[s.land].sea) ? 4 : 0); k++) {
+      for (let k = 0; k < (LANDS[s.land].sea ? 4 : 0); k++) {
         const v = (Math.random() < 0.5 ? 1 : -1) * rnd(2, 5);
         s.fish.push({ x: Math.random() * s.cols, y: Math.random(), v, k: (v > 0 ? 0 : 1) + (Math.random() < 0.3 ? 2 : 0), i: -1 });
       }
@@ -338,7 +352,7 @@ const Scenes = (() => {
       const ob = s.pickedObst.length ? s.pickedObst.map((o) => o.id) : s.walker ? L.obstacles || [] : [];
       s.obstPool = ob.map((id) => OBST[id]).filter(Boolean);
     },
-    water: (s) => LANDS[s.land].sea || s.heroes.some((h) => h.slot === 'water') || s.fishOn,
+    water: (s) => LANDS[s.land].sea || s.heroes.some((h) => h.slot === 'water') || s.buoysPicked,
     horizon: (s) => Math.round(s.rows * (s.portrait ? 0.62 : 0.7)),
     surface: (s) => Math.round(s.rows * (s.portrait ? 0.42 : 0.5)),
     // the line things stand on: the ground, or the sea's surface
@@ -437,11 +451,11 @@ const Scenes = (() => {
           return { i: -2 };
         }, () => rnd(60, 110));
       }
-      if (s.links && this.water(s)) fill(s.buoys, 'nextBuoy', 1, () => ({ i: -2 }), () => rnd(45, 80));
-      if (s.links && sea) fill(s.chests, 'nextChest', 0.6, () => ({ i: -2 }), () => rnd(70, 130));
+      if ((s.links || s.buoysPicked) && this.water(s)) fill(s.buoys, 'nextBuoy', 1, () => ({ i: s.links ? -2 : -1 }), () => rnd(45, 80));
+      if ((s.links || s.chestsPicked) && sea) fill(s.chests, 'nextChest', 0.6, () => ({ i: s.links ? -2 : -1 }), () => rnd(70, 130));
       if (s.rails) {
         fill(s.stations, 'nextStation', 1, () => ({ i: -2 }), () => rnd(260, 420));
-        fill(s.tunnels, 'nextTunnel', 1, () => (s.stations.some((st) => Math.abs(st.x - s.nextTunnel) < 80) ? null : { w: rnd(40, 70) }), () => rnd(280, 460));
+        if (!sea) fill(s.tunnels, 'nextTunnel', 1, () => (s.stations.some((st) => Math.abs(st.x - s.nextTunnel) < 80) ? null : { w: rnd(40, 70) }), () => rnd(280, 460));
         fill(s.poles, 'nextPole', 1.3, () => ({}), () => 34);
       } else if (s.stationsOn) fill(s.stations, 'nextStation', 0.4, () => ({ i: -2 }), () => rnd(160, 300));
       // flyers cross the sky; in the home, some with a banner or a sign
@@ -452,7 +466,7 @@ const Scenes = (() => {
       for (const f of s.flyers) f.x -= (f.v + s.speed * 0.2) * dt;
       s.flyers = s.flyers.filter((f) => f.x > -30);
       // fish, some trailing a label
-      if (this.water(s) && (s.fishOn || sea)) {
+      if (sea) {
         if (s.fish.length < Math.round(5 * d) && Math.random() < dt * 1.5) {
           const right = Math.random() < 0.5;
           s.fish.push({ x: right ? -20 : s.cols + 20, y: Math.random(), v: (right ? 1 : -1) * rnd(2, 5), k: (right ? 0 : 1) + (Math.random() < 0.3 ? 2 : 0),
@@ -460,6 +474,15 @@ const Scenes = (() => {
         }
         for (const f of s.fish) f.x += (f.v - s.speed * 0.2) * dt;
         s.fish = s.fish.filter((f) => f.x > -30 && f.x < s.cols + 30);
+      }
+      // crabs scuttle sideways: on the sea bed, or across the ground
+      if (s.crabsOn) {
+        if (s.crabs.length < Math.round(3 * d) && Math.random() < dt * 0.8) {
+          const right = Math.random() < 0.5;
+          s.crabs.push({ x: right ? -12 : s.cols + 2, depth: Math.random(), v: (right ? 1 : -1) * rnd(1.5, 4) });
+        }
+        for (const c of s.crabs) c.x += (c.v - s.speed * (sea ? 0.6 : 1)) * dt;
+        s.crabs = s.crabs.filter((c) => c.x > -14 && c.x < s.cols + 14);
       }
       if (sea) {
         if (Math.random() < dt * 2) s.bubbles.push({ x: Math.random() * s.cols, y: s.rows - 2 });
@@ -507,8 +530,12 @@ const Scenes = (() => {
       g.gradient(0, B + 1, pal.skyTop, pal.skyLow);
       if (sea) g.gradient(B + 2, g.rows, pal.deep, mixHex(pal.deep, '#000000', 0.3));
       else g.gradient(B + 1, g.rows, pal.soil, pal.soilDeep);
-      if (night || s.starsPicked) stars(g, s, B - 4, C.dim);
-      const sun = s.sunOverride || (s.weather ? null : night ? 'moon' : s.time === 'dusk' ? 'dusk' : 'sun');
+      if (night) stars(g, s, B - 4, C.dim, s.starsPicked ? 0.03 : 0.012);
+      // the sun by day, the moon at night; a picked moon shows by day too, pale, away from the sun
+      let sun = s.weather ? null : night ? 'moon' : s.time === 'dusk' ? 'dusk' : 'sun';
+      if (s.sunPicked && !night && s.time === 'day') sun = 'sun';
+      if (s.moonPicked && night) sun = 'moon';
+      if (s.moonPicked && !night) g.sprite(Math.round(g.cols * 0.3), 3, MOON, C.dim, M.moon);
       if (sun === 'sun') g.sprite(g.cols - 16, 2, SUN, C.gold, M.sun);
       else if (sun === 'moon') g.sprite(g.cols - 14, 2, MOON, C.gold, M.moon);
       else if (sun === 'dusk') g.sprite(g.cols - 14, Math.round(B * 0.45), DUSK_SUN, C.accent, M.sun);
@@ -573,10 +600,11 @@ const Scenes = (() => {
           if (hash(w, 13) < 0.3) g.put(x, g.rows - 1, '.', C.under, M.sand);
         }
         for (const b of s.bubbles) g.put(b.x, b.y, 'o', C.under, M.bubble);
+        for (const c of s.crabs) g.float(c.x, g.rows - CRAB[0].length, CRAB[Math.floor(s.t * 6) % 2], C.accent, M.crab);
         for (const c of s.chests) {
           const x = Math.round(c.x - s.off * 0.6);
           g.sprite(x, g.rows - 3, CHEST, C.gold, M.chest);
-          g.put(x + 3, g.rows - 4, '|', C.under);
+          if (c.i >= 0) g.put(x + 3, g.rows - 4, '|', C.under);
           tag(x + 3, g.rows - 5, c.i, C.foam);
         }
       } else {
@@ -592,6 +620,11 @@ const Scenes = (() => {
         for (const p of s.props) {
           const x = Math.round(p.x - s.off * 1.4), y = B + 2 + Math.round(p.depth * Math.max(0, g.rows - B - 4));
           g.sprite(x, y - p.lines.length + 1, p.lines, p.lines === PROPS.crack ? C.accent : p.depth > 0.5 ? C.fg : C.green, M.sand);
+        }
+        for (const c of s.crabs) {
+          const top = B + (this.water(s) ? 6 : 1);    // below the river, if there is one
+          const y = top + Math.round(c.depth * Math.max(0, g.rows - top - CRAB[0].length));
+          g.float(c.x, y, CRAB[Math.floor(s.t * 6) % 2], C.accent, M.crab);
         }
         // a river for a boat or fish in a land
         if (this.water(s)) {
@@ -643,8 +676,11 @@ const Scenes = (() => {
         for (let x = 0; x < g.cols; x++) {
           const u = wrap(x + s.off * 1.3, 34) / 34;
           g.put(x, B - 11 + Math.round(Math.sin(u * Math.PI) * 1.2), '-', C.dim, M.rope);
-          g.put(x, B, '=', C.fg, M.rail);
-          if (!sea) g.put(x, B + 1, Math.floor(x + s.off) % 3 ? '_' : '|', C.dim, M.rail);
+          // on the sea the rails run just under the water, showing between the waves
+          if (!sea) {
+            g.put(x, B, '=', C.fg, M.rail);
+            g.put(x, B + 1, Math.floor(x + s.off) % 3 ? '_' : '|', C.dim, M.rail);
+          } else if (Math.sin((x + s.off) * 0.18 + s.t * 1.6) < 0.3) g.put(x, B, '=', C.dim, M.rail);
         }
         for (const st of s.stations) {
           const x = Math.round(st.x - s.off);
@@ -674,7 +710,8 @@ const Scenes = (() => {
             tag(wx + 11, top + 3, w.i);
           });
         } else if (h.slot === 'water') {
-          const line = sea ? B : B + 2, bx = Math.round(g.cols * (s.portrait ? 0.2 : 0.32));
+          // behind a train on the sea, like the dinosaur
+          const line = sea ? B : B + 2, bx = Math.round(g.cols * (s.portrait ? 0.2 : s.rails && sea ? 0.07 : 0.32));
           const bob = Math.sin(s.t * 1.6 + bx * 0.18) > 0.5 ? -1 : 0;
           g.sprite(bx, line - BOAT.length + 2 + bob, BOAT.slice(0, 4), C.fg, M.sail, true);
           g.sprite(bx, line - BOAT.length + 6 + bob, BOAT.slice(4), C.fg, M.boat, true);
@@ -808,7 +845,8 @@ const Scenes = (() => {
 
     // A scene from a recipe (the lab's composer, or the home's random ones).
     compose(recipe) {
-      this.s = { ...this.fresh(), recipe: { picks: [], ...recipe } };
+      // only what fits the land and the time (scene-catalog.js says what goes with what)
+      this.s = { ...this.fresh(), recipe: { ...recipe, picks: SceneCatalog.fit({ land: recipe.land || 'countryside', time: recipe.time || 'day', picks: recipe.picks || [] }) } };
       scene.init(this.s);
     }
 

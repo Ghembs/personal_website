@@ -346,6 +346,8 @@ _| || |_
   const FISH = ['><>', '<><', '><((°>', '<°))><'];
   const CHEST = [' ____', '[_$__]'];
   const MINIPLANE = ['_|_', '=[_]>'];
+  // a crab, scuttling sideways: two frames of legs
+  const CRAB = [[' (\\/)(\\/)', '  \\(°°)/', '  //  \\\\'], [' (\\/)(\\/)', '  \\(°°)/', '  \\\\  //']];
 
 
   const GROUND = {
@@ -507,6 +509,14 @@ __|_________________|__`);
     return Array.from({ length: h }, (_, r) => pad.map((b, k) => b[r].padEnd(widthOf(blocks[k]) + 2)).join(''));
   };
 
+  // What goes with what: an item may ask for some lands, some times of day or
+  // another item (`only`). The composer greys out the rest; the engine leaves
+  // it out. Odd mixes stay possible: a Duomo by the sea, a pterodactyl over
+  // the countryside.
+  const ON_LAND = ['desert', 'jungle', 'volcano', 'ice', 'countryside'];
+  const RIVERS = ['sea', 'countryside', 'jungle'];   // where a boat finds water
+  const onLand = (t) => ({ ...t, only: t.only || { lands: ON_LAND } });
+
   const LANDS = {
     desert: ['Deserto', 'Desert'], jungle: ['Giungla', 'Jungle'], volcano: ['Vulcano', 'Volcano'], ice: ['Ghiaccio', 'Ice'],
   };
@@ -527,8 +537,8 @@ __|_________________|__`);
       item('snow', 'Neve', 'Snow', ['  .--.', ' (    )-.', '(______)', ' *  .  *', '.  *  . '], { palette: { bg: '#eef2f5', fg: '#3b4a57', dim: '#a9b8c4', accent: '#c8553d', green: '#6f8f86' } }),
     ] },
     { id: 'vehicles', name: { it: 'Mezzi e protagonisti', en: 'Vehicles and heroes' }, items: [
-      item('dino', 'Dinosauro', 'Dinosaur', [...DINO, ...DINO_LEGS[0]]),
-      item('boat', 'Barca a vela', 'Sailing boat', BOAT),
+      item('dino', 'Dinosauro', 'Dinosaur', [...DINO, ...DINO_LEGS[0]], { only: { lands: ON_LAND } }),
+      item('boat', 'Barca a vela', 'Sailing boat', BOAT, { only: { lands: RIVERS } }),
       item('plane', 'Aereo', 'Plane', PLANE),
       item('miniplane', 'Aereo piccolo', 'Small plane', MINIPLANE),
       item('train', 'Treno', 'Train', side(WAGON, LOCO)),
@@ -544,7 +554,7 @@ __|_________________|__`);
       item('church', 'Chiesa', 'Church', GROUND.church.lines), item('castle', 'Castello', 'Castle', GROUND.castle.lines),
       item('factory', 'Fabbrica', 'Factory', GROUND.factory.lines), item('mill', 'Mulino', 'Windmill', [...BLADES[0], ...GROUND.mill.lines]),
       item('station', 'Stazione', 'Station', STATION),
-    ] },
+    ].map(onLand) },
     { id: 'trees', name: { it: 'Alberi e piante', en: 'Trees and plants' }, items: [
       item('oak', 'Quercia', 'Oak', GROUND.oak.lines), item('treeR', 'Albero', 'Tree', GROUND.treeR.lines),
       item('cypressL', 'Cipresso', 'Cypress', GROUND.cypressL.lines), item('pineL', 'Pino', 'Pine', GROUND.pineL.lines),
@@ -552,40 +562,64 @@ __|_________________|__`);
       item('palmL', 'Palma', 'Palm', TREES.palmL), item('canopyL', 'Chioma tropicale', 'Tropical canopy', TREES.canopyL),
       item('fern', 'Felce', 'Fern', TREES.fern), item('deadL', 'Albero secco', 'Dead tree', TREES.deadL),
       item('pineXL', 'Abete', 'Fir', TREES.pineXL),
-    ].map((t) => ({ ...t, role: 'green' })) },
+    ].map((t) => onLand({ ...t, role: 'green' })) },
     { id: 'obstacles', name: { it: 'Ostacoli', en: 'Obstacles' }, items: [
       item('cactusL', 'Cactus', 'Cactus', OBST.cactusL.lines), item('cactusD', 'Cactus doppio', 'Twin cactus', OBST.cactusD.lines),
       item('rockL', 'Masso', 'Boulder', OBST.rockL.lines), item('logL', 'Tronco', 'Log', OBST.logL.lines),
       item('iceL', 'Blocchi di ghiaccio', 'Ice blocks', OBST.iceL.lines), item('snowman', 'Pupazzo di neve', 'Snowman', OBST.snowman.lines),
       item('lava', 'Lava', 'Lava', OBST.lava.lines, { role: 'accent' }),
-    ] },
+    ].map((t) => ({ ...t, only: { lands: ON_LAND, needs: 'vehicles.dino' } })) },
     { id: 'animals', name: { it: 'Animali', en: 'Animals' }, items: [
       item('ptero', 'Pterodattilo', 'Pterodactyl', PTERO[0]),
       item('gull', 'Gabbiano', 'Gull', ['~v~']),
-      item('fish', 'Pesci', 'Fish', [FISH[2], '   ' + FISH[1], FISH[0]]),
+      item('fish', 'Pesci', 'Fish', [FISH[2], '   ' + FISH[1], FISH[0]], { only: { lands: ['sea'] } }),
+      item('crab', 'Granchi', 'Crabs', CRAB[0], { role: 'accent', only: { lands: ['sea', 'desert', 'jungle'] } }),
     ] },
     { id: 'sky', name: { it: 'Cielo', en: 'Sky' }, items: [
       ...CLOUDS.map((c, k) => item(`cloud${k}`, `Nuvola ${k + 1}`, `Cloud ${k + 1}`, c, { role: 'dim' })),
-      item('sun', 'Sole', 'Sun', SUN, { role: 'accent' }), item('moon', 'Luna', 'Moon', MOON, { role: 'accent' }),
-      item('stars', 'Stelle', 'Stars', ['*   .    *', '   .   *  ', ' *     .  '], { role: 'dim' }),
+      item('sun', 'Sole', 'Sun', SUN, { role: 'accent', only: { times: ['day'] } }), item('moon', 'Luna', 'Moon', MOON, { role: 'accent' }),
+      item('stars', 'Stelle', 'Stars', ['*   .    *', '   .   *  ', ' *     .  '], { role: 'dim', only: { times: ['night'] } }),
     ] },
     { id: 'ground', name: { it: 'Terreno', en: 'Ground' }, items: [
       item('bones', 'Ossa', 'Bones', PROPS.bones), item('skull', 'Teschio', 'Skull', PROPS.skull),
       item('flowers', 'Fiori', 'Flowers', PROPS.flowers, { role: 'green' }), item('mushrooms', 'Funghi', 'Mushrooms', PROPS.mushrooms),
       item('grass', 'Erba', 'Grass', PROPS.grass, { role: 'green' }), item('stones', 'Sassi', 'Stones', PROPS.stones),
       item('drift', 'Neve', 'Snow drift', PROPS.drift, { role: 'dim' }), item('crack', 'Crepa di lava', 'Lava crack', PROPS.crack, { role: 'accent' }),
-      item('buoy', 'Boa', 'Buoy', BUOY, { role: 'accent' }), item('chest', 'Forziere', 'Treasure chest', CHEST, { role: 'accent' }),
-    ] },
+      item('buoy', 'Boa', 'Buoy', BUOY, { role: 'accent', only: { lands: RIVERS } }),
+      item('chest', 'Forziere', 'Treasure chest', CHEST, { role: 'accent', only: { lands: ['sea'] } }),
+    ].map(onLand) },
     { id: 'logos', name: { it: 'Loghi', en: 'Logos' }, items: [
       item('vesta-laris', 'Vesta Laris', 'Vesta Laris', ICONS['vesta-laris']),
       item('stf', 'Stairway to Florence', 'Stairway to Florence', ICONS.stf),
-    ] },
+    ].map(onLand) },
   ];
 
+  const byKey = new Map(categories.flatMap((c) => c.items.map((it) => [`${c.id}.${it.id}`, it])));
+  // Why an item can't be in a scene ({ why: 'land' | 'time' | 'needs', ... }),
+  // or null when it can.
+  function blocked(key, { land = 'countryside', time = 'day', picks = [] } = {}) {
+    const o = byKey.get(key)?.only;
+    if (!o) return null;
+    if (o.lands && !o.lands.includes(land)) return { why: 'land', land };
+    if (o.times && !o.times.includes(time)) return { why: 'time', times: o.times };
+    if (o.needs && !picks.includes(o.needs)) return { why: 'needs', item: o.needs };
+    return null;
+  }
+  // The picks of a recipe that fit its land and time (dropping one may drop
+  // another: no dinosaur, no obstacles).
+  function fit({ land, time, picks = [] }) {
+    let out = picks.filter((k) => byKey.has(k));
+    for (let n = -1; n !== out.length;) {
+      n = out.length;
+      out = out.filter((k) => !blocked(k, { land, time, picks: out }));
+    }
+    return out;
+  }
+
   return {
-    categories,
+    categories, byKey, blocked, fit,
     parts: {
-      CLOUDS, SUN, DUSK_SUN, MOON, DUOMO, PEARL, ICONS, DINO, DINO_LEGS, DINO_AIR, BIOMES, OBST, TREES, PTERO, PROPS, FAR, BOAT, BUOY, FISH, CHEST, MINIPLANE, GROUND, BLADES, GENERIC, PLANE, BALLOON, KITE, LOCO, WAGON, STATION, TUNNEL_IN, TUNNEL_OUT, SEA_PALETTES, PLANE_PALETTES, TRAIN_PALETTES,
+      CLOUDS, SUN, DUSK_SUN, MOON, DUOMO, PEARL, ICONS, DINO, DINO_LEGS, DINO_AIR, BIOMES, OBST, TREES, PTERO, PROPS, FAR, BOAT, BUOY, FISH, CHEST, MINIPLANE, CRAB, GROUND, BLADES, GENERIC, PLANE, BALLOON, KITE, LOCO, WAGON, STATION, TUNNEL_IN, TUNNEL_OUT, SEA_PALETTES, PLANE_PALETTES, TRAIN_PALETTES,
     },
     art, widthOf,
   };

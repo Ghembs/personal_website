@@ -107,3 +107,8 @@ footer { padding: 16px 0 22px; margin-top: 18px; color: var(--dim); font-size: 1
     background: var(--line);
   }
 }
+
+/* what doesn't fit the land, the time or the other picks */
+.item.off { opacity: 0.35; cursor: not-allowed; border-style: dashed; }
+.item.off:hover { border-color: var(--line); }
+.item .why { font-size: 10px; color: var(--dim); font-style: italic; }

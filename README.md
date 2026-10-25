@@ -8,8 +8,8 @@ always passing through a grid of characters (p5.js WebGL shaders):
 - **tunnel**: rectangles in riso inks turning on the inner wall of a cylinder (Canvas2D);
 - **scene**: an ascii scene drawn cell by cell, a random recipe of the lab's
   catalogue — a land (desert, jungle, volcano, ice, countryside, sea), a time
-  of day, maybe rain or snow, a hero (dinosaur, boat, plane, train, balloon)
-  and things to see. With the dinosaur it is a little game (space or a tap to
+  of day, maybe rain or snow, one or two heroes (dinosaur, boat, plane, train,
+  balloon; a train on the sea, a dinosaur chasing it) and things to see. With the dinosaur it is a little game (space or a tap to
   jump, hold to jump higher). Links sit on random objects of the scene, never
   twice at once; Florence's Duomo carries only STF and Shanghai's Oriental
   Pearl tower only 中文;
@@ -31,7 +31,7 @@ public/          the site, served as is (no build step)
   kaleido.js     the tunnel
   shanshui.js    the handscroll
   scenes.js      the ascii scenes (behaviour)
-  scene-catalog.js  their drawings, lands and palettes, by category
+  scene-catalog.js  their drawings, lands and palettes, by category; what goes with what
   lab/           the lab notebook: one card per experiment (lab.js)
   lab/scene/     the scene composer: the same full-screen scene as the home, its
                  elements in a drawer (Scenes.compose); save as image or text
