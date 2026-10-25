@@ -125,6 +125,12 @@ const Voice = (() => {
       await chain([s]);
     },
 
+    // a syllable by name ('ma3'), and whether it was recorded
+    has: (name) => !!index?.syl.has(name),
+    async syllable(name) { await ready; if (index.syl.has(name)) await chain([name]); },
+    // 'mǎ' -> 'ma3' (the first syllable of a pinyin)
+    async name(py) { await ready; return split(py)?.[0] || null; },
+
     // a word or a character, with its pinyin when the page knows it
     async word(text, py) {
       await ready;

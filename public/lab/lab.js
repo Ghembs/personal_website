@@ -39,11 +39,11 @@ const EXPERIMENTS = [
     },
   },
   {
-    id: 'tones', date: '…', tags: ['cinese', 'audio'],
+    id: 'tones', href: 'toni/', tags: ['cinese', 'audio'],
     title: { it: 'Allenamento sui toni', en: 'Tone trainer' },
     text: {
-      it: 'Ascolta una sillaba e indovina il tono. Usa la sintesi vocale del dispositivo, come l\'introduzione al cinese.',
-      en: 'Hear a syllable and guess its tone. It uses the device\'s speech synthesis, like the introduction to Chinese.',
+      it: 'Ascolta un carattere che non vedi e indovinane il tono, fino al livello HSK che vuoi; poi la sua scheda. Registrazioni di madrelingua.',
+      en: 'Hear a character you can\'t see and guess its tone, up to the HSK level you choose; then its card. Native speakers\' recordings.',
     },
     sketch: ['  ā   á   ǎ   à', ' ___  /  \\_/  \\', '               \\'],
   },

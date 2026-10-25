@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Allenamento sui toni · Giuliano Gambacorta</title>
+  <meta name="description" content="Ascolta un carattere cinese, nascosto, e indovinane il tono: registrazioni di madrelingua, livelli HSK 1–4.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="toni.css">
+</head>
+<body>
+  <header id="top">
+    <a class="back" href="../" data-i18n="back">[ ← cesta dei giochi ]</a>
+    <button id="lang">EN</button>
+  </header>
+
+  <main>
+    <h1 data-i18n="title">allenamento sui toni</h1>
+    <p class="hint" data-i18n="hint">ascolta un carattere che non vedi e indovinane il tono</p>
+
+    <div class="levels">
+      <span data-i18n="upTo">fino a</span>
+      <button data-level="1">HSK 1</button><button data-level="2">HSK 2</button><button data-level="3">HSK 3</button><button data-level="4">HSK 4</button>
+    </div>
+
+    <button id="play" class="play" data-i18n-attr="aria-label:listen"><span>▶</span></button>
+    <p id="status" class="status" data-i18n="start">premi ▶ (o spazio) per ascoltare</p>
+
+    <div id="tones" class="tones"></div>
+
+    <section id="answer" hidden>
+      <div class="row">
+        <span id="glyph" class="glyph hz">？</span>
+        <div>
+          <div id="reading" class="reading"></div>
+          <div class="acts">
+            <button id="reveal" data-i18n="reveal">[ mostra la scheda ]</button>
+            <button id="next" class="primary" data-i18n="next">[ prossimo → ]</button>
+          </div>
+        </div>
+      </div>
+      <div id="card" class="card" hidden></div>
+    </section>
+
+    <section class="stats">
+      <div id="score" class="score"></div>
+      <div id="bars" class="bars"></div>
+      <button id="reset" data-i18n="reset">[ azzera ]</button>
+    </section>
+  </main>
+
+  <footer data-i18n="foot">Registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Caratteri e significati dalla <a href="../../cinese/">sezione di cinese</a> (HSK 2025, CC-CEDICT).</footer>
+
+  <script src="../../i18n.js"></script>
+  <script src="../../cinese/voice.js"></script>
+  <script src="toni.js"></script>
+</body>
+</html>

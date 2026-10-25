@@ -38,6 +38,9 @@ public/          the site, served as is (no build step)
   lab/shanshui/  the shan shui painter: a density for each element of the
                  handscroll (Shanshui.catalog), painted on confirm into a scroll
                  of 2-6 panels or a screen-sized frame (Shanshui.paint); save as PNG
+  lab/toni/      the tone trainer: a hidden HSK character is pronounced (its
+                 syllable, from cinese/voice.js) and its tone guessed, tones
+                 drawn evenly; then the character, its card on request
   img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders
   style.css
