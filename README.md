@@ -37,7 +37,7 @@ public/          the site, served as is (no build step)
                  elements in a drawer (Scenes.compose); save as image or text
   lab/shanshui/  the shan shui painter: a density for each element of the
                  handscroll (Shanshui.catalog), painted on confirm into a scroll
-                 of 2-8 panels or a screen-sized frame (Shanshui.paint); save as PNG
+                 of 2-6 panels or a screen-sized frame (Shanshui.paint); save as PNG
   img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders
   style.css

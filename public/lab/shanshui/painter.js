@@ -56,7 +56,7 @@ if (q.has('seed')) seed = (+q.get('seed') >>> 0) || seed;
 if (q.get('f')) {
   const [f, n] = q.get('f').split(':');
   format = f === 'screen' ? 'screen' : 'scroll';
-  length = Math.min(8, Math.max(2, +n || 4));
+  length = Math.min(6, Math.max(2, +n || 4));
 }
 
 function save() {
@@ -170,10 +170,12 @@ $('#seed').addEventListener('change', () => { seed = (+$('#seed').value >>> 0) |
 $('#reseed').addEventListener('click', () => { seed = newSeed(); controls(); changed(); });
 $('#home').addEventListener('click', () => { dens = { ...HOME }; catalog(); changed(); });
 $('#clear').addEventListener('click', () => { dens = Object.fromEntries(KEYS.map((k) => [k, 0])); catalog(); changed(); });
-// a random recipe, still a landscape: some ground, some water, distant ridges
+// a random recipe, still a landscape: some water, distant ridges, and always
+// mountains or plateaus (at least 0.2), or it comes out flat
 $('#random').addEventListener('click', () => {
   for (const k of KEYS) dens[k] = Math.random() < 0.45 ? round(0.4 + Math.random() * 1.6) : 0;
-  if (!(dens['mountains.mount'] || dens['mountains.hill'] || dens['mountains.plateau'])) dens['mountains.mount'] = 1;
+  const relief = Math.random() < 0.5 ? 'mountains.mount' : 'mountains.plateau';
+  if (Math.max(dens['mountains.mount'], dens['mountains.plateau']) < 0.2) dens[relief] = round(0.2 + Math.random() * 1.3);
   dens['water.waves'] ||= 1;
   dens['mountains.ridges'] ||= 1;
   seed = newSeed();

@@ -757,7 +757,12 @@ const Shanshui = (() => {
   // dark trees; there are always shrubs, sometimes crooked trees, rarely a lodge.
   function flatDec(c, bd, { kind = randChoice([0, 0, 1, 2, 3, 4]), crooked = true, shrubs = true, lodge = R() < 0.2 } = {}) {
     const mid = (bd.ymin + bd.ymax) / 2;
-    const boulder = (x, y, big) => rock(c, x, y, big ? { wid: 50 + R() * 20, hei: 40 + R() * 20 } : { wid: 10 + R() * 20, hei: 10 + R() * 20 });
+    // a rock on the terrace: kept inside it (the terrace narrows at its ends), or left out
+    const boulder = (x, y, big) => {
+      const wid = big ? 50 + R() * 20 : 10 + R() * 20, hei = big ? 40 + R() * 20 : 10 + R() * 20;
+      const lo = bd.xmin + (bd.xmax - bd.xmin) * 0.12 + wid / 2, hi = bd.xmax - (bd.xmax - bd.xmin) * 0.12 - wid / 2;
+      if (lo <= hi) rock(c, Math.min(Math.max(x, lo), hi), y, { wid, hei });
+    };
     for (let j = 0; j < R() * 5; j++) boulder(normRand(bd.xmin, bd.xmax), mid + normRand(-10, 10) + 10, false);
     if (crooked) {
       for (let j = 0; j < randChoice([0, 0, 1, 2]); j++) {
