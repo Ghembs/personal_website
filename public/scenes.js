@@ -380,7 +380,10 @@ const Scenes = (() => {
     action(s) {
       if (!s.walker || !s.recipe.game) return false;
       if (!s.game || s.over) {
-        Object.assign(s, { game: true, over: false, score: 0, speed: s.speed0 * JUMP.speed, obst: [], nextObst: s.off + s.cols * 0.7 });
+        // the first obstacle beyond the jump this very tap makes, plus a second to get ready
+        // (on a narrow phone 70% of the screen is less than one jump)
+        const v = s.speed0 * JUMP.speed, first = this.walkerX(s) + widthOf(DINO) + v * (JUMP_AIR + 1);
+        Object.assign(s, { game: true, over: false, score: 0, speed: v, obst: [], nextObst: s.off + Math.max(s.cols * 0.7, first) });
       }
       s.held = true;
       if (s.y <= 0.01) this.jump(s); else s.buffer = s.t;
