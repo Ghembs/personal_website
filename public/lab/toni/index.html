@@ -9,11 +9,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="toni.css">
+  <script>
+    // the same theme as the Chinese section
+    try {
+      const t = localStorage.getItem('hanzi-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.dataset.theme = t;
+    } catch (e) { /* private mode */ }
+  </script>
 </head>
 <body>
   <header id="top">
     <a class="back" href="../" data-i18n="back">[ ← cesta dei giochi ]</a>
+    <a href="../../cinese/" data-i18n="section">[ 汉字 la sezione di cinese → ]</a>
     <button id="lang">EN</button>
+    <button id="theme" data-i18n-attr="title:theme;aria-label:theme">◐</button>
   </header>
 
   <main>
