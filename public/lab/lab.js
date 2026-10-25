@@ -18,8 +18,9 @@ const TEXT = {
 };
 const t = (k) => I18N.t(TEXT, k);
 
-// The experiments. `href` for those that exist; `preview` 'scenes' runs the
-// ascii scene engine live in the card; `sketch` is a drawing for the others.
+// The experiments. `href` for those that exist; `preview` runs the ascii scene
+// engine ('scenes') or the handscroll ('shanshui') live in the card; `sketch`
+// is a drawing for the others.
 const EXPERIMENTS = [
   {
     id: 'composer', href: 'scene/', preview: 'scenes', tags: ['ascii', 'generativo'],
@@ -30,13 +31,12 @@ const EXPERIMENTS = [
     },
   },
   {
-    id: 'shanshui', date: '…', tags: ['generativo', '山水'],
+    id: 'shanshui', href: 'shanshui/', preview: 'shanshui', tags: ['generativo', '山水'],
     title: { it: 'Pittore di shan shui', en: 'Shan shui painter' },
     text: {
-      it: 'Il rotolo di paesaggio della home, a tutto schermo, con i suoi parametri e l\'esportazione dell\'immagine.',
-      en: 'The home page landscape scroll, full screen, with its parameters and image export.',
+      it: 'Il rotolo di paesaggio della home, con tutti gli elementi dell\'originale: montagne, altopiani, acque, alberi, architetture e figure, ognuno con la sua densità. Si dipinge su conferma e si salva come immagine.',
+      en: 'The home page landscape scroll, with all the original\'s elements: mountains, plateaus, waters, trees, buildings and figures, each with its density. It is painted when you confirm, and saved as an image.',
     },
-    sketch: ['     /\\', '  /\\/  \\  /\\', ' /  \\   \\/  \\', '~~~~~~~~~~~~~~', '  ~~  _/\\_ ~~'],
   },
   {
     id: 'tones', date: '…', tags: ['cinese', 'audio'],
@@ -62,7 +62,7 @@ function render() {
     const tilt = ((k * 37) % 7 - 3) * 0.6;
     const body = `
       <div class="tape"></div>
-      <div class="view">${x.preview ? `<canvas data-preview="${x.preview}"></canvas>` : `<pre>${esc(x.sketch.join('\n'))}</pre>`}</div>
+      <div class="view">${x.preview === 'scenes' ? '<canvas data-preview="scenes"></canvas>' : x.preview ? `<div class="ink" data-preview="${x.preview}"></div>` : `<pre>${esc(x.sketch.join('\n'))}</pre>`}</div>
       <h2>${x.title[L]}</h2>
       <p>${x.text[L]}</p>
       <div class="meta"><span>${x.tags.map((g) => `#${TAGS[L]?.[g] || g}`).join(' ')}</span><span class="when">${x.href ? t(x.status || 'open') : t('soon')}</span></div>`;
@@ -73,11 +73,36 @@ function render() {
   startPreviews();
 }
 
-// Live previews: the ascii scenes engine, in the card, only while it is seen.
+// Live previews, in the card, only while it is seen.
 let running = [];
+function whileSeen(el, frame, size) {
+  let on = false, last = 0, raf = 0;
+  const loop = (now) => {
+    frame(Math.min(0.1, (now - last) / 1000 || 0));
+    last = now;
+    if (on) raf = requestAnimationFrame(loop);
+  };
+  const io = new IntersectionObserver(([e]) => {
+    on = e.isIntersecting;
+    if (on) { last = performance.now(); raf = requestAnimationFrame(loop); } else cancelAnimationFrame(raf);
+  });
+  io.observe(el);
+  window.addEventListener('resize', size);
+  running.push({ stop: () => { on = false; cancelAnimationFrame(raf); io.disconnect(); window.removeEventListener('resize', size); } });
+}
+
+// the handscroll, with a few of the original's elements the home doesn't show
+const SHAN_PREVIEW = { 'mountains.plateau': 1, 'trees.pine': 0.6, 'buildings.tower': 0.8, 'buildings.hall': 0.6 };
+
 function startPreviews() {
   running.forEach((r) => r.stop());
   running = [];
+  document.querySelectorAll('[data-preview="shanshui"]').forEach((box) => {
+    const sh = new Shanshui(box, [], SHAN_PREVIEW);
+    const size = () => { sh.resize(box.clientWidth, box.clientHeight, window.devicePixelRatio || 1); sh.update(0); };
+    size();
+    whileSeen(box, (dt) => sh.update(dt), size);
+  });
   document.querySelectorAll('canvas[data-preview="scenes"]').forEach((cv) => {
     const box = cv.parentElement;
     const sc = new Scenes(cv, [], '', {});
@@ -85,23 +110,13 @@ function startPreviews() {
     const size = () => sc.resize(box.clientWidth, box.clientHeight, window.devicePixelRatio || 1);
     size();
     sc.pick();
-    let on = false, last = 0, raf = 0, since = 0;
-    const frame = (now) => {
-      const dt = Math.min(0.1, (now - last) / 1000 || 0);
-      last = now;
+    let since = 0;
+    whileSeen(cv, (dt) => {
       since += dt;
       if (since > 14) { sc.pick(); since = 0; }        // a new scene now and then
       sc.update(dt);
       sc.render();
-      if (on) raf = requestAnimationFrame(frame);
-    };
-    const io = new IntersectionObserver(([e]) => {
-      on = e.isIntersecting;
-      if (on) { last = performance.now(); raf = requestAnimationFrame(frame); } else cancelAnimationFrame(raf);
-    });
-    io.observe(cv);
-    window.addEventListener('resize', size);
-    running.push({ stop: () => { on = false; cancelAnimationFrame(raf); io.disconnect(); window.removeEventListener('resize', size); } });
+    }, size);
   });
 }
 

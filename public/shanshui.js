@@ -1495,6 +1495,27 @@ const Shanshui = (() => {
     // the densities a recipe comes to, needs applied
     static densities(recipe) { return densities(recipe); }
 
+    // A finished painting for the lab's painter: `width` world units of the
+    // scroll (a panel is 800), `height` pixels tall. One panel is painted per
+    // frame, onPanel(done, total) tells how far it got. Resolves to the canvas.
+    static async paint(recipe, seed, { width = 4 * PW, height = 1000, onPanel = () => {} } = {}) {
+      const sh = new Shanshui(document.createElement('div'), [], recipe);
+      sh.setRecipe(recipe, seed);
+      Object.assign(sh, { s: height / WORLD_H, dpr: 1, h: height });
+      sh.w = width * sh.s;
+      const out = document.createElement('canvas');
+      out.width = Math.round(sh.w);
+      out.height = height;
+      const g = out.getContext('2d');
+      const n = Math.ceil(width / PW);
+      for (let k = 0; k < n; k++) {
+        g.drawImage(sh.renderPanel(k), Math.round(k * PW * sh.s), 0);
+        onPanel(k + 1, n);
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      return out;
+    }
+
     // A new recipe (and seed): everything is planned and painted again.
     setRecipe(recipe, seed = this.seed) {
       this.dens = densities(recipe || {});

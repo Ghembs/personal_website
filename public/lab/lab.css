@@ -100,6 +100,8 @@ a.card:hover { transform: rotate(0deg) translateY(-4px); box-shadow: 0 2px 4px r
   place-items: center;
 }
 .view canvas { width: 100%; height: 100%; display: block; }
+.view .ink { position: relative; width: 100%; height: 100%; overflow: hidden; background: #efe9dc; }
+.view .ink canvas { position: absolute; left: 0; top: 0; width: auto; height: auto; will-change: transform; }
 .view pre { margin: 0; font: 13px/1.15 var(--mono); color: var(--pencil); }
 .card h2 { font-family: var(--hand); font-size: 30px; font-weight: 700; line-height: 1.1; margin: 12px 0 4px; }
 .card p { margin: 0 0 10px; font-size: 13px; color: #3c4048; }

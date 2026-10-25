@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pittore di shan shui · Giuliano Gambacorta</title>
+  <meta name="description" content="Dipingi un rotolo di paesaggio a inchiostro: scegli montagne, acque, alberi, architetture e figure, e la densità di ognuno.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&text=%E5%B1%B1%E6%B0%B4&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="painter.css">
+</head>
+<body>
+  <div id="view">
+    <div id="art"></div>
+    <p id="empty" data-i18n="empty">componi la ricetta e premi [ dipingi ]</p>
+    <div id="progress" hidden><span id="progress-text"></span><i><b id="progress-bar"></b></i></div>
+  </div>
+
+  <button id="open" aria-controls="panel" aria-expanded="true" data-i18n="open">[ ≡ ricetta ]</button>
+
+  <aside id="panel">
+    <header id="top">
+      <a class="back" href="../" data-i18n="back">[ ← cesta dei giochi ]</a>
+      <button id="lang">EN</button>
+      <button id="close" data-i18n="close" data-i18n-attr="aria-label:closeLabel">[ × ]</button>
+    </header>
+    <h1 data-i18n="title">pittore di shan shui</h1>
+    <p class="hint" data-i18n="hint">scegli cosa far apparire e quanto: il paesaggio si dipinge solo quando confermi</p>
+
+    <div class="actions">
+      <button id="paint" class="primary" data-i18n="paint">[ dipingi ]</button>
+      <button id="save" data-i18n="save" disabled>[ salva immagine ]</button>
+    </div>
+
+    <div class="controls">
+      <fieldset class="format">
+        <legend data-i18n="format">formato</legend>
+        <label><input type="radio" name="format" value="scroll" checked> <span data-i18n="scroll">rotolo</span></label>
+        <label class="len"><span data-i18n="length">lunghezza</span> <input id="length" type="range" min="2" max="8" step="1" value="4"> <output id="length-out">4</output></label>
+        <label><input type="radio" name="format" value="screen"> <span data-i18n="screen">a schermo</span></label>
+      </fieldset>
+      <div class="seed">
+        <label><span data-i18n="seed">seme</span> <input id="seed" type="number" min="0" max="999999999" step="1"></label>
+        <button id="reseed" data-i18n="reseed">[ nuovo seme ]</button>
+      </div>
+      <div class="presets">
+        <button id="random" data-i18n="random">[ a caso ]</button>
+        <button id="home" data-i18n="home">[ come nella home ]</button>
+        <button id="clear" data-i18n="clear">[ svuota ]</button>
+      </div>
+    </div>
+
+    <div id="catalog"></div>
+
+    <footer data-i18n="foot">Disegni portati, e semplificati, da <a href="https://github.com/LingDong-/shan-shui-inf">shan-shui-inf</a> di Lingdong Huang (MIT); case, villaggi, padiglioni, ponti, viandanti e stormi sono nuovi.</footer>
+  </aside>
+
+  <script src="../../i18n.js"></script>
+  <script src="../../shanshui.js"></script>
+  <script src="painter.js"></script>
+</body>
+</html>
