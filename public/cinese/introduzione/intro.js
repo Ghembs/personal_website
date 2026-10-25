@@ -1,20 +1,20 @@
-// Introduction page: language and theme switches, pronunciation through the
-// device's speech synthesis (when it has a Chinese voice), stroke-order demos
-// with Hanzi Writer.
+// Introduction page: language and theme switches, pronunciation (voice.js:
+// native recordings, the device's voice for whole sentences), stroke-order
+// demos with Hanzi Writer.
 
 const TEXT = {
   it: {
     title: 'Introduzione al cinese · Giuliano Gambacorta', back: '← i caratteri HSK 1–4',
     nTones: 'toni', nPinyin: 'pinyin', nChars: 'caratteri', nGrammar: 'grammatica', theme: 'Tema chiaro / scuro',
-    foot: 'Testi di Giuliano Gambacorta. Ordine dei tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>. La pronuncia usa la sintesi vocale del tuo dispositivo.',
-    noVoice: 'Il tuo dispositivo non ha una voce cinese per la sintesi vocale: i pulsanti di ascolto sono disattivati.',
+    foot: 'Testi di Giuliano Gambacorta. Ordine dei tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>. Pronuncia: registrazioni di <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA); le frasi con la sintesi vocale del tuo dispositivo, se ha una voce cinese.',
+    noVoice: 'Dove vedi <span class="say-icon">▶</span> puoi ascoltare la pronuncia. Il tuo dispositivo non ha una voce cinese: le frasi vengono lette sillaba per sillaba.',
     lang: 'EN', langName: 'English',
   },
   en: {
     title: 'An introduction to Chinese · Giuliano Gambacorta', back: '← the HSK 1–4 characters',
     nTones: 'tones', nPinyin: 'pinyin', nChars: 'characters', nGrammar: 'grammar', theme: 'Light / dark theme',
-    foot: 'Texts by Giuliano Gambacorta. Stroke order: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>. Pronunciation uses your device\'s speech synthesis.',
-    noVoice: 'Your device has no Chinese voice for speech synthesis: the listen buttons are off.',
+    foot: 'Texts by Giuliano Gambacorta. Stroke order: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>. Pronunciation: recordings from <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA); sentences with your device\'s speech synthesis, if it has a Chinese voice.',
+    noVoice: 'Where you see <span class="say-icon">▶</span> you can listen to the pronunciation. Your device has no Chinese voice: sentences are read syllable by syllable.',
     lang: 'IT', langName: 'Italiano',
   },
 };
@@ -31,7 +31,7 @@ function applyLanguage() {
   const b = document.getElementById('lang');
   b.textContent = I18N.t(TEXT, 'lang');
   b.title = I18N.t(TEXT, 'langName');
-  findVoice?.();
+  voiceNote?.();
   watchStrokes?.();
 }
 
@@ -44,38 +44,19 @@ document.getElementById('theme').addEventListener('click', () => {
 
 // ---------- pronunciation ----------
 
-const synth = window.speechSynthesis;
-let voice = null;
-function findVoice() {
-  const voices = synth ? synth.getVoices() : [];
-  voice = voices.find((v) => /^zh[-_](CN|Hans)/i.test(v.lang)) || voices.find((v) => /^zh/i.test(v.lang)) || null;
-  document.body.classList.toggle('no-voice', !voice);
+// words and syllables are always there (recordings); only sentences need a voice
+function voiceNote() {
   const note = document.getElementById('voice-note');
-  if (note && !voice && voices.length) note.textContent = I18N.t(TEXT, 'noVoice');
+  if (note && !Voice.hasVoice) note.innerHTML = I18N.t(TEXT, 'noVoice');
 }
-if (synth) {
-  findVoice();
-  synth.addEventListener?.('voiceschanged', findVoice);
-} else {
-  document.body.classList.add('no-voice');
-}
-
-function say(text) {
-  if (!voice) return;
-  synth.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.voice = voice;
-  u.lang = voice.lang;
-  u.rate = 0.75;
-  synth.speak(u);
-}
+setTimeout(() => Voice.onVoice(() => voiceNote()), 1500);   // voices arrive late on some browsers
 
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-say]');
-  if (b) { say(b.dataset.say); return; }
-  // grammar sentences: the Chinese part
+  if (b) { Voice.word(b.dataset.say, b.dataset.py); return; }
+  // grammar sentences: the Chinese part, with its pinyin for the syllables
   const s = e.target.closest('.s');
-  if (s) say(s.querySelector('.hz').textContent);
+  if (s) Voice.sentence(s.querySelector('.hz').textContent, s.querySelector('i')?.textContent);
 });
 
 // ---------- stroke order ----------

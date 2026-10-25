@@ -79,3 +79,11 @@ taken from the HSK syllabus; see
   `hanzi-writer-data` (Arphic Public License), loaded from jsDelivr.
 - Fonts from Google Fonts (SIL Open Font License): JetBrains Mono, Space Grotesk,
   Unbounded, Cormorant Garamond, Ma Shan Zheng.
+
+## audio-cmn
+
+`public/cinese/audio/` holds recordings from
+[audio-cmn](https://github.com/hugolpz/audio-cmn) (Hugo Lopez, PLIDAM, INALCO):
+the Mandarin syllables read by Chen Wang and the HSK words and characters read
+by Yue Tan, both under CC BY-SA, shared under the same licence. See
+`public/cinese/audio/LICENSES.md`.

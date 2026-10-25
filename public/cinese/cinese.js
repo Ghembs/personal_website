@@ -37,7 +37,7 @@ const TEXT = {
     meaning: 'Significato', meanings: 'Significati', readsAs: 'Come si legge la famiglia', nChars: '{n} caratteri · {lv}',
     composition: 'Composizione', what: "cos'è?", phon: 'Fonetico {p}, semantico {s}', picto: 'Pittogramma', ideo: 'Ideogramma',
     family: 'Famiglia fonetica di {p}', examples: "Frasi d'esempio", examplesLv: "Frasi d'esempio · {lv}", loading: 'caricamento…',
-    noSentences: 'Nessuna frase in questi livelli.', words: 'Parole · {lv}', noWords: 'Nessuna parola in questi livelli.',
+    listen: 'ascolta', noSentences: 'Nessuna frase in questi livelli.', words: 'Parole · {lv}', noWords: 'Nessuna parola in questi livelli.',
     measure: 'classificatore', all: 'tutte', char1: 'carattere', charN: 'caratteri', clear: 'Annulla ricerca',
     practice: 'esercitati', again: 'ricomincia', failed: 'Qualcosa è andato storto nel caricamento.',
     pos: { 名: 'nomi', 动: 'verbi', 形: 'aggettivi', 副: 'avverbi', 量: 'classificatori', 代: 'pronomi', 数: 'numerali', 助: 'particelle',
@@ -45,7 +45,7 @@ const TEXT = {
     // page
     home: '← giulianogambacorta', intro: 'introduzione', vLevels: 'livelli', vRadicals: 'radicali', vPhonetic: 'famiglie fonetiche',
     cLevel: 'colore: livello', cTone: 'colore: tono', search: '字 o pinyin', strokesBtn: 'tratti', done: 'fine',
-    sources: 'Dati: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), sillabo HSK 2025. Frasi: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
+    sources: 'Pronuncia: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Dati: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), sillabo HSK 2025. Frasi: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
     lang: 'EN', langName: 'English', theme: 'Tema chiaro / scuro', aView: 'Vista', aLevels: 'Livelli visibili', aDim: 'Dimensioni', aColor: 'Colore',
     aClose: 'Chiudi', aGrip: 'Riduci o espandi la scheda', title: '汉字 · HSK 1–4 · Giuliano Gambacorta',
   },
@@ -55,14 +55,14 @@ const TEXT = {
     meaning: 'Meaning', meanings: 'Meanings', readsAs: 'How the family reads', nChars: '{n} characters · {lv}',
     composition: 'Composition', what: 'what is it?', phon: 'Phonetic {p}, semantic {s}', picto: 'Pictogram', ideo: 'Ideogram',
     family: 'Phonetic family of {p}', examples: 'Example sentences', examplesLv: 'Example sentences · {lv}', loading: 'loading…',
-    noSentences: 'No sentences in these levels.', words: 'Words · {lv}', noWords: 'No words in these levels.',
+    listen: 'listen', noSentences: 'No sentences in these levels.', words: 'Words · {lv}', noWords: 'No words in these levels.',
     measure: 'measure word', all: 'all', char1: 'character', charN: 'characters', clear: 'Clear search',
     practice: 'practise', again: 'start again', failed: 'Something went wrong while loading.',
     pos: { 名: 'nouns', 动: 'verbs', 形: 'adjectives', 副: 'adverbs', 量: 'measure words', 代: 'pronouns', 数: 'numerals', 助: 'particles',
       介: 'prepositions', 连: 'conjunctions', 叹: 'interjections', 拟声: 'onomatopoeia', 前缀: 'prefixes', 后缀: 'suffixes' },
     home: '← giulianogambacorta', intro: 'introduction', vLevels: 'levels', vRadicals: 'radicals', vPhonetic: 'phonetic families',
     cLevel: 'colour: level', cTone: 'colour: tone', search: '字 or pinyin', strokesBtn: 'strokes', done: 'done',
-    sources: 'Data: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), HSK syllabus 2025. Sentences: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Strokes: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
+    sources: 'Pronunciation: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Data: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), HSK syllabus 2025. Sentences: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Strokes: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
     lang: 'IT', langName: 'Italiano', theme: 'Light / dark theme', aView: 'View', aLevels: 'Shown levels', aDim: 'Dimensions', aColor: 'Colour',
     aClose: 'Close', aGrip: 'Fold or unfold the card', title: '汉字 · HSK 1–4 · Giuliano Gambacorta',
   },
@@ -889,6 +889,9 @@ async function main() {
   });
 
   const tonePy = (py) => `<span style="color:${COLORS.tone[toneOf(py)]}">${py}</span>`;
+  const attr = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  // a reading to listen to (voice.js): its syllable
+  const sayPy = (py, c) => `<button class="say" data-read="${py}" data-char="${c}" aria-label="${t('listen')} ${py}" style="color:${COLORS.tone[toneOf(py)]}">${py}</button>`;
 
   function renderNodeCard(node) {
     const r = glyphs[node], d = dec[r] || {};
@@ -897,7 +900,7 @@ async function main() {
     const own = index.has(r) ? reading[index.get(r)] : (d.py || '').split(',')[0];
     card.querySelector('.big').textContent = r;
     card.querySelector('.level').textContent = phonetic ? t('component') : t('radicalN', { n: strokesOf(r) });
-    card.querySelector('.readings').innerHTML = own ? tonePy(own) : '';
+    card.querySelector('.readings').innerHTML = own ? sayPy(own, r) : '';
     card.querySelector('.meanings').innerHTML = `<h2>${t('meaning')}</h2><p>${d.def || '—'}</p>`;
     if (phonetic) {
       // How the family reads: syllables with their tones, the component's own first.
@@ -932,7 +935,7 @@ async function main() {
     card.querySelector('.big').textContent = c;
     card.querySelector('.level').textContent = `HSK ${level}${d.n ? ` · ${t('strokes', { n: d.n })}` : ''}`;
     card.querySelector('.readings').innerHTML = entries.length
-      ? entries.slice(0, 3).map(([py]) => `<span style="color:${COLORS.tone[toneOf(py)]}">${py}</span>`).join('')
+      ? entries.slice(0, 3).map(([py]) => sayPy(py, c)).join('')
       : `<span>${d.py || ''}</span>`;
 
     const [first, ...others] = entries;
@@ -972,7 +975,7 @@ async function main() {
     const list = (sentences.c[c] || []).map((k) => sentences.s[k]).filter((x) => levels.has(x[3]));
     el.innerHTML = `<h2>${t('examplesLv', { lv: levelText() })}</h2>` + (list.length
       ? list.map(([id, zh, py, lv, it, en]) => `<div class="ex">` +
-        `<div class="zh hz">${zh.replaceAll(c, `<mark>${c}</mark>`)}</div>` +
+        `<button class="zh hz say" data-sentence="${attr(zh)}" data-py="${attr(py)}" aria-label="${t('listen')}">${zh.replaceAll(c, `<mark>${c}</mark>`)}</button>` +
         `<div class="py">${py}</div>` +
         `<div class="tr">${I18N.lang === 'en' ? en || `${it} <small>(it)</small>` : it || `${en} <small>(en)</small>`}</div>` +
         `<div class="lv">HSK ${lv} · <a href="https://tatoeba.org/${I18N.lang}/sentences/show/${id}" target="_blank" rel="noopener">Tatoeba #${id}</a></div>` +
@@ -997,7 +1000,7 @@ async function main() {
         const info = ced.words[w.w];
         const gl = info?.d?.[0] || '';
         const cl = info?.cl ? ` · ${t('measure')} ${info.cl.map(([h, py]) => `<span class="hz">${h}</span> ${py}`).join(', ')}` : '';
-        return `<div class="word"><span class="hz">${w.w}</span><span class="py">${w.py}</span><span class="gl">${gl}</span>` +
+        return `<div class="word"><button class="hz say" data-word="${w.w}" data-py="${w.py}" aria-label="${t('listen')} ${w.w}">${w.w}</button><span class="py">${w.py}</span><span class="gl">${gl}</span>` +
           `<span class="lv">HSK ${w.level}${w.pos ? ` · ${w.pos}` : ''}${cl}</span></div>`;
       }).join('')
       : `<p class="muted">${t('noWords')}</p>`);
@@ -1034,6 +1037,14 @@ async function main() {
   }
 
   card.addEventListener('click', (e) => {
+    const say = e.target.closest('.say');
+    if (say) {
+      const d = say.dataset;
+      if (d.read) Voice.reading(d.read, d.char);
+      else if (d.word) Voice.word(d.word, d.py);
+      else if (d.sentence) Voice.sentence(d.sentence, d.py);
+      return;
+    }
     const go = e.target.closest('[data-go]');
     if (go) select(index.has(go.dataset.go) ? index.get(go.dataset.go) : nodeOf[view].get(go.dataset.go));
     const pf = e.target.closest('[data-pos]');

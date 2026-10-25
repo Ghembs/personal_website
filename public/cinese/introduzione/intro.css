@@ -104,8 +104,6 @@ h3 { font-weight: 600; font-size: 21px; margin: 26px 0 8px; }
 .say::before { content: "▶"; font-size: 10px; color: var(--red); align-self: center; }
 .say:hover { border-color: var(--dim); }
 .say .hz { font-size: 20px; }
-body.no-voice .say { cursor: default; }
-body.no-voice .say::before { display: none; }
 
 dl.rules { margin: 10px 0; }
 dl.rules dt { font-weight: 600; margin-top: 14px; }
@@ -172,7 +170,6 @@ article.g h3.sub { font-size: 18px; margin-top: 16px; }
 .s .hz { font-size: 23px; }
 .s i { color: var(--dim); }
 .s span:last-child { font-size: 17px; }
-body.no-voice .s { cursor: default; }
 
 .next { text-align: center; padding: 40px 0 10px; }
 .go { font-size: 24px; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 8px 22px; }

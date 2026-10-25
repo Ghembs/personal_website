@@ -183,7 +183,12 @@ a { color: inherit; }
 #card .big { font-size: 76px; line-height: 1; }
 #card .level { font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
 #card .readings { font-size: 22px; }
-#card .readings span + span::before { content: " · "; color: var(--dim); }
+#card .readings .say + .say::before { content: " · "; color: var(--dim); }
+/* what can be listened to (voice.js): a small red ▸ before it */
+.say { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.say::after { content: " ▸"; font-size: 0.5em; color: var(--red); vertical-align: middle; opacity: 0.7; }
+.say:hover::after { opacity: 1; }
+#card .readings .say { font-size: 22px; }
 #card .strokes { text-align: center; }
 #writer { width: 96px; height: 96px; border: 1px solid var(--line); border-radius: 8px; }
 .writer-tools { display: flex; gap: 2px; justify-content: center; margin-top: 4px; }
@@ -225,6 +230,7 @@ a { color: inherit; }
 
 .ex { padding: 6px 0; border-top: 1px solid rgba(var(--fg), 0.07); }
 .ex .zh { font-size: 20px; }
+.ex .zh.say { display: block; }
 .ex mark { color: var(--red); background: none; }
 .ex .py { font-size: 15px; color: var(--dim); }
 .ex .tr { font-size: 16px; }

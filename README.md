@@ -42,8 +42,8 @@ public/          the site, served as is (no build step)
   shaders.js     source and ascii shaders
   style.css
   _headers       Cloudflare Pages response headers
-  cinese/        the Chinese section: page, data/, fonts/
-scripts/         build-hanzi.mjs, the data pipeline for cinese/
+  cinese/        the Chinese section: page, data/, fonts/, audio/ (voice.js plays it)
+scripts/         build-hanzi.mjs and build-audio.mjs, the data pipeline for cinese/
 wrangler.toml    Cloudflare Pages project config
 ```
 
@@ -63,9 +63,14 @@ picks a view (then `#氵` opens a radical, `#青` a phonetic component).
 `public/cinese/introduzione/` is an introduction for complete beginners, in
 Italian: the tones (with their changes), pinyin and the sounds that trip up an
 Italian speaker, how characters are built (with links into the radicals and
-phonetic views) and stroke order, and ten points of basic grammar. Buttons read
-syllables and sentences aloud with the device's speech synthesis, when it has
-a Chinese voice.
+phonetic views) and stroke order, and ten points of basic grammar.
+
+Pronunciation (`public/cinese/voice.js`), in the cards and in the introduction,
+is the same on every device: native recordings from audio-cmn (CC BY-SA), each
+reading its syllable, each word its recording (87% of the HSK 1-4 words) or
+else its syllables chained with the tone changes of speech (3+3, 不, 一).
+Sentences use the device's speech synthesis when it has a Chinese voice, the
+chained syllables otherwise.
 
 Its data and font subset are built by:
 
@@ -77,6 +82,16 @@ npm run build:hanzi -- path/to/HSK-syllabus.pdf
 which needs `pdftotext` (poppler-utils) and `bzip2`, and downloads CC-CEDICT,
 Make Me a Hanzi, the Tatoeba exports and Noto Serif SC into `data/raw/` (git-ignored). The syllabus PDF is read
 locally and not published. Data licences: [public/cinese/data/LICENSES.md](public/cinese/data/LICENSES.md).
+
+The recordings come from a sparse checkout of audio-cmn:
+
+```bash
+git clone --depth 1 --filter=blob:none --sparse https://github.com/hugolpz/audio-cmn ../audio-cmn
+git -C ../audio-cmn sparse-checkout set 24k-abr
+node scripts/build-audio.mjs ../audio-cmn
+```
+
+Their licences: [public/cinese/audio/LICENSES.md](public/cinese/audio/LICENSES.md).
 
 ## Run locally
 
