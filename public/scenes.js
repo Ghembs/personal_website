@@ -240,7 +240,23 @@ const Scenes = (() => {
     'vehicles.dino': 'walk', 'vehicles.train': 'rails', 'vehicles.boat': 'water',
     'vehicles.plane': 'fly', 'vehicles.miniplane': 'flyer', 'vehicles.balloon': 'drift', 'vehicles.kite': 'kite',
   };
-  const DINO_FEET = [7, 12];       // columns of the dinosaur the feet span
+  // The game. The hitbox follows the dinosaur's outline from the belly down
+  // (columns 4-15: legs and belly, not the tail or the head), each column as
+  // high off the ground as its lowest mark. The ground runs three times faster
+  // than in the demo, so a jump covers more than the dinosaur's own length:
+  // jumping as an obstacle reaches the nose clears it (a tap for small ones,
+  // held for the rest).
+  const DINO_HIT = (() => {
+    const rows = [...DINO, ...DINO_LEGS[0]], out = [];
+    for (let c = 4; c <= 15; c++) {
+      for (let r = rows.length - 1; r >= 0; r--) if (rows[r][c] && rows[r][c] !== ' ') { out.push([c, rows.length - 1 - r]); break; }
+    }
+    return out;
+  })();
+  // a tap counts as held for `tap` seconds: enough to clear the small obstacles
+  const JUMP = { v0: 34, gHeld: 50, g: 85, tap: 0.2, speed: 3 };
+  // how long a held jump stays up, for the demo's own jumps
+  const JUMP_AIR = JUMP.v0 / JUMP.gHeld + Math.sqrt(JUMP.v0 ** 2 / JUMP.gHeld / JUMP.g);
   const STATION_W = widthOf(STATION);
 
   // ---------- recipes for the home page ----------
@@ -322,7 +338,7 @@ const Scenes = (() => {
       s.rails = s.heroes.some((h) => h.slot === 'rails');
       s.stationsOn = s.rails || has('buildings.station');
       Object.assign(s, {
-        off: 0, flash: 0, nextFlash: 4, y: 0, vy: 0, held: false, buffer: -1,
+        off: 0, flash: 0, nextFlash: 4, y: 0, vy: 0, held: false, buffer: -1, jumpAt: -9,
         game: false, over: false, score: 0, hi: 0, nightMix: s.time === 'night' ? 1 : 0, nightGoal: null,
         clouds: [], mid: [], far: [], obst: [], props: [], signs: [], buoys: [], chests: [], flyers: [], fish: [], crabs: [], bubbles: [],
         stations: [], tunnels: [], poles: [],
@@ -364,14 +380,14 @@ const Scenes = (() => {
     action(s) {
       if (!s.walker || !s.recipe.game) return false;
       if (!s.game || s.over) {
-        Object.assign(s, { game: true, over: false, score: 0, speed: s.speed0 * 1.3, obst: [], nextObst: s.off + s.cols * 0.7 });
+        Object.assign(s, { game: true, over: false, score: 0, speed: s.speed0 * JUMP.speed, obst: [], nextObst: s.off + s.cols * 0.7 });
       }
       s.held = true;
       if (s.y <= 0.01) this.jump(s); else s.buffer = s.t;
       return true;
     },
     release(s) { s.held = false; },
-    jump(s) { s.vy = 32; s.y = 0.01; s.buffer = -1; },
+    jump(s) { s.vy = JUMP.v0; s.y = 0.01; s.buffer = -1; s.jumpAt = s.t; },
     busy: (s) => s.game && !s.over,
 
     update(s, dt) {
@@ -380,28 +396,29 @@ const Scenes = (() => {
       s.off += s.speed * dt;
       if (s.game) {
         s.score += dt * s.speed * 0.8;
-        s.speed = s.speed0 * 1.3 * (1 + 0.1 * Math.floor(s.score / 1000));
+        s.speed = s.speed0 * JUMP.speed * (1 + 0.06 * Math.floor(s.score / 1000));
         s.nightGoal = Math.floor(s.score / 700) % 2;
       }
       if (s.nightGoal !== null) s.nightMix += (s.nightGoal - s.nightMix) * Math.min(1, dt * 1.5);
       // the dinosaur: jump physics, the demo's own jumps, collisions in a game
       if (s.walker) {
         if (s.y > 0 || s.vy > 0) {
-          const gr = s.vy > 0 && s.held ? 45 : 90;
+          const gr = s.vy > 0 && (s.held || s.t - s.jumpAt < JUMP.tap) ? JUMP.gHeld : JUMP.g;
           s.vy -= gr * dt;
           s.y = Math.max(0, s.y + s.vy * dt);
           if (s.y === 0) { s.vy = 0; if (s.buffer > 0 && s.t - s.buffer < 0.15) this.jump(s); }
         }
-        const next = s.obst.find((o) => o.x + o.w - s.off > dx + DINO_FEET[0]);
+        const next = s.obst.find((o) => o.x + o.w - s.off > dx + 4);
         if (next && !s.game && s.y === 0) {
-          const gap = next.x + next.w / 2 - s.off - (dx + (DINO_FEET[0] + DINO_FEET[1]) / 2);
-          if (gap > 0 && gap < 0.71 * s.speed) { s.held = true; this.jump(s); }
+          const gap = next.x + next.w / 2 - s.off - (dx + 10);
+          if (gap > 0 && gap < 0.5 * JUMP_AIR * s.speed) { s.held = true; this.jump(s); }
         }
         if (!s.game && s.vy < 0) s.held = false;
         if (s.game) {
           for (const o of s.obst) {
-            const ox = o.x - s.off;
-            if (ox + 1 < dx + DINO_FEET[1] && ox + o.w - 1 > dx + DINO_FEET[0] && s.y < o.h - 0.4) {
+            // the lava pool burns only in its middle
+            const ox = o.x - s.off - dx, sh = o.pool ? 2 : 0;
+            if (DINO_HIT.some(([c, b]) => c > ox + sh && c < ox + o.w - 1 - sh && s.y + b < o.h - 0.4)) {
               s.over = true;
               s.hi = Math.max(s.hi, Math.floor(s.score));
               try { localStorage.setItem('dino-hi', s.hi); } catch (e) { /* private mode */ }

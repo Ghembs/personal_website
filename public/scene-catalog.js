@@ -546,7 +546,7 @@ __|_________________|__`);
       item('kite', 'Aquilone', 'Kite', KITE),
     ] },
     { id: 'landmarks', name: { it: 'Monumenti', en: 'Landmarks' }, items: [
-      item('duomo', 'Duomo di Firenze', 'Florence Cathedral', DUOMO),
+      item('duomo', 'Duomo di Firenze', 'Florence Cathedral', DUOMO, { only: { lands: ON_LAND } }),   // Shanghai is by the sea, Florence isn't
       item('pearl', 'Perla d\'Oriente', 'Oriental Pearl Tower', PEARL),
     ] },
     { id: 'buildings', name: { it: 'Edifici', en: 'Buildings' }, items: [
