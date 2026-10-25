@@ -23,6 +23,7 @@ const Shanshui = (() => {
   const MAX_DPR = 1.5;
   const LINK_CYCLE = 2;     // world link elements are spread over this many panels
   const ROLES = ['pavilion', 'pagoda', 'walker', 'boat', 'birds'];
+  const ROLE_KEY = { pavilion: 'buildings.pavilion', pagoda: 'buildings.pagoda', walker: 'figures.walker', boat: 'water.boat', birds: 'figures.birds' };
 
   // ---------- randomness ----------
 
@@ -588,7 +589,10 @@ const Shanshui = (() => {
     for (const f of ft) stroke(c, f, { col: grey(0.1 + R() * 0.1), wid: 1 });
   }
 
-  function mountain(c, xoff, yoff, seed, { hei = 300, wid = 500, tex = 200, veg = true } = {}) {
+  // What grows and stands on it comes in densities (1 is the home's; the
+  // buildings are the original's, off unless asked for).
+  function mountain(c, xoff, yoff, seed, { hei = 300, wid = 500, tex = 200, veg = true,
+    shrubs = 1, saplings = 1, leafy = 0, halls = 0, gazebos = 0, towers = 0, pylons = 0 } = {}) {
     const ptlist = [];
     const reso = [10, 50];
     let hoff = 0;
@@ -617,7 +621,7 @@ const Shanshui = (() => {
 
     // rim
     vegetate((x, y) => tree02(c, x, y - 5, { a: leafA(x, y, 0.5), clu: 2 }),
-      (i, j) => { const ns = noise(j * 0.1, seed); return i === 0 && ns ** 3 < 0.1 && Math.abs(ptlist[i][j][1]) / hei > 0.2; });
+      (i, j) => { const ns = noise(j * 0.1, seed); return i === 0 && ns ** 3 < 0.1 * shrubs && Math.abs(ptlist[i][j][1]) / hei > 0.2; });
 
     fillPoly(c, ptlist[0].concat([[0, reso[0] * 4]]), '#fff');
     stroke(c, ptlist[0], { col: 'rgba(100,100,100,0.3)', noi: 1, wid: 3 });
@@ -626,7 +630,7 @@ const Shanshui = (() => {
 
     // top
     vegetate((x, y) => tree02(c, x, y, { a: leafA(x, y, 0.5) }),
-      (i, j) => { const ns = noise(i * 0.1, j * 0.1, seed + 2); return ns ** 3 < 0.13 && Math.abs(ptlist[i][j][1]) / hei > 0.5; });
+      (i, j) => { const ns = noise(i * 0.1, j * 0.1, seed + 2); return ns ** 3 < 0.13 * shrubs && Math.abs(ptlist[i][j][1]) / hei > 0.5; });
 
     if (veg) {
       // middle
@@ -636,7 +640,7 @@ const Shanshui = (() => {
         tree01(c, x, y, { hei: ht, wid: R() * 3 + 1, a: leafA(x, y, 0.3) });
       }, (i, j) => {
         const ns = noise(i * 0.2, j * 0.05, seed);
-        return j % 2 && ns ** 4 < 0.018 && Math.abs(ptlist[i][j][1]) / hei < 0.3;
+        return j % 2 && ns ** 4 < 0.018 * saplings && Math.abs(ptlist[i][j][1]) / hei < 0.3;
       }, (list, i) => {
         let n = 0;
         for (let j = 0; j < list.length; j++) {
@@ -652,8 +656,40 @@ const Shanshui = (() => {
         tree01(c, x, y, { hei: ht, wid: R() * 4 + 2, a: leafA(x, y, 0.3) });
       }, (i, j) => {
         const ns = noise(i * 0.2, j * 0.05, seed);
-        return (j === 0 || j === ptlist[i].length - 1) && ns ** 4 < 0.018;
+        return (j === 0 || j === ptlist[i].length - 1) && ns ** 4 < 0.018 * saplings;
       });
+      // the original's bottom: leafy trees, gently bent
+      if (leafy > 0) {
+        vegetate((x, y) => {
+          let ht = ((hei + y) / hei) * 120;
+          ht = ht * 0.5 + R() * ht * 0.5;
+          const bc = R() * 0.1;
+          tree03(c, x, y, { hei: ht, ben: (v) => v * bc, a: leafA(x, y, 0.3) });
+        }, (i, j) => {
+          const ns = noise(i * 0.2, j * 0.05, seed + 5);
+          return (j === 0 || j === ptlist[i].length - 1) && ns ** 4 < 0.012 * leafy;
+        });
+      }
+    }
+    // houses and gazebos at the feet, pylons, a pagoda on the summit
+    if (halls + gazebos > 0) {
+      vegetate((x, y) => {
+        if (R() * (halls + gazebos) < halls) hall(c, x, y, { wid: normRand(40, 70), sto: randChoice([1, 2, 2, 3]), rot: R(), sty: randChoice([1, 2, 3]) });
+        else gazebo(c, x, y, { sto: randChoice([1, 1, 1, 2, 2]) });
+      }, (i, j) => {
+        const ns = noise(i * 0.2, j * 0.05, seed + 10);
+        return i !== 0 && (j === 1 || j === ptlist[i].length - 2) && ns ** 4 < 0.0055 * (halls + gazebos);
+      });
+    }
+    if (pylons > 0) {
+      vegetate((x, y) => pylon(c, x, y), (i, j) => {
+        const ns = noise(i * 0.2, j * 0.05, seed + 20 * Math.PI);
+        return i % 2 === 0 && (j === 1 || j === ptlist[i].length - 2) && ns ** 4 < 0.002 * pylons;
+      });
+    }
+    if (towers > 0 && R() < 0.35 * towers) {
+      const top = ptlist[1][ptlist[1].length >> 1];
+      tallPagoda(c, top[0], top[1], { sto: randChoice([5, 7]), wid: 40 + R() * 20 });
     }
     c.restore();
   }
@@ -1287,6 +1323,27 @@ const Shanshui = (() => {
     figure(c, x, y, { sca, dir });
   }
 
+  // Trees of the plateaus standing on the shore, alone or in a little group.
+  function grove(c, kind, x, y) {
+    if (kind === 'big') tree04(c, x, y, { hei: 150 + R() * 110 });
+    else if (kind === 'pine') {
+      const n = 1 + ((R() * 3) | 0);
+      for (let i = 0; i < n; i++) tree05(c, x + (i - (n - 1) / 2) * 28 + normRand(-6, 6), y + normRand(-3, 3), { hei: 150 + R() * 130 });
+    } else if (kind === 'bare') tree06(c, x, y, { hei: 60 + R() * 40 });
+    else if (kind === 'dark') { for (let px = x - 50; px < x + 50; px += 20) tree07(c, px + 10 * normRand(-1, 1), y + normRand(-1, 1), { hei: normRand(40, 80) }); }
+    else if (kind === 'crooked') { for (let i = 0; i < 2 + R() * 3; i++) tree08(c, x + normRand(-30, 30), y, { hei: 60 + R() * 40 }); }
+  }
+
+  // One to three of the original's figures on the shore.
+  function people(c, x, y) {
+    const n = randChoice([1, 2, 2, 3]);
+    for (let i = 0; i < n; i++) {
+      man(c, x + (i - (n - 1) / 2) * 24 + normRand(-4, 4), y, {
+        sca: normRand(0.45, 0.6), fli: R() < 0.5, hat: R() < 0.6 ? capHat : strawHat, ite: R() < 0.3 ? staff : null,
+      });
+    }
+  }
+
   function birds(c, x, y, { n = 4 } = {}) {
     for (let i = 0; i < n; i++) {
       const bx = x + randGaussian() * 40, by = y + randGaussian() * 14, sz = 4 + R() * 4;
@@ -1326,39 +1383,40 @@ const Shanshui = (() => {
   // Every element of the handscroll, by category, for the lab's painter. Each
   // has a sample: the element alone in a view of [w, h] world units. `zone` is
   // where the planner puts it (far, mountains, slopes, plateaus, peaks, the
-  // mountains' feet, the shore, the water, the sky); `needs` another element
-  // it can't do without. `orig` marks what comes from shan-shui-inf.
+  // mountains' feet, the shore, the water, the sky); `needs` the element (or
+  // any of the elements) it can't do without; `def` its density in the home's
+  // handscroll (0 if absent). `orig` marks what comes from shan-shui-inf.
 
   const n0 = () => R() * 100;
   const CATALOG = [
     { id: 'mountains', name: { it: 'Montagne', en: 'Mountains' }, items: [
-      { id: 'mount', name: { it: 'Montagne alte', en: 'High mountains' }, zone: 'mountains', orig: true, view: [640, 440],
+      { id: 'mount', name: { it: 'Montagne alte', en: 'High mountains' }, def: 1, zone: 'mountains', orig: true, view: [640, 440],
         sample: (c) => mountain(c, 320, 420, n0(), { hei: 400, wid: 540, tex: 240 }) },
-      { id: 'hill', name: { it: 'Colline vicine', en: 'Near hills' }, zone: 'shore', orig: true, view: [420, 200],
+      { id: 'hill', name: { it: 'Colline vicine', en: 'Near hills' }, def: 1, zone: 'shore', orig: true, view: [420, 200],
         sample: (c) => mountain(c, 210, 185, n0(), { hei: 95, wid: 320, tex: 110 }) },
       { id: 'plateau', name: { it: 'Altopiani', en: 'Plateaus' }, zone: 'mountains', orig: true, view: [640, 360],
         sample: (c) => { const bd = flatMount(c, 320, 330, n0(), { hei: 160, wid: 520 }); if (bd) flatDec(c, bd, { kind: -1, crooked: false, lodge: false }); } },
-      { id: 'ridges', name: { it: 'Creste lontane', en: 'Distant ridges' }, zone: 'far', view: [640, 300],
+      { id: 'ridges', name: { it: 'Creste lontane', en: 'Distant ridges' }, def: 1, zone: 'far', view: [640, 300],
         sample: (c) => { farRidge(c, 0, 640, 200, 160, 0.006, 1, 205); farRidge(c, 0, 640, 290, 110, 0.009, 2, 190); } },
-      { id: 'rock', name: { it: 'Rocce', en: 'Rocks' }, zone: 'shore', orig: true, view: [220, 110],
+      { id: 'rock', name: { it: 'Rocce', en: 'Rocks' }, def: 1, zone: 'shore', orig: true, view: [220, 110],
         sample: (c) => { rock(c, 80, 95, { wid: 60, hei: 40 }); rock(c, 150, 100, { wid: 34, hei: 22 }); } },
     ] },
     { id: 'water', name: { it: 'Acqua', en: 'Water' }, items: [
-      { id: 'waves', name: { it: 'Onde', en: 'Waves' }, zone: 'water', orig: true, view: [520, 110],
+      { id: 'waves', name: { it: 'Onde', en: 'Waves' }, def: 1, zone: 'water', orig: true, view: [520, 110],
         sample: (c) => water(c, 260, 80, { len: 520, clu: 9 }) },
-      { id: 'boat', name: { it: 'Barca da pesca', en: 'Fishing boat' }, zone: 'water', needs: 'water.waves', view: [260, 120],
+      { id: 'boat', name: { it: 'Barca da pesca', en: 'Fishing boat' }, def: 1, zone: 'water', needs: 'water.waves', view: [260, 120],
         sample: (c) => { water(c, 130, 110, { len: 240, clu: 5 }); boat(c, 70, 85); } },
       { id: 'poler', name: { it: 'Barcaiolo', en: 'Boatman' }, zone: 'water', needs: 'water.waves', orig: true, view: [260, 120],
         sample: (c) => { water(c, 130, 110, { len: 240, clu: 5 }); boat(c, 70, 85, { poler: true }); } },
-      { id: 'bridge', name: { it: 'Ponte', en: 'Bridge' }, zone: 'water', needs: 'water.waves', view: [240, 120],
+      { id: 'bridge', name: { it: 'Ponte', en: 'Bridge' }, def: 1, zone: 'water', needs: 'water.waves', view: [240, 120],
         sample: (c) => bridge(c, 120, 70, { len: 120 }) },
     ] },
     { id: 'trees', name: { it: 'Alberi', en: 'Trees' }, items: [
-      { id: 'shrubs', name: { it: 'Cespugli', en: 'Shrubs' }, zone: 'slopes', orig: true, view: [200, 100],
+      { id: 'shrubs', name: { it: 'Cespugli', en: 'Shrubs' }, def: 1, needs: ['mountains.mount', 'mountains.hill'], zone: 'slopes', orig: true, view: [200, 100],
         sample: (c) => { for (let i = 0; i < 4; i++) tree02(c, 50 + i * 35, 60 + (i % 2) * 10, { a: 0.5 }); } },
-      { id: 'saplings', name: { it: 'Alberelli', en: 'Saplings' }, zone: 'slopes', orig: true, view: [200, 160],
+      { id: 'saplings', name: { it: 'Alberelli', en: 'Saplings' }, def: 1, needs: ['mountains.mount', 'mountains.hill'], zone: 'slopes', orig: true, view: [200, 160],
         sample: (c) => { for (let i = 0; i < 3; i++) tree01(c, 60 + i * 40, 150, { hei: 90 + i * 15, wid: 3, a: 0.35 }); } },
-      { id: 'leafy', name: { it: 'Albero frondoso', en: 'Leafy tree' }, zone: 'slopes', orig: true, view: [200, 200],
+      { id: 'leafy', name: { it: 'Albero frondoso', en: 'Leafy tree' }, needs: ['mountains.mount', 'mountains.hill'], zone: 'slopes', orig: true, view: [200, 200],
         sample: (c) => tree03(c, 100, 190, { hei: 150, wid: 8, ben: (v) => Math.sin(v * 2) * 0.15 }) },
       { id: 'big', name: { it: 'Grande albero', en: 'Big tree' }, zone: 'plateaus', orig: true, view: [360, 360],
         sample: (c) => tree04(c, 180, 350, { hei: 300 }) },
@@ -1372,38 +1430,56 @@ const Shanshui = (() => {
         sample: (c) => { for (let i = 0; i < 3; i++) tree08(c, 60 + i * 40, 150, { hei: 90 }); } },
     ] },
     { id: 'buildings', name: { it: 'Architetture', en: 'Buildings' }, items: [
-      { id: 'house', name: { it: 'Casa', en: 'House' }, zone: 'shore', view: [140, 110], sample: (c) => house(c, 70, 100, { wid: 46 }) },
-      { id: 'village', name: { it: 'Villaggio', en: 'Village' }, zone: 'shore', view: [200, 140], sample: (c) => village(c, 100, 120) },
-      { id: 'hall', name: { it: 'Casa a piani', en: 'Storeyed house' }, zone: 'feet', orig: true, view: [140, 120],
+      { id: 'house', name: { it: 'Casa', en: 'House' }, def: 1, zone: 'shore', view: [140, 110], sample: (c) => house(c, 70, 100, { wid: 46 }) },
+      { id: 'village', name: { it: 'Villaggio', en: 'Village' }, def: 1, zone: 'shore', view: [200, 140], sample: (c) => village(c, 100, 120) },
+      { id: 'hall', name: { it: 'Casa a piani', en: 'Storeyed house' }, needs: ['mountains.mount', 'mountains.hill'], zone: 'feet', orig: true, view: [140, 120],
         sample: (c) => hall(c, 70, 110, { wid: 60, sto: 3, sty: 1 + ((R() * 3) | 0), rot: R() }) },
       { id: 'lodge', name: { it: 'Capanna sul terrazzo', en: 'Terrace lodge' }, zone: 'plateaus', needs: 'mountains.plateau', orig: true, view: [260, 150],
         sample: (c) => lodgeHall(c, 130, 135, { wid: 180, hei: 90, per: R() }) },
-      { id: 'gazebo', name: { it: 'Gazebo', en: 'Gazebo' }, zone: 'feet', orig: true, view: [110, 110],
+      { id: 'gazebo', name: { it: 'Gazebo', en: 'Gazebo' }, needs: ['mountains.mount', 'mountains.hill'], zone: 'feet', orig: true, view: [110, 110],
         sample: (c) => gazebo(c, 55, 100, { sto: 2, wid: 36 }) },
-      { id: 'pavilion', name: { it: 'Padiglione', en: 'Pavilion' }, zone: 'shore', view: [140, 140], sample: (c) => pavilion(c, 70, 130, { wid: 54 }) },
-      { id: 'pagoda', name: { it: 'Pagoda sulla collina', en: 'Hill pagoda' }, zone: 'shore', view: [200, 220], sample: (c) => pagoda(c, 100, 200, { sto: 4 }) },
+      { id: 'pavilion', name: { it: 'Padiglione', en: 'Pavilion' }, def: 1, zone: 'shore', view: [140, 140], sample: (c) => pavilion(c, 70, 130, { wid: 54 }) },
+      { id: 'pagoda', name: { it: 'Pagoda sulla collina', en: 'Hill pagoda' }, def: 1, zone: 'shore', view: [200, 220], sample: (c) => pagoda(c, 100, 200, { sto: 4 }) },
       { id: 'tower', name: { it: 'Pagoda in vetta', en: 'Summit pagoda' }, zone: 'peaks', needs: 'mountains.mount', orig: true, view: [130, 230],
         sample: (c) => tallPagoda(c, 65, 220, { sto: 7, wid: 48 }) },
-      { id: 'pylon', name: { it: 'Traliccio', en: 'Pylon' }, zone: 'feet', orig: true, view: [90, 130], sample: (c) => pylon(c, 45, 120) },
+      { id: 'pylon', name: { it: 'Traliccio', en: 'Pylon' }, needs: ['mountains.mount', 'mountains.hill'], zone: 'feet', orig: true, view: [90, 130], sample: (c) => pylon(c, 45, 120) },
     ] },
     { id: 'figures', name: { it: 'Figure e animali', en: 'Figures and animals' }, items: [
-      { id: 'walker', name: { it: 'Viandante', en: 'Wanderer' }, zone: 'shore', view: [140, 70], sample: (c) => walker(c, 70, 55) },
+      { id: 'walker', name: { it: 'Viandante', en: 'Wanderer' }, def: 1, zone: 'shore', view: [140, 70], sample: (c) => walker(c, 70, 55) },
       { id: 'people', name: { it: 'Figure', en: 'People' }, zone: 'shore', orig: true, view: [200, 90],
         sample: (c) => {
           man(c, 40, 80, { sca: 0.5, hat: capHat, fli: false });
           man(c, 110, 80, { sca: 0.5, hat: strawHat, ite: staff });
           man(c, 165, 80, { sca: 0.45, hat: capHat });
         } },
-      { id: 'birds', name: { it: 'Stormi', en: 'Flocks' }, zone: 'sky', view: [200, 90], sample: (c) => birds(c, 100, 50, { n: 5 }) },
+      { id: 'birds', name: { it: 'Stormi', en: 'Flocks' }, def: 1, zone: 'sky', view: [200, 90], sample: (c) => birds(c, 100, 50, { n: 5 }) },
     ] },
   ];
+
+  const ITEMS = new Map(CATALOG.flatMap((cat) => cat.items.map((it) => [`${cat.id}.${it.id}`, it])));
+
+  // A recipe is { 'category.id': density }; what it leaves out keeps the home's
+  // density. An element whose needs are all at 0 drops to 0 too.
+  function densities(recipe = {}) {
+    const d = {};
+    for (const [k, it] of ITEMS) d[k] = Math.max(0, Number(recipe[k] ?? it.def ?? 0) || 0);
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const [k, it] of ITEMS) {
+        const needs = [].concat(it.needs || []);
+        if (d[k] > 0 && needs.length && !needs.some((n) => d[n] > 0)) { d[k] = 0; changed = true; }
+      }
+    }
+    return d;
+  }
 
   // ---------- the scroll ----------
 
   return class Shanshui {
-    constructor(container, roles) {
+    constructor(container, roles, recipe = null) {
       this.el = container;
       this.roles = roles;            // role of each link index (null if not in the world)
+      this.dens = densities(recipe || {});
       this.seed = (Math.random() * 1e9) | 0;
       noiseSeed(this.seed);
       this.paper = paperTile();
@@ -1416,6 +1492,18 @@ const Shanshui = (() => {
     }
 
     static get catalog() { return CATALOG; }
+    // the densities a recipe comes to, needs applied
+    static densities(recipe) { return densities(recipe); }
+
+    // A new recipe (and seed): everything is planned and painted again.
+    setRecipe(recipe, seed = this.seed) {
+      this.dens = densities(recipe || {});
+      this.seed = seed;
+      noiseSeed(seed);
+      this.plans.clear();
+      for (const cv of this.panels.values()) cv.remove();
+      this.panels.clear();
+    }
 
     // One element alone on paper, `scale` canvas pixels per world unit.
     static sample(canvas, key, { seed = 1, scale = 1 } = {}) {
@@ -1466,7 +1554,7 @@ const Shanshui = (() => {
         const y = near ? 700 + rng() * 90 : 420 + rng() * 260;
         const hei = near ? 40 + rng() * 70 : Math.min(y - 70, 140 + rng() * 300);
         const wid = near ? 160 + rng() * 200 : 380 + rng() * 260;
-        const m = { type: 'mount', x: x0 + rng() * PW, y, hei, wid, seed: (rng() * 1e6) | 0, nseed: rng() * 100,
+        const m = { type: 'mount', key: near ? 'mountains.hill' : 'mountains.mount', near, x: x0 + rng() * PW, y, hei, wid, seed: (rng() * 1e6) | 0, nseed: rng() * 100,
           box: [-wid / 2 - 60, -hei - 60, wid / 2 + 60, 140] };
         items.push(m);
         if (!near) big.push(m);
@@ -1475,22 +1563,23 @@ const Shanshui = (() => {
       for (const m of big) {
         if (rng() < 0.55) {
           const side = rng() < 0.5 ? -1 : 1;
-          items.push({ type: rng() < 0.5 ? 'village' : 'house', x: m.x + side * m.wid * (0.28 + rng() * 0.18), y: m.y + 8 + rng() * 22,
+          const type = rng() < 0.5 ? 'village' : 'house';
+          items.push({ type, key: `buildings.${type}`, x: m.x + side * m.wid * (0.28 + rng() * 0.18), y: m.y + 8 + rng() * 22,
             seed: (rng() * 1e6) | 0, wid: 30 + rng() * 16, box: [-90, -90, 90, 30] });
         }
       }
       for (let i = 0; i < 3 + (rng() < 0.5); i++) {
         const y = 640 + rng() * 140;
-        items.push({ type: 'water', x: x0 + rng() * PW, y, seed: (rng() * 1e6) | 0, box: [-260, -40, 260, 40] });
+        items.push({ type: 'water', key: 'water.waves', x: x0 + rng() * PW, y, seed: (rng() * 1e6) | 0, box: [-260, -40, 260, 40] });
       }
-      if (rng() < 0.35) items.push({ type: 'bridge', x: x0 + rng() * PW, y: 690 + rng() * 80, seed: (rng() * 1e6) | 0, len: 70 + rng() * 50, box: [-70, -40, 70, 40] });
+      if (rng() < 0.35) items.push({ type: 'bridge', key: 'water.bridge', x: x0 + rng() * PW, y: 690 + rng() * 80, seed: (rng() * 1e6) | 0, len: 70 + rng() * 50, box: [-70, -40, 70, 40] });
       for (let i = 0; i < 2 + ((rng() * 3) | 0); i++) {
         const w = 18 + rng() * 26;
-        items.push({ type: 'rock', x: x0 + rng() * PW, y: 700 + rng() * 90, seed: (rng() * 1e6) | 0, wid: w, hei: w * (0.5 + rng() * 0.4), box: [-30, -40, 30, 10] });
+        items.push({ type: 'rock', key: 'mountains.rock', x: x0 + rng() * PW, y: 700 + rng() * 90, seed: (rng() * 1e6) | 0, wid: w, hei: w * (0.5 + rng() * 0.4), box: [-30, -40, 30, 10] });
       }
       if (rng() < 0.45) {
         const fli = rng() < 0.5;
-        items.push({ type: 'boat', x: x0 + rng() * PW, y: 660 + rng() * 110, fli, seed: (rng() * 1e6) | 0,
+        items.push({ type: 'boat', key: 'water.boat', x: x0 + rng() * PW, y: 660 + rng() * 110, fli, seed: (rng() * 1e6) | 0,
           box: fli ? [-130, -50, 10, 20] : [-10, -50, 130, 20] });
       }
       // Link elements: each cycle of LINK_CYCLE panels holds every role once.
@@ -1500,32 +1589,92 @@ const Shanshui = (() => {
       ROLES.forEach((role, r) => {
         if (slots[r] !== ((k % LINK_CYCLE) + LINK_CYCLE) % LINK_CYCLE) return;
         const x = x0 + 80 + rng() * (PW - 160);
-        const seed = (rng() * 1e6) | 0;
-        if (role === 'pavilion') items.push({ type: role, x, y: 660 + rng() * 80, seed, wid: 46 + rng() * 14, box: [-55, -110, 55, 8] });
-        if (role === 'pagoda') items.push({ type: role, x, y: 560 + rng() * 110, seed, sto: 3 + ((rng() * 4) | 0), box: [-60, -190, 60, 10] });
-        if (role === 'walker') items.push({ type: role, x, y: 720 + rng() * 55, seed, dir: rng() < 0.5 ? -1 : 1, box: [-22, -38, 22, 6] });
+        const seed = (rng() * 1e6) | 0, key = ROLE_KEY[role];
+        if (role === 'pavilion') items.push({ type: role, key, x, y: 660 + rng() * 80, seed, wid: 46 + rng() * 14, box: [-55, -110, 55, 8] });
+        if (role === 'pagoda') items.push({ type: role, key, x, y: 560 + rng() * 110, seed, sto: 3 + ((rng() * 4) | 0), box: [-60, -190, 60, 10] });
+        if (role === 'walker') items.push({ type: role, key, x, y: 720 + rng() * 55, seed, dir: rng() < 0.5 ? -1 : 1, box: [-22, -38, 22, 6] });
         if (role === 'boat') {
           const fli = rng() < 0.5;
-          items.push({ type: role, x, y: 650 + rng() * 110, seed, fli, box: fli ? [-130, -50, 10, 20] : [-10, -50, 130, 20] });
+          items.push({ type: role, key, x, y: 650 + rng() * 110, seed, fli, box: fli ? [-130, -50, 10, 20] : [-10, -50, 130, 20] });
         }
-        if (role === 'birds') items.push({ type: role, x, y: 90 + rng() * 140, seed, box: [-70, -35, 70, 30] });
+        if (role === 'birds') items.push({ type: role, key, x, y: 90 + rng() * 140, seed, box: [-70, -35, 70, 30] });
       });
+      this.dress(k, items);
       this.plans.set(k, items);
       // Old plans are cheap but not free: keep a window around the view.
       for (const key of this.plans.keys()) if (key < k - 6) this.plans.delete(key);
       return items;
     }
 
+    // The recipe on top of the plan, with randomness of its own so that the
+    // home's densities (all 1, the new elements at 0) leave the plan as it is:
+    // each planned element is kept, dropped or repeated by its density, then
+    // the elements the home doesn't have are added.
+    dress(k, items) {
+      const d = this.dens, x0 = k * PW;
+      const rng = mulberry32(this.seed ^ Math.imul(k + 31337, 2246822519) ^ 0x5bd1e995);
+      const count = (v) => Math.floor(v) + (rng() < v % 1 ? 1 : 0);
+      const seed = () => (rng() * 1e6) | 0;
+      const planned = items.splice(0);
+      const boats = d['water.boat'] + d['water.poler'];
+      for (const it of planned) {
+        const v = it.key === 'water.boat' ? boats : d[it.key];
+        const n = v === 1 ? 1 : count(v);
+        for (let i = 0; i < n; i++) {
+          const copy = i === 0 ? it : { ...it, x: x0 + rng() * PW, seed: seed(), nseed: rng() * 100 };
+          if (it.key === 'water.boat' && d['water.poler'] > 0) copy.poler = rng() * boats < d['water.poler'];
+          items.push(copy);
+        }
+      }
+      // plateaus, and what grows on them
+      for (let i = count(d['mountains.plateau'] * 0.8); i > 0; i--) {
+        const wid = 260 + rng() * 260;
+        const kinds = [[0, d['mountains.rock'] * 0.5], [1, d['trees.pine']], [2, d['trees.big']], [3, d['trees.bare']], [4, d['trees.dark']]];
+        const sum = kinds.reduce((a, [, w]) => a + w, 0);
+        let r = rng() * sum, kind = -1;
+        for (const [kk, w] of kinds) { if (sum > 0 && r < w) { kind = kk; break; } r -= w; }
+        // cut higher than the original's (50): in this world they'd hardly show
+        items.push({ type: 'plateau', key: 'mountains.plateau', x: x0 + rng() * PW, y: 640 + rng() * 130, wid, cho: 0.8 + rng() * 0.8, seed: seed(), nseed: rng() * 100,
+          dec: { kind, crooked: rng() < d['trees.crooked'] * 0.6, shrubs: d['trees.shrubs'] > 0, lodge: rng() < d['buildings.lodge'] * 0.45 },
+          box: [-wid / 2 - 70, -330, wid / 2 + 70, 60] });
+      }
+      // lone trees and groves along the shore
+      const GROVES = { big: [0.35, 90], pine: [0.5, 70], bare: [0.4, 80], dark: [0.4, 70], crooked: [0.4, 50] };
+      for (const [id, [per, half]] of Object.entries(GROVES)) {
+        for (let i = count(d[`trees.${id}`] * per); i > 0; i--) {
+          items.push({ type: 'grove', key: `trees.${id}`, kind: id, x: x0 + rng() * PW, y: 715 + rng() * 75, seed: seed(), box: [-half - 60, -320, half + 60, 10] });
+        }
+      }
+      for (let i = count(d['figures.people'] * 0.8); i > 0; i--) {
+        items.push({ type: 'people', key: 'figures.people', x: x0 + rng() * PW, y: 715 + rng() * 70, seed: seed(), box: [-60, -50, 60, 8] });
+      }
+    }
+
     drawItem(c, it) {
       R = mulberry32(it.seed);
       switch (it.type) {
-        case 'mount': mountain(c, it.x, it.y, it.nseed, { hei: it.hei, wid: it.wid, tex: it.hei < 120 ? 110 : 260 }); break;
+        case 'mount': {
+          const d = this.dens;
+          mountain(c, it.x, it.y, it.nseed, {
+            hei: it.hei, wid: it.wid, tex: it.hei < 120 ? 110 : 260,
+            shrubs: d['trees.shrubs'], saplings: d['trees.saplings'], leafy: d['trees.leafy'],
+            halls: d['buildings.hall'], gazebos: d['buildings.gazebo'], pylons: d['buildings.pylon'], towers: it.near ? 0 : d['buildings.tower'],
+          });
+          break;
+        }
+        case 'plateau': {
+          const bd = flatMount(c, it.x, it.y, it.nseed, { hei: 260 + R() * 120, wid: it.wid, cho: it.cho });
+          if (bd) flatDec(c, bd, it.dec);
+          break;
+        }
+        case 'grove': grove(c, it.kind, it.x, it.y); break;
+        case 'people': people(c, it.x, it.y); break;
         case 'house': house(c, it.x, it.y, { wid: it.wid }); break;
         case 'village': village(c, it.x, it.y); break;
         case 'bridge': bridge(c, it.x, it.y, { len: it.len }); break;
         case 'rock': rock(c, it.x, it.y, { wid: it.wid, hei: it.hei }); break;
         case 'water': water(c, it.x, it.y, { len: 500, clu: 8 }); break;
-        case 'boat': water(c, it.x + (it.fli ? -60 : 60), it.y + 28, { len: 260, clu: 5 }); boat(c, it.x, it.y, { fli: it.fli, sca: 0.9 }); break;
+        case 'boat': water(c, it.x + (it.fli ? -60 : 60), it.y + 28, { len: 260, clu: 5 }); boat(c, it.x, it.y, { fli: it.fli, sca: 0.9, poler: it.poler }); break;
         case 'pavilion': pavilion(c, it.x, it.y, { wid: it.wid }); break;
         case 'pagoda': pagoda(c, it.x, it.y, { sto: it.sto }); break;
         case 'walker': walker(c, it.x, it.y, { dir: it.dir }); break;
@@ -1550,8 +1699,11 @@ const Shanshui = (() => {
       c.lineJoin = 'round';
 
       R = mulberry32(this.seed);
-      farRidge(c, x0, x1, 330, 230, 0.0035, 1, 205);
-      farRidge(c, x0, x1, 430, 150, 0.005, 2, 190);
+      // distant ridges: two layers in the home, one when sparse, a third further away when dense
+      const rd = this.dens['mountains.ridges'];
+      if (rd >= 1.8) farRidge(c, x0, x1, 260, 250, 0.0025, 3, 218);
+      if (rd > 0) farRidge(c, x0, x1, 330, 230, 0.0035, 1, 205);
+      if (rd >= 0.5) farRidge(c, x0, x1, 430, 150, 0.005, 2, 190);
 
       const items = [this.plan(k - 1), this.plan(k), this.plan(k + 1)].flat()
         .filter((it) => it.x + it.box[2] > x0 && it.x + it.box[0] < x1)
