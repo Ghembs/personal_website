@@ -3,7 +3,8 @@
 ## shan-shui-inf
 
 `public/shanshui.js` ports and simplifies drawing algorithms (brush stroke,
-mountains, texture, trees, water, boat) from
+mountains and plateaus, texture, the eight trees, water, boat, buildings, the
+pylon, figures with their hats and staff) from
 [shan-shui-inf](https://github.com/LingDong-/shan-shui-inf) by Lingdong Huang.
 
 ```

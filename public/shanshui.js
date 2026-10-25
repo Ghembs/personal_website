@@ -1,8 +1,11 @@
 // Shan shui (山水): an endless ink-landscape handscroll.
-// The drawing algorithms (brush stroke, layered mountains, texture strokes, feet,
-// trees, water, boat hull) are ported to Canvas2D, and simplified, from
+// The drawing algorithms (brush stroke, layered mountains, plateaus, texture
+// strokes, feet, the eight trees, water, boat hull, the original's buildings,
+// pylon and robed figures) are ported to Canvas2D, and simplified, from
 // LingDong-'s shan-shui-inf (MIT, https://github.com/LingDong-/shan-shui-inf).
-// Buildings, figures, birds and the far ridges are new, simpler drawings.
+// The houses, village, pavilion, hill pagoda, bridge, wanderer, birds and the
+// far ridges are new, simpler drawings. The catalogue at the end lists them all
+// for the lab's painter.
 //
 // Unlike the original, which rebuilds a huge SVG on every scroll, the scroll is
 // cut into panels: each panel is painted once (ink on a white layer, multiplied
@@ -120,6 +123,57 @@ const Shanshui = (() => {
     c.stroke();
   }
 
+  // The original's polyline: a fill, an outline, or both.
+  function poly(c, pts, { fil = null, str = fil, wid = 0 } = {}) {
+    if (fil) fillPoly(c, pts, fil);
+    if (str && wid > 0) polyline(c, pts, str, wid);
+  }
+
+  const midPt = (...pts) => pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]);
+  const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+  // Subdivides a polyline, reso points per segment (the last point is kept as is).
+  function div(pts, reso) {
+    const out = [], tl = (pts.length - 1) * reso;
+    for (let i = 0; i < tl; i++) {
+      const a = pts[Math.floor(i / reso)], b = pts[Math.ceil(i / reso)], p = (i % reso) / reso;
+      out.push([a[0] * (1 - p) + b[0] * p, a[1] * (1 - p) + b[1] * p]);
+    }
+    if (pts.length) out.push(pts[pts.length - 1]);
+    return out;
+  }
+
+  // A smooth curve through the midpoints of a polyline (rational quadratic Béziers).
+  function bezmh(P, w = 1) {
+    if (P.length === 2) P = [P[0], midPt(P[0], P[1]), P[1]];
+    const out = [];
+    for (let j = 0; j < P.length - 2; j++) {
+      const p0 = j === 0 ? P[j] : midPt(P[j], P[j + 1]);
+      const p1 = P[j + 1];
+      const p2 = j === P.length - 3 ? P[j + 2] : midPt(P[j + 1], P[j + 2]);
+      const pl = 20;
+      for (let i = 0; i < pl + (j === P.length - 3); i++) {
+        const t = i / pl, u = (1 - t) ** 2 + 2 * t * (1 - t) * w + t * t;
+        out.push([((1 - t) ** 2 * p0[0] + 2 * t * (1 - t) * p1[0] * w + t * t * p2[0]) / u,
+          ((1 - t) ** 2 * p0[1] + 2 * t * (1 - t) * p1[1] * w + t * t * p2[1]) / u]);
+      }
+    }
+    return out;
+  }
+
+  // Records drawing calls to replay them later: the original builds bark and
+  // twigs before the trunk but paints them over it.
+  const METHODS = new Set(['beginPath', 'moveTo', 'lineTo', 'closePath', 'fill', 'stroke', 'arc', 'save', 'restore', 'translate']);
+  function recorder() {
+    const ops = [];
+    return new Proxy({}, {
+      get: (_, k) => (k === 'replay'
+        ? (c) => { for (const [m, a] of ops) { if (m === '=') c[a[0]] = a[1]; else c[m](...a); } }
+        : METHODS.has(k) ? (...a) => { ops.push([k, a]); } : undefined),
+      set: (_, k, v) => { ops.push(['=', [k, v]]); return true; },
+    });
+  }
+
   // The brush stroke: a polyline swollen by fun() along its length, with noise.
   function stroke(c, pts, { wid = 2, col = 'rgba(200,200,200,0.9)', noi = 0.5, out = 1,
     fun = (x) => Math.sin(x * Math.PI) } = {}) {
@@ -147,7 +201,10 @@ const Shanshui = (() => {
     }
   }
 
-  function blob(c, x, y, { len = 20, wid = 5, ang = 0, col = 'rgba(200,200,200,0.9)', noi = 0.5,
+  function blob(c, x, y, { col = 'rgba(200,200,200,0.9)', ...o } = {}) {
+    fillPoly(c, blobPts(x, y, o), col);
+  }
+  function blobPts(x, y, { len = 20, wid = 5, ang = 0, noi = 0.5,
     fun = (x) => (x <= 1 ? Math.pow(Math.sin(x * Math.PI), 0.5) : -Math.pow(Math.sin((x + 1) * Math.PI), 0.5)) } = {}) {
     const reso = 20, la = [];
     for (let i = 0; i <= reso; i++) {
@@ -159,11 +216,10 @@ const Shanshui = (() => {
     const ns = [], n0 = R() * 10;
     for (let i = 0; i <= reso; i++) ns.push(noise(i * 0.05, n0));
     loopNoise(ns);
-    const pts = la.map(([l, a], i) => {
+    return la.map(([l, a], i) => {
       const k = ns[i] * noi + (1 - noi);
       return [x + Math.cos(a + ang) * l * k, y + Math.sin(a + ang) * l * k];
     });
-    fillPoly(c, pts, col);
   }
 
   // Texture strokes laid between the contour layers of a shape.
@@ -230,6 +286,273 @@ const Shanshui = (() => {
         col: grey(a),
       });
     }
+  }
+
+  // Trees 03-08 of the original. 03 and 07 are slender trees clad in blobs of
+  // leaves (07 dark, shaded in patches); 04, 05, 06 and 08 grow a trunk with
+  // limbs (branch), bark (barkify) and twigs (twig).
+  const leafFun = (x) => (x <= 1 ? Math.pow(Math.sin(x * Math.PI) * x, 0.5) : -Math.pow(Math.sin((x - 2) * Math.PI * (x - 2)), 0.5));
+
+  function tree03(c, x, y, { hei = 50, wid = 5, ben = () => 0, a = 0.5 } = {}) {
+    const reso = 10, ns = [];
+    for (let i = 0; i < reso; i++) ns.push([noise(i * 0.5), noise(i * 0.5, 0.5)]);
+    const leaves = recorder(), l1 = [], l2 = [];
+    for (let i = 0; i < reso; i++) {
+      const nx = x + ben(i / reso) * 100, ny = y - (i * hei) / reso;
+      if (i >= reso / 5) {
+        for (let j = 0; j < (reso - i) * 2; j++) {
+          const ox = R() * wid * 2 * (Math.log(50 * ((reso - i) / reso) + 1) / 3.95);
+          blob(leaves, nx + ox * randChoice([-1, 1]), ny + (R() - 0.5) * wid * 2, {
+            len: ox * 2, wid: R() * 6 + 3, ang: ((R() - 0.5) * Math.PI) / 6, col: grey(Math.min(1, R() * 0.2 + a)),
+          });
+        }
+      }
+      l1.push([nx + (((ns[i][0] - 0.5) * wid - wid / 2) * (reso - i)) / reso, ny]);
+      l2.push([nx + (((ns[i][1] - 0.5) * wid + wid / 2) * (reso - i)) / reso, ny]);
+    }
+    poly(c, l1.concat(l2.reverse()), { fil: '#fff', str: grey(a), wid: 1.5 });
+    leaves.replay(c);
+  }
+
+  // A bent limb from the origin: its two outlines.
+  function branch({ hei = 300, wid = 6, ang = 0, det = 10, ben = Math.PI * 0.2 } = {}) {
+    const tl0 = [[0, 0]];
+    let nx = 0, ny = 0, a0 = 0;
+    for (let i = 0; i < 3; i++) {
+      a0 += (ben / 2 + (R() * ben) / 2) * randChoice([-1, 1]);
+      nx += (Math.cos(a0) * hei) / 3;
+      ny -= (Math.sin(a0) * hei) / 3;
+      tl0.push([nx, ny]);
+    }
+    const ta = Math.atan2(tl0[tl0.length - 1][1], tl0[tl0.length - 1][0]);
+    const tlist = tl0.map(([px, py]) => {
+      const a = Math.atan2(py, px), d = Math.hypot(px, py);
+      return [d * Math.cos(a - ta + ang), d * Math.sin(a - ta + ang)];
+    });
+    const t1 = [], t2 = [], tl = (tlist.length - 1) * det;
+    let lx = 0, ly = 0;
+    for (let i = 0; i < tl; i++) {
+      const pa = tlist[Math.floor(i / det)], pb = tlist[Math.ceil(i / det)], p = (i % det) / det;
+      const qx = pa[0] * (1 - p) + pb[0] * p, qy = pa[1] * (1 - p) + pb[1] * p;
+      const an = Math.atan2(qy - ly, qx - lx);
+      const woff = ((noise(i * 0.3) - 0.5) * wid * hei) / 80;
+      const b = p === 0 ? R() * wid : 0;
+      const nw = wid * (((tl - i) / tl) * 0.5 + 0.5);
+      t1.push([qx + Math.cos(an + Math.PI / 2) * (nw + woff + b), qy + Math.sin(an + Math.PI / 2) * (nw + woff + b)]);
+      t2.push([qx + Math.cos(an - Math.PI / 2) * (nw - woff + b), qy + Math.sin(an - Math.PI / 2) * (nw - woff + b)]);
+      lx = qx; ly = qy;
+    }
+    return [t1, t2];
+  }
+
+  function twig(c, tx, ty, dep, { dir = 1, sca = 1, wid = 1, ang = 0, lea = [true, 12] } = {}) {
+    const tw = [], tl = 10, hs = R() * 0.5 + 0.5;
+    const a0 = ((R() * Math.PI) / 6) * dir + ang;
+    for (let i = 0; i < tl; i++) {
+      const mx = dir * (-1 / Math.pow(i / tl + 1, 5) + 1) * 50 * sca * hs, my = -i * 5 * sca;
+      const a = Math.atan2(my, mx), d = Math.hypot(mx, my);
+      const nx = Math.cos(a + a0) * d, ny = Math.sin(a + a0) * d;
+      tw.push([nx + tx, ny + ty]);
+      if ((i === ((tl / 3) | 0) || i === (((tl * 2) / 3) | 0)) && dep > 0) {
+        twig(c, nx + tx, ny + ty, dep - 1, { ang, sca: sca * 0.8, wid, dir: dir * randChoice([-1, 1]), lea });
+      }
+      if (i === tl - 1 && lea[0]) {
+        for (let j = 0; j < 5; j++) {
+          const dj = (j - 2.5) * 5;
+          blob(c, nx + tx + Math.cos(ang) * dj * wid, ny + ty + (Math.sin(ang) * dj - lea[1] / (dep + 1)) * wid, {
+            wid: (6 + 3 * R()) * wid, len: (15 + 12 * R()) * wid,
+            ang: ang / 2 + Math.PI / 2 + Math.PI * 0.2 * (R() - 0.5),
+            col: grey(Math.min(1, 0.5 + dep * 0.2)), fun: leafFun,
+          });
+        }
+      }
+    }
+    stroke(c, tw, { wid: 1, fun: (x) => Math.cos((x * Math.PI) / 2), col: grey(0.5) });
+  }
+
+  // Bark: knots and short marks along a trunk, and its broken outline.
+  function barkify(c, x, y, tr) {
+    for (let i = 2; i < tr[0].length - 1; i++) {
+      const a0 = Math.atan2(tr[0][i][1] - tr[0][i - 1][1], tr[0][i][0] - tr[0][i - 1][0]);
+      const a1 = Math.atan2(tr[1][i][1] - tr[1][i - 1][1], tr[1][i][0] - tr[1][i - 1][0]);
+      const p = R();
+      const nx = tr[0][i][0] * (1 - p) + tr[1][i][0] * p, ny = tr[0][i][1] * (1 - p) + tr[1][i][1] * p;
+      if (R() < 0.2) {
+        blob(c, nx + x, ny + y, { noi: 1, len: 15, wid: 6 - Math.abs(p - 0.5) * 10, ang: (a0 + a1) / 2, col: grey(0.6) });
+      } else {
+        // a bark mark: the outline of a thin blob, wavering
+        const pts = blobPts(nx + x, ny + y, { len: 10 + 10 * R(), wid: 5 - Math.abs(p - 0.5) * 10, ang: (a0 + a1) / 2 });
+        const fr = R();
+        stroke(c, pts, { wid: 0.8, noi: 0, col: grey(0.4), out: 0, fun: (v) => Math.sin((v + fr) * Math.PI * 3) });
+      }
+      if (R() < 0.05) {
+        const jl = R() * 2 + 2, [qx, qy, qa] = randChoice([[tr[0][i][0], tr[0][i][1], a0], [tr[1][i][0], tr[1][i][1], a1]]);
+        for (let j = 0; j < jl; j++) {
+          blob(c, qx + x + Math.cos(qa) * (j - jl / 2) * 4, qy + y + Math.sin(qa) * (j - jl / 2) * 4,
+            { wid: 4, len: 4 + 6 * R(), ang: a0 + Math.PI / 2, col: grey(0.6) });
+        }
+      }
+    }
+    const outline = tr[0].concat(tr[1].slice().reverse()), runs = [[]];
+    for (const pt of outline) { if (R() < 0.5) runs.push([]); else runs[runs.length - 1].push(pt); }
+    runs.forEach((run, i) => {
+      const pts = div(run, 4).map((v, j) => [
+        v[0] + (noise(i, j * 0.1, 1) - 0.5) * (15 + 5 * randGaussian()) + x,
+        v[1] + (noise(i, j * 0.1, 2) - 0.5) * (15 + 5 * randGaussian()) + y]);
+      stroke(c, pts, { wid: 1.5, col: grey(0.7), out: 0 });
+    });
+  }
+
+  // The trunk's fill and its shaded edge, then what grew on it.
+  function trunk(c, x, y, outline, a, ...over) {
+    poly(c, outline.map(([px, py]) => [px + x, py + y]), { fil: '#fff' });
+    stroke(c, outline.slice(1, -1).map(([px, py]) => [px + x, py + y]),
+      { col: grey(a + R() * 0.1), wid: 2.5, fun: () => Math.sin(1), noi: 0.9, out: 0 });
+    for (const r of over) r.replay(c);
+  }
+
+  // A big tree: trunk, a few limbs, twigs with leaves.
+  function tree04(c, x, y, { hei = 300, wid = 6 } = {}) {
+    const tx = recorder(), tw = recorder();
+    let tr = branch({ hei, wid, ang: -Math.PI / 2 });
+    barkify(tx, x, y, tr);
+    tr = tr[0].concat(tr[1].reverse());
+    let out = [];
+    for (let i = 0; i < tr.length; i++) {
+      if ((i >= tr.length * 0.3 && i <= tr.length * 0.7 && R() < 0.1) || i === tr.length / 2 - 1) {
+        const ba = Math.PI * 0.2 - Math.PI * 1.4 * (i > tr.length / 2);
+        const br = branch({ hei: hei * (R() + 1) * 0.3, wid: wid * 0.5, ang: ba });
+        br[0].splice(0, 1); br[1].splice(0, 1);
+        const off = (v) => [v[0] + tr[i][0], v[1] + tr[i][1]];
+        barkify(tx, x, y, [br[0].map(off), br[1].map(off)]);
+        for (let j = 0; j < br[0].length; j++) {
+          if (R() < 0.2 || j === br[0].length - 1) {
+            twig(tw, br[0][j][0] + tr[i][0] + x, br[0][j][1] + tr[i][1] + y, 1, {
+              wid: hei / 300, ang: ba > -Math.PI / 2 ? ba : ba + Math.PI, sca: (0.5 * hei) / 300, dir: ba > -Math.PI / 2 ? 1 : -1,
+            });
+          }
+        }
+        out = out.concat(br[0].concat(br[1].reverse()).map(off));
+      } else out.push(tr[i]);
+    }
+    trunk(c, x, y, out, 0.4, tx, tw);
+  }
+
+  // A pine: a straight trunk, level branches, tufts of needles.
+  function tree05(c, x, y, { hei = 300, wid = 5 } = {}) {
+    const tx = recorder(), tw = recorder();
+    let tr = branch({ hei, wid, ang: -Math.PI / 2, ben: 0 });
+    barkify(tx, x, y, tr);
+    tr = tr[0].concat(tr[1].reverse());
+    let out = [];
+    for (let i = 0; i < tr.length; i++) {
+      const p = Math.abs(i - tr.length * 0.5) / (tr.length * 0.5);
+      if ((i >= tr.length * 0.2 && i <= tr.length * 0.8 && i % 3 === 0 && R() > p) || i === tr.length / 2 - 1) {
+        const bar = R() * 0.2;
+        const ba = -bar * Math.PI - (1 - bar * 2) * Math.PI * (i > tr.length / 2);
+        const br = branch({ hei: hei * (0.3 * p - R() * 0.05), wid: wid * 0.5, ang: ba, ben: 0.5 });
+        br[0].splice(0, 1); br[1].splice(0, 1);
+        for (let j = 0; j < br[0].length; j++) {
+          if (j % 20 === 0 || j === br[0].length - 1) {
+            twig(tw, br[0][j][0] + tr[i][0] + x, br[0][j][1] + tr[i][1] + y, 0, {
+              wid: hei / 300, ang: ba > -Math.PI / 2 ? ba : ba + Math.PI, sca: (0.2 * hei) / 300, dir: ba > -Math.PI / 2 ? 1 : -1, lea: [true, 5],
+            });
+          }
+        }
+        out = out.concat(br[0].concat(br[1].reverse()).map((v) => [v[0] + tr[i][0], v[1] + tr[i][1]]));
+      } else out.push(tr[i]);
+    }
+    trunk(c, x, y, out, 0.4, tx, tw);
+  }
+
+  // A bare tree: limbs forking three times, leafless twigs.
+  function tree06(c, x, y, { hei = 100, wid = 6 } = {}) {
+    const tx = recorder(), tw = recorder();
+    const frac = (xoff, yoff, dep, { hei = 300, wid = 5, ang = 0, ben = Math.PI * 0.2 }) => {
+      let tr = branch({ hei, wid, ang, ben, det: hei / 20 });
+      barkify(tx, xoff, yoff, tr);
+      tr = tr[0].concat(tr[1].reverse());
+      let out = [];
+      for (let i = 0; i < tr.length; i++) {
+        if (((R() < 0.025 && i >= tr.length * 0.2 && i <= tr.length * 0.8) || i === ((tr.length / 2) | 0) - 1 || i === ((tr.length / 2) | 0) + 1) && dep > 0) {
+          const bar = 0.02 + R() * 0.08;
+          const ba = bar * Math.PI - bar * 2 * Math.PI * (i > tr.length / 2);
+          const br = frac(tr[i][0] + xoff, tr[i][1] + yoff, dep - 1, { hei: hei * (0.7 + R() * 0.2), wid: wid * 0.6, ang: ang + ba, ben: 0.55 });
+          for (const b of br) {
+            if (R() < 0.03) twig(tw, b[0] + tr[i][0] + xoff, b[1] + tr[i][1] + yoff, 2, { ang: ba * (R() * 0.5 + 0.75), sca: 0.3, dir: ba > 0 ? 1 : -1, lea: [false, 0] });
+          }
+          out = out.concat(br.map((v) => [v[0] + tr[i][0], v[1] + tr[i][1]]));
+        } else out.push(tr[i]);
+      }
+      return out;
+    };
+    trunk(c, x, y, frac(x, y, 3, { hei, wid, ang: -Math.PI / 2, ben: 0 }), 0.4, tx, tw);
+  }
+
+  // A dark slender tree, its leaves shaded in small patches (the original
+  // triangulates them; here they are cut into fans, then quartered down to size).
+  function tree07(c, x, y, { hei = 60, wid = 4, ben = (v) => Math.sqrt(v) * 0.2 } = {}) {
+    const reso = 10, ns = [];
+    for (let i = 0; i < reso; i++) ns.push([noise(i * 0.5), noise(i * 0.5, 0.5)]);
+    const tris = [], leaves = [], l1 = [], l2 = [];
+    const split = (t) => {
+      const [p, q, r] = t;
+      if (Math.abs((q[0] - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (q[1] - p[1])) / 2 <= 50) { tris.push(t); return; }
+      const pq = midPt(p, q), qr = midPt(q, r), rp = midPt(r, p);
+      split([p, pq, rp]); split([pq, q, qr]); split([rp, qr, r]); split([pq, qr, rp]);
+    };
+    for (let i = 0; i < reso; i++) {
+      const nx = x + ben(i / reso) * 100, ny = y - (i * hei) / reso;
+      if (i >= reso / 4) {
+        leaves.push(blobPts(nx + (R() - 0.5) * wid * 1.2 * (reso - i) * 0.5, ny + (R() - 0.5) * wid * 0.5, {
+          len: R() * 50 + 20, wid: R() * 12 + 12, ang: (-R() * Math.PI) / 6,
+          fun: (v) => (v <= 1 ? 2.75 * v * Math.pow(1 - v, 1 / 1.8) : 2.75 * (v - 2) * Math.pow(v - 1, 1 / 1.8)),
+        }));
+      }
+      l1.push([nx + (ns[i][0] - 0.5) * wid - wid / 2, ny]);
+      l2.push([nx + (ns[i][1] - 0.5) * wid + wid / 2, ny]);
+    }
+    for (let i = 0; i < reso - 1; i++) { split([l1[i], l1[i + 1], l2[i + 1]]); split([l1[i], l2[i + 1], l2[i]]); }
+    for (const pts of leaves) {
+      const m = midPt(...pts);
+      for (let k = 0; k < pts.length - 1; k++) split([m, pts[k], pts[k + 1]]);
+    }
+    for (const t of tris) {
+      const m = midPt(...t), v = (noise(m[0] * 0.02, m[1] * 0.02) * 200 + 50) | 0, col = `rgba(${v},${v},${v},0.8)`;
+      poly(c, t, { fil: col, str: col, wid: 0.5 });
+    }
+  }
+
+  // A thin crooked tree, its crown a tangle of forking twigs.
+  function tree08(c, x, y, { hei = 80, wid = 1 } = {}) {
+    const tw = recorder();
+    const ang = normRand(-1, 1) * Math.PI * 0.2;
+    let tr = branch({ hei, wid, ang: -Math.PI / 2 + ang, ben: Math.PI * 0.2, det: hei / 20 });
+    tr = tr[0].concat(tr[1].reverse());
+    const frac = (xoff, yoff, dep, { ang = -Math.PI / 2, len = 15, ben = 0 }) => {
+      const fun = dep === 0 ? (v) => Math.cos(0.5 * Math.PI * v) : () => 1;
+      const ept = [xoff + Math.cos(ang) * len, yoff + Math.sin(ang) * len];
+      const bfun = randChoice([(v) => Math.sin(v * Math.PI), (v) => -Math.sin(v * Math.PI)]);
+      const pts = div([[xoff, yoff], [xoff + len, yoff]], 10).map((p) => [...p]);
+      for (let i = 0; i < pts.length; i++) pts[i][1] += bfun(i / pts.length) * 2;
+      for (const p of pts) {
+        const d = distance(p, [xoff, yoff]), a = Math.atan2(p[1] - yoff, p[0] - xoff);
+        p[0] = xoff + d * Math.cos(a + ang); p[1] = yoff + d * Math.sin(a + ang);
+      }
+      stroke(tw, pts, { fun, wid: 0.8, col: grey(0.5) });
+      if (dep !== 0) {
+        const nben = ben + randChoice([-1, 1]) * Math.PI * 0.001 * dep * dep;
+        if (R() < 0.5) {
+          frac(ept[0], ept[1], dep - 1, { ang: ang + ben + Math.PI * randChoice([normRand(-1, 0.5), normRand(0.5, 1)]) * 0.2, len: len * normRand(0.8, 0.9), ben: nben });
+          frac(ept[0], ept[1], dep - 1, { ang: ang + ben + Math.PI * randChoice([normRand(-1, -0.5), normRand(0.5, 1)]) * 0.2, len: len * normRand(0.8, 0.9), ben: nben });
+        } else frac(ept[0], ept[1], dep - 1, { ang: ang + ben, len: len * normRand(0.8, 0.9), ben: nben });
+      }
+    };
+    for (let i = 0; i < tr.length; i++) {
+      if (R() < 0.2) frac(x + tr[i][0], y + tr[i][1], Math.floor(4 * R()), { ang: -Math.PI / 2 - ang * R() });
+      else if (i === Math.floor(tr.length / 2)) frac(x + tr[i][0], y + tr[i][1], 3, { ang: -Math.PI / 2 + ang });
+    }
+    trunk(c, x, y, tr, 0.6, tw);
   }
 
   // ---------- mountains ----------
@@ -335,6 +658,103 @@ const Shanshui = (() => {
     c.restore();
   }
 
+  // A plateau: a mountain cut flat at the top, a white terrace on it. Returns
+  // the terrace's bounds (world units) for what grows there, or null.
+  function flatMount(c, xoff, yoff, seed, { hei = 40 + R() * 400, wid = 400 + R() * 200, tex = 80, cho = 0.5 } = {}) {
+    const ptlist = [], flat = [], reso = [5, 50];
+    let hoff = 0;
+    for (let j = 0; j < reso[0]; j++) {
+      hoff += (R() * yoff) / 100;
+      const row = [], fl = [];
+      for (let i = 0; i < reso[1]; i++) {
+        const x = (i / reso[1] - 0.5) * Math.PI;
+        const y = (Math.cos(x * 2) + 1) * noise(x + 10, j * 0.1, seed);
+        const p = 1 - (j / reso[0]) * 0.6;
+        const nx = (x / Math.PI) * wid * p;
+        let ny = -y * hei * p + hoff;
+        if (ny < -100 * cho + hoff) {
+          ny = -100 * cho + hoff;
+          if (fl.length % 2 === 0) fl.push([nx, ny]);
+        } else if (fl.length % 2 === 1) fl.push(row[row.length - 1]);
+        row.push([nx, ny]);
+      }
+      ptlist.push(row);
+      flat.push(fl);
+    }
+    c.save();
+    c.translate(xoff, yoff);
+    fillPoly(c, ptlist[0].concat([[0, reso[0] * 4]]), '#fff');
+    stroke(c, ptlist[0], { col: grey(0.3), noi: 1, wid: 3 });
+    texture(c, ptlist, { tex, wid: 2, dis: () => (R() > 0.5 ? 0.1 + 0.4 * R() : 0.9 - 0.4 * R()) });
+    const g1 = [], g2 = [];
+    for (let i = 0; i < flat.length; i += 2) {
+      if (flat[i].length >= 2) { g1.push(flat[i][0]); g2.push(flat[i][flat[i].length - 1]); }
+    }
+    if (!g1.length) { c.restore(); return null; }
+    let wb = [g1[0][0], g2[0][0]];
+    for (let i = 0; i < 3; i++) {
+      const p = 0.8 - i * 0.2;
+      g1.unshift([wb[0] * p, g1[0][1] - 5]);
+      g2.unshift([wb[1] * p, g2[0][1] - 5]);
+    }
+    wb = [g1[g1.length - 1][0], g2[g2.length - 1][0]];
+    for (let i = 0; i < 3; i++) {
+      const p = 0.6 - i * i * 0.1;
+      g1.push([wb[0] * p, g1[g1.length - 1][1] + 1]);
+      g2.push([wb[1] * p, g2[g2.length - 1][1] + 1]);
+    }
+    const d = 5, d1 = div(g1, d), d2 = div(g2, d);
+    const gr = d1.reverse().concat(d2.concat([d1[0]]));
+    for (let i = 0; i < gr.length; i++) {
+      const v = (1 - Math.abs((i % d) - d / 2) / (d / 2)) * 0.12;
+      gr[i][0] *= 1 - v + noise(gr[i][1] * 0.5) * v;
+    }
+    fillPoly(c, gr, '#fff');
+    stroke(c, gr, { wid: 3, col: grey(0.2) });
+    c.restore();
+    const xs = gr.map((p) => p[0]), ys = gr.map((p) => p[1]);
+    return { xmin: Math.min(...xs) + xoff, xmax: Math.max(...xs) + xoff, ymin: Math.min(...ys) + yoff, ymax: Math.max(...ys) + yoff };
+  }
+
+  // What grows on a plateau (bd: its bounds). `kind` is the original's choice:
+  // 0 boulders, 1 a pine wood, 2 big trees among rocks, 3 bare trees, 4 a row of
+  // dark trees; there are always shrubs, sometimes crooked trees, rarely a lodge.
+  function flatDec(c, bd, { kind = randChoice([0, 0, 1, 2, 3, 4]), crooked = true, shrubs = true, lodge = R() < 0.2 } = {}) {
+    const mid = (bd.ymin + bd.ymax) / 2;
+    const boulder = (x, y, big) => rock(c, x, y, big ? { wid: 50 + R() * 20, hei: 40 + R() * 20 } : { wid: 10 + R() * 20, hei: 10 + R() * 20 });
+    for (let j = 0; j < R() * 5; j++) boulder(normRand(bd.xmin, bd.xmax), mid + normRand(-10, 10) + 10, false);
+    if (crooked) {
+      for (let j = 0; j < randChoice([0, 0, 1, 2]); j++) {
+        const xr = normRand(bd.xmin, bd.xmax), yr = mid + normRand(-5, 5) + 20;
+        for (let k = 0; k < 2 + R() * 3; k++) tree08(c, xr + Math.min(Math.max(normRand(-30, 30), bd.xmin), bd.xmax), yr, { hei: 60 + R() * 40 });
+      }
+    }
+    const span = () => {
+      const pmin = R() * 0.5, pmax = R() * 0.5 + 0.5;
+      return [bd.xmin * (1 - pmin) + bd.xmax * pmin, bd.xmin * (1 - pmax) + bd.xmax * pmax];
+    };
+    if (kind === 0) {
+      for (let j = 0; j < R() * 3; j++) boulder(normRand(bd.xmin, bd.xmax), mid + normRand(-5, 5) + 20, true);
+    } else if (kind === 1) {
+      const [x0, x1] = span();
+      for (let x = x0; x < x1; x += 30) tree05(c, x + 20 * normRand(-1, 1), mid + 20, { hei: 100 + R() * 200 });
+      for (let j = 0; j < R() * 4; j++) boulder(normRand(bd.xmin, bd.xmax), mid + normRand(-5, 5) + 20, true);
+    } else if (kind === 2) {
+      for (let i = 0; i < randChoice([1, 1, 1, 1, 2, 2, 3]); i++) {
+        const xr = normRand(bd.xmin, bd.xmax);
+        tree04(c, xr, mid + 20);
+        for (let j = 0; j < R() * 2; j++) boulder(Math.max(bd.xmin, Math.min(bd.xmax, xr + normRand(-50, 50))), mid + normRand(-5, 5) + 20, true);
+      }
+    } else if (kind === 3) {
+      for (let i = 0; i < randChoice([1, 1, 1, 1, 2, 2, 3]); i++) tree06(c, normRand(bd.xmin, bd.xmax), mid, { hei: 60 + R() * 60 });
+    } else if (kind === 4) {
+      const [x0, x1] = span();
+      for (let x = x0; x < x1; x += 20) tree07(c, x + 20 * normRand(-1, 1), mid + normRand(-1, 1), { hei: normRand(40, 80) });
+    }
+    if (shrubs) for (let i = 0; i < 50 * R(); i++) tree02(c, normRand(bd.xmin, bd.xmax), normRand(bd.ymin, bd.ymax));
+    if (lodge && kind !== 4) lodgeHall(c, normRand(bd.xmin, bd.xmax), mid + 20, { wid: normRand(160, 200), hei: normRand(80, 100), per: R() });
+  }
+
   // Distant ridges: one continuous silhouette per layer, washed into mist.
   function farRidge(c, x0, x1, base, hei, freq, layer, tone) {
     const pts = [];
@@ -383,11 +803,17 @@ const Shanshui = (() => {
     if (staff) stroke(c, [[x + 4 * s * dir, y - 19 * s], [x + 5 * s * dir, y - 9 * s], [x + 6 * s * dir, y]], { wid: 0.7 * s, col, fun: () => 1 });
   }
 
-  function boat(c, x, y, { len = 120, sca = 1, fli = false } = {}) {
+  // A fishing boat; `poler` puts the original's boatman on it instead, standing
+  // under a straw hat with a punting pole.
+  function boat(c, x, y, { len = 120, sca = 1, fli = false, poler = false } = {}) {
     const dir = fli ? -1 : 1;
-    figure(c, x + 22 * sca * dir, y + 2 * sca, { sca: 0.55 * sca, dir: -dir, staff: false, seated: true });
-    // the fishing pole
-    stroke(c, [[x + 24 * sca * dir, y - 8 * sca], [x + 55 * sca * dir, y - 30 * sca], [x + 85 * sca * dir, y - 42 * sca]], { wid: 0.6, col: 'rgba(80,80,80,0.8)', fun: () => 1 });
+    if (poler) {
+      man(c, x + 20 * sca * dir, y, { ite: staff, hat: strawHat, sca: 0.5 * sca, fli: !fli, len: [0, 30, 20, 30, 10, 30, 30, 30, 30] });
+    } else {
+      figure(c, x + 22 * sca * dir, y + 2 * sca, { sca: 0.55 * sca, dir: -dir, staff: false, seated: true });
+      // the fishing pole
+      stroke(c, [[x + 24 * sca * dir, y - 8 * sca], [x + 55 * sca * dir, y - 30 * sca], [x + 85 * sca * dir, y - 42 * sca]], { wid: 0.6, col: 'rgba(80,80,80,0.8)', fun: () => 1 });
+    }
     const f1 = (x) => Math.pow(Math.sin(x * Math.PI), 0.5) * 7 * sca;
     const f2 = (x) => Math.pow(Math.sin(x * Math.PI), 0.5) * 10 * sca;
     const p1 = [], p2 = [];
@@ -581,6 +1007,278 @@ const Shanshui = (() => {
     texture(c, rows, { tex: 35, wid: 1.4, sha: 2, noi: () => 2, col: () => grey(0.25 + R() * 0.3) });
   }
 
+  // ---------- the original's buildings ----------
+  // Drawn in a slight perspective: `rot` is where the front corner falls,
+  // `per` how far the base dips towards it.
+
+  const at = (xoff, yoff) => ([x, y]) => [x + xoff, y + yoff];
+
+  // A wall block; dec() adds window frames.
+  function box(c, xoff, yoff, { hei = 20, wid = 120, rot = 0.7, per = 4, tra = true, bot = true, wei = 3, dec = () => [] } = {}) {
+    const mid = -wid * 0.5 + wid * rot, bmid = -wid * 0.5 + wid * (1 - rot);
+    const pl = [div([[-wid * 0.5, -hei], [-wid * 0.5, 0]], 5), div([[wid * 0.5, -hei], [wid * 0.5, 0]], 5)];
+    if (bot) pl.push(div([[-wid * 0.5, 0], [mid, per]], 5), div([[wid * 0.5, 0], [mid, per]], 5));
+    pl.push(div([[mid, -hei], [mid, per]], 5));
+    if (tra) {
+      if (bot) pl.push(div([[-wid * 0.5, 0], [bmid, -per]], 5), div([[wid * 0.5, 0], [bmid, -per]], 5));
+      pl.push(div([[bmid, -hei], [bmid, -per]], 5));
+    }
+    const surf = (rot < 0.5) * 2 - 1;
+    pl.push(...dec({ pul: [surf * wid * 0.5, -hei], pur: [mid, -hei + per], pdl: [surf * wid * 0.5, 0], pdr: [mid, per] }));
+    const g = at(xoff, yoff);
+    if (!tra) fillPoly(c, [[-wid * 0.5, -hei], [wid * 0.5, -hei], [wid * 0.5, 0], [mid, per], [-wid * 0.5, 0]].map(g), '#fff');
+    for (const l of pl) stroke(c, l.map(g), { col: grey(0.4), noi: 1, wid: wei, fun: () => 1 });
+  }
+
+  // Window frames on a wall face: 1 -| |-, 2 ||||, 3 |##|.
+  function deco(style, { pul = [0, 0], pur = [0, 100], pdl = [100, 0], pdr = [100, 100], hsp = [1, 3], vsp = [1, 2] } = {}) {
+    const out = [];
+    const dl = div([pul, pdl], vsp[1]), dr = div([pur, pdr], vsp[1]), du = div([pul, pur], hsp[1]), dd = div([pdl, pdr], hsp[1]);
+    if (style === 1 || style === 3) {
+      const mlu = du[hsp[0]], mru = du[du.length - 1 - hsp[0]], mld = dd[hsp[0]], mrd = dd[du.length - 1 - hsp[0]];
+      for (let i = vsp[0]; i < dl.length - vsp[0]; i += vsp[0]) {
+        const mml = div([mlu, mld], vsp[1])[i], mmr = div([mru, mrd], vsp[1])[i];
+        if (style === 1) out.push(div([mml, dl[i]], 5), div([mmr, dr[i]], 5));
+        else out.push(div([mml, mmr], 5), div([div([mlu, mru], vsp[1])[i], div([mld, mrd], vsp[1])[i]], 5));
+      }
+      out.push(div([mlu, mld], 5), div([mru, mrd], 5));
+    } else if (style === 2) {
+      for (let i = hsp[0]; i < du.length - hsp[0]; i += hsp[0]) out.push(div([du[i], dd[i]], 5));
+    }
+    return out;
+  }
+
+  // A balustrade: the front (fro) and/or back (tra) rails, wobbly posts between.
+  function railing(c, xoff, yoff, seed, { hei = 20, wid = 180, rot = 0.7, per = 4, seg = 4, wei = 1, tra = true, fro = true } = {}) {
+    const mid = -wid * 0.5 + wid * rot, bmid = -wid * 0.5 + wid * (1 - rot);
+    const pl = [];
+    if (fro) pl.push(div([[-wid * 0.5, 0], [mid, per]], seg), div([[mid, per], [wid * 0.5, 0]], seg));
+    if (tra) pl.push(div([[-wid * 0.5, 0], [bmid, -per]], seg), div([[bmid, -per], [wid * 0.5, 0]], seg));
+    if (fro) pl.push(div([[-wid * 0.5, -hei], [mid, -hei + per]], seg), div([[mid, -hei + per], [wid * 0.5, -hei]], seg));
+    if (tra) pl.push(div([[-wid * 0.5, -hei], [bmid, -hei - per]], seg), div([[bmid, -hei - per], [wid * 0.5, -hei]], seg));
+    if (tra) {
+      // a gap in the back rail
+      const open = Math.floor(R() * pl.length);
+      pl[open] = pl[open].slice(0, -2);
+    }
+    const g = at(xoff, yoff), n = pl.length;
+    for (let i = 0; i < n / 2; i++) {
+      const k = (n / 2 + i) % n;
+      for (let j = 0; j < pl[i].length; j++) {
+        const b = pl[k][j % pl[k].length];
+        pl[i][j][1] += (noise(i, j * 0.5, seed) - 0.5) * hei;
+        b[1] += (noise(i + 0.5, j * 0.5, seed) - 0.5) * hei;
+        const ln = div([pl[i][j], b], 2);
+        ln[0][0] += (R() - 0.5) * hei * 0.5;
+        poly(c, ln.map(g), { str: grey(0.5), wid: 2 });
+      }
+    }
+    for (const l of pl) stroke(c, l.map(g), { col: grey(0.5), noi: 0.5, wid: wei, fun: () => 1 });
+  }
+
+  // A hipped roof in perspective, its ridge at height hei.
+  function eaves(c, xoff, yoff, { hei = 20, wid = 120, rot = 0.7, per = 4, cor = 5, wei = 3 } = {}) {
+    const opf = (pts) => (rot < 0.5 ? pts.map(([x, y]) => [-x, y]) : pts);
+    const rr = rot < 0.5 ? 1 - rot : rot;
+    const mid = -wid * 0.5 + wid * rr, quat = (mid + wid * 0.5) * 0.5 - mid;
+    const pl = [
+      [[-wid * 0.5 + quat, -hei - per / 2], [-wid * 0.5 + quat * 0.5, -hei / 2 - per / 4], [-wid * 0.5 - cor, 0]],
+      [[mid + quat, -hei], [(mid + quat + wid * 0.5) / 2, -hei / 2], [wid * 0.5 + cor, 0]],
+      [[mid + quat, -hei], [mid + quat / 2, -hei / 2 + per / 2], [mid + cor, per]],
+      [[-wid * 0.5 - cor, 0], [mid + cor, per]],
+      [[wid * 0.5 + cor, 0], [mid + cor, per]],
+      [[-wid * 0.5 + quat, -hei - per / 2], [mid + quat, -hei]],
+    ].map((l) => div(opf(l), 5));
+    const g = at(xoff, yoff);
+    fillPoly(c, opf([[-wid * 0.5, 0], [-wid * 0.5 + quat, -hei - per / 2], [mid + quat, -hei], [wid * 0.5, 0], [mid, per]]).map(g), '#fff');
+    for (const l of pl) stroke(c, l.map(g), { col: grey(0.4), noi: 1, wid: wei, fun: () => 1 });
+  }
+
+  // A pointed pagoda roof with sid ridges.
+  function pagroof(c, xoff, yoff, { hei = 20, wid = 120, per = 4, cor = 10, sid = 4, wei = 3 } = {}) {
+    const pl = [], po = [[0, -hei]];
+    for (let i = 0; i < sid; i++) {
+      const t = i / (sid - 1) - 0.5;
+      const fx = wid * t, fy = per * (1 - Math.abs(t) * 2), fxx = (wid + cor) * t;
+      if (i > 0) pl.push([pl[pl.length - 1][2], [fxx, fy]]);
+      pl.push([[0, -hei], [fx * 0.5, (-hei + fy) * 0.5], [fxx, fy]]);
+      po.push([fxx, fy]);
+    }
+    const g = at(xoff, yoff);
+    fillPoly(c, po.map(g), '#fff');
+    for (const l of pl) stroke(c, div(l, 5).map(g), { col: grey(0.4), noi: 1, wid: wei, fun: () => 1 });
+  }
+
+  // arch01: a thatched hall on a terrace, a balustrade, people at the rail.
+  function lodgeHall(c, xoff, yoff, { hei = 70, wid = 180, per = 5 } = {}) {
+    const seed = R(), p = 0.4 + R() * 0.2, h0 = hei * p, h1 = hei * (1 - p);
+    roof(c, xoff, yoff - hei, { hei: h0, wid, tex: 300 });
+    box(c, xoff, yoff, { hei: h1, wid: (wid * 2) / 3, per, bot: false });
+    railing(c, xoff, yoff, seed, { tra: true, fro: false, hei: 10, wid, per: per * 2, seg: (3 + R() * 3) | 0 });
+    const n = randChoice([0, 1, 1, 2]);
+    if (n === 1) man(c, xoff + normRand(-wid / 3, wid / 3), yoff, { fli: randChoice([true, false]), sca: 0.42 });
+    if (n === 2) {
+      man(c, xoff + normRand(-wid / 4, -wid / 5), yoff, { fli: false, sca: 0.42 });
+      man(c, xoff + normRand(wid / 5, wid / 4), yoff, { fli: true, sca: 0.42 });
+    }
+    railing(c, xoff, yoff, seed, { tra: false, fro: true, hei: 10, wid, per: per * 2, seg: (3 + R() * 3) | 0 });
+  }
+
+  // arch02: a house of sto storeys, each under its own roof, windows framed (sty).
+  function hall(c, xoff, yoff, { hei = 10, wid = 50, rot = 0.3, per = 5, sto = 3, sty = 1, rai = false } = {}) {
+    let hoff = 0;
+    for (let i = 0; i < sto; i++) {
+      box(c, xoff, yoff - hoff, {
+        tra: false, hei, wid: wid * 0.85 ** i, rot, wei: 1.5, per,
+        dec: (a) => deco(sty, { ...a, hsp: [[], [1, 5], [1, 5], [1, 4]][sty], vsp: [[], [1, 2], [1, 2], [1, 3]][sty] }),
+      });
+      if (rai) railing(c, xoff, yoff - hoff, i * 0.2, { wid: wid * 0.85 ** i * 1.1, hei: hei / 2, per, rot, wei: 0.5, tra: false });
+      eaves(c, xoff, yoff - hoff - hei, { hei, wid: wid * 0.9 ** i, rot, wei: 1.5, per });
+      hoff += hei * 1.5;
+    }
+  }
+
+  // arch03: a tall pagoda of five or seven storeys, for mountain tops.
+  function tallPagoda(c, xoff, yoff, { hei = 10, wid = 50, rot = 0.7, per = 5, sto = 7 } = {}) {
+    let hoff = 0;
+    for (let i = 0; i < sto; i++) {
+      box(c, xoff, yoff - hoff, {
+        tra: false, hei, wid: wid * 0.85 ** i, rot, wei: 1.5, per: per / 2,
+        dec: (a) => deco(1, { ...a, hsp: [1, 4], vsp: [1, 2] }),
+      });
+      railing(c, xoff, yoff - hoff, i * 0.2, { seg: 5, wid: wid * 0.85 ** i * 1.1, hei: hei / 2, per: per / 2, rot, wei: 0.5, tra: false });
+      pagroof(c, xoff, yoff - hoff - hei, { hei: hei * 1.5, wid: wid * 0.9 ** i, wei: 1.5, per });
+      hoff += hei * 1.5;
+    }
+  }
+
+  // arch04: an open gazebo of one or two storeys.
+  function gazebo(c, xoff, yoff, { hei = 15, wid = 30, rot = 0.7, per = 5, sto = 2 } = {}) {
+    let hoff = 0;
+    for (let i = 0; i < sto; i++) {
+      box(c, xoff, yoff - hoff, { tra: true, hei, wid: wid * 0.85 ** i, rot, wei: 1.5, per: per / 2 });
+      railing(c, xoff, yoff - hoff, i * 0.2, { seg: 3, wid: wid * 0.85 ** i * 1.2, hei: hei / 3, per: per / 2, rot, wei: 0.5, tra: true });
+      pagroof(c, xoff, yoff - hoff - hei, { hei, wid: wid * 0.9 ** i, wei: 1.5, per });
+      hoff += hei * 1.2;
+    }
+  }
+
+  // The original's joke among the pavilions: a power line pylon.
+  function pylon(c, xoff, yoff, { hei = 100, wid = 20 } = {}) {
+    const g = at(xoff, yoff);
+    const q = (pl) => stroke(c, div(pl, 5).map(g), { wid: 1, fun: () => 0.5, col: grey(0.4) });
+    const p00 = [-wid * 0.05, -hei], p01 = [wid * 0.05, -hei], p10 = [-wid * 0.1, -hei * 0.9], p11 = [wid * 0.1, -hei * 0.9];
+    const p20 = [-wid * 0.2, -hei * 0.5], p21 = [wid * 0.2, -hei * 0.5], p30 = [-wid * 0.5, 0], p31 = [wid * 0.5, 0];
+    for (const [bx, by] of [[0.7, -0.85], [1, -0.675], [0.7, -0.5]]) {
+      q([[-bx * wid, by * hei], [bx * wid, by * hei]]);
+      q([[-bx * wid, by * hei], [0, (by - 0.05) * hei]]);
+      q([[bx * wid, by * hei], [0, (by - 0.05) * hei]]);
+      q([[-bx * wid, by * hei], [-bx * wid, (by + 0.1) * hei]]);
+      q([[bx * wid, by * hei], [bx * wid, (by + 0.1) * hei]]);
+    }
+    const l0 = div([p00, p10, p20, p30], 5), l1 = div([p01, p11, p21, p31], 5);
+    for (let i = 0; i < l0.length - 1; i++) { q([l0[i], l1[i + 1]]); q([l1[i], l0[i + 1]]); }
+    q([p00, p01]); q([p10, p11]); q([p20, p21]); q([p00, p10, p20, p30]); q([p01, p11, p21, p31]);
+  }
+
+  // ---------- the original's figures ----------
+  // A robed figure on a skeleton of nine joints:
+  //      2
+  //    1/
+  // 7/  | \_ 6
+  // 8| 0 \ 5
+  //      /3
+  //     4
+
+  // a polyline widened by wfun along its length: its two sides
+  function expand(pts, wfun) {
+    const v0 = [], v1 = [];
+    for (let i = 1; i < pts.length - 1; i++) {
+      const w = wfun(i / pts.length);
+      const a1 = Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0]);
+      const a2 = Math.atan2(pts[i][1] - pts[i + 1][1], pts[i][0] - pts[i + 1][0]);
+      let a = (a1 + a2) / 2;
+      if (a < a2) a += Math.PI;
+      v0.push([pts[i][0] + w * Math.cos(a), pts[i][1] + w * Math.sin(a)]);
+      v1.push([pts[i][0] - w * Math.cos(a), pts[i][1] - w * Math.sin(a)]);
+    }
+    const l = pts.length - 1;
+    const a0 = Math.atan2(pts[1][1] - pts[0][1], pts[1][0] - pts[0][0]) - Math.PI / 2;
+    const a1 = Math.atan2(pts[l][1] - pts[l - 1][1], pts[l][0] - pts[l - 1][0]) - Math.PI / 2;
+    const w0 = wfun(0), w1 = wfun(1);
+    v0.unshift([pts[0][0] + w0 * Math.cos(a0), pts[0][1] + w0 * Math.sin(a0)]);
+    v1.unshift([pts[0][0] - w0 * Math.cos(a0), pts[0][1] - w0 * Math.sin(a0)]);
+    v0.push([pts[l][0] + w1 * Math.cos(a1), pts[l][1] + w1 * Math.sin(a1)]);
+    v1.push([pts[l][0] - w1 * Math.cos(a1), pts[l][1] - w1 * Math.sin(a1)]);
+    return [v0, v1];
+  }
+
+  // a shape drawn in the frame of the segment p0-p1 (a head, a hand)
+  function tranpoly(p0, p1, pts) {
+    const ang = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]) - Math.PI / 2, scl = distance(p0, p1);
+    return pts.map(([vx, vy]) => {
+      const d = Math.hypot(vx, vy), a = Math.atan2(vy, -vx);
+      return [p0[0] + d * scl * Math.cos(ang + a), p0[1] + d * scl * Math.sin(ang + a)];
+    });
+  }
+  const flipX = (pts) => pts.map(([x, y]) => [-x, y]);
+
+  // hat01: a scholar's cap with a ribbon trailing behind
+  function capHat(c, p0, p1, { fli = false } = {}) {
+    const seed = R(), f = fli ? flipX : (v) => v;
+    poly(c, tranpoly(p0, p1, f([[-0.3, 0.5], [0.3, 0.8], [0.2, 1], [0, 1.1], [-0.3, 1.15], [-0.55, 1], [-0.65, 0.5]])), { fil: grey(0.8) });
+    const rib = [];
+    for (let i = 0; i < 10; i++) rib.push([-0.3 - noise(i * 0.2, seed) * i * 0.1, 0.5 - i * 0.3]);
+    poly(c, tranpoly(p0, p1, f(rib)), { str: grey(0.8), wid: 1 });
+  }
+
+  // hat02: a wide straw hat
+  function strawHat(c, p0, p1, { fli = false } = {}) {
+    const f = fli ? flipX : (v) => v;
+    poly(c, tranpoly(p0, p1, f([[-0.3, 0.5], [-1.1, 0.5], [-1.2, 0.6], [-1.1, 0.7], [-0.3, 0.8], [0.3, 0.8], [1.0, 0.7], [1.3, 0.6], [1.2, 0.5], [0.3, 0.5]])), { fil: grey(0.8) });
+  }
+
+  // stick01: a walking staff (or a fishing pole) held between the hands
+  function staff(c, p0, p1, { fli = false } = {}) {
+    const seed = R(), f = fli ? flipX : (v) => v, l = 12, pts = [];
+    for (let i = 0; i < l; i++) pts.push([-noise(i * 0.1, seed) * 0.1 * Math.sin((i / l) * Math.PI) * 5, i * 0.3]);
+    poly(c, tranpoly(p0, p1, f(pts)), { str: grey(0.5), wid: 1 });
+  }
+
+  const JOINT_PARENT = [-1, 0, 1, 0, 3, 1, 5, 1, 7];
+  const joints = (i) => (i < 0 ? [] : [...joints(JOINT_PARENT[i]), i]);
+
+  // man: a figure in a robe, feet at (xoff, yoff); `ite` is what it holds.
+  function man(c, xoff, yoff, { sca = 0.5, hat = capHat, ite = null, fli = true, ang = null, len = [0, 30, 20, 30, 30, 30, 30, 30, 30] } = {}) {
+    ang = ang || [0, -Math.PI / 2, normRand(0, 0), (Math.PI / 4) * R(), ((Math.PI * 3) / 4) * R(), (Math.PI * 3) / 4,
+      -Math.PI / 4, (-Math.PI * 3) / 4 - (Math.PI / 4) * R(), -Math.PI / 4];
+    len = len.map((v) => v * sca);
+    const rot = (i) => joints(i).reduce((s, k) => s + ang[k], 0);
+    const pts = ang.map((_, i) => joints(i).reduce((p, k) => [p[0] + len[k] * Math.cos(rot(k)), p[1] + len[k] * Math.sin(rot(k))], [0, 0]));
+    const y0 = yoff - pts[4][1];
+    const g = ([x, y]) => [(fli ? -1 : 1) * x + xoff, y + y0];
+    const cloth = (P, fun) => {
+      const [t1, t2] = expand(bezmh(P, 2), fun);
+      fillPoly(c, t1.concat(t2.slice().reverse()).map(g), '#fff');
+      stroke(c, t1.map(g), { wid: 1, col: grey(0.5) });
+      stroke(c, t2.map(g), { wid: 1, col: grey(0.6) });
+    };
+    const fall = (x, k, base) => sca * k * (Math.sin(0.5 * x * Math.PI) * Math.pow(Math.sin(x * Math.PI), 0.1) + (1 - x) * base);
+    const fsleeve = (x) => fall(x, 8, 0.4), fbody = (x) => fall(x, 11, 0.5);
+    const fhead = (x) => sca * 7 * Math.pow(Math.max(0, 0.25 - Math.pow(x - 0.5, 2)), 0.3);
+    if (ite) ite(c, g(pts[8]), g(pts[6]), { fli });
+    cloth([pts[1], pts[7], pts[8]], fsleeve);
+    cloth([pts[1], pts[0], pts[3], pts[4]], fbody);
+    cloth([pts[1], pts[5], pts[6]], fsleeve);
+    cloth([pts[1], pts[2]], fhead);
+    // hair
+    const [h1, h2] = expand(bezmh([pts[1], pts[2]], 2), fhead);
+    h1.splice(0, Math.floor(h1.length * 0.1));
+    h2.splice(0, Math.floor(h2.length * 0.95));
+    fillPoly(c, h1.concat(h2.reverse()).map(g), grey(0.6));
+    hat(c, g(pts[1]), g(pts[2]), { fli });
+  }
+
   function walker(c, x, y, { sca = 1.25, dir = 1 } = {}) {
     // a stretch of path under the feet
     const path0 = [];
@@ -599,6 +1297,8 @@ const Shanshui = (() => {
   }
 
   // ---------- paper ----------
+
+  let PAPER = null;   // the tile, shared by the samples
 
   function paperTile() {
     const S = 256, cv = document.createElement('canvas');
@@ -622,6 +1322,82 @@ const Shanshui = (() => {
     return cv;
   }
 
+  // ---------- the catalogue ----------
+  // Every element of the handscroll, by category, for the lab's painter. Each
+  // has a sample: the element alone in a view of [w, h] world units. `zone` is
+  // where the planner puts it (far, mountains, slopes, plateaus, peaks, the
+  // mountains' feet, the shore, the water, the sky); `needs` another element
+  // it can't do without. `orig` marks what comes from shan-shui-inf.
+
+  const n0 = () => R() * 100;
+  const CATALOG = [
+    { id: 'mountains', name: { it: 'Montagne', en: 'Mountains' }, items: [
+      { id: 'mount', name: { it: 'Montagne alte', en: 'High mountains' }, zone: 'mountains', orig: true, view: [640, 440],
+        sample: (c) => mountain(c, 320, 420, n0(), { hei: 400, wid: 540, tex: 240 }) },
+      { id: 'hill', name: { it: 'Colline vicine', en: 'Near hills' }, zone: 'shore', orig: true, view: [420, 200],
+        sample: (c) => mountain(c, 210, 185, n0(), { hei: 95, wid: 320, tex: 110 }) },
+      { id: 'plateau', name: { it: 'Altopiani', en: 'Plateaus' }, zone: 'mountains', orig: true, view: [640, 360],
+        sample: (c) => { const bd = flatMount(c, 320, 330, n0(), { hei: 160, wid: 520 }); if (bd) flatDec(c, bd, { kind: -1, crooked: false, lodge: false }); } },
+      { id: 'ridges', name: { it: 'Creste lontane', en: 'Distant ridges' }, zone: 'far', view: [640, 300],
+        sample: (c) => { farRidge(c, 0, 640, 200, 160, 0.006, 1, 205); farRidge(c, 0, 640, 290, 110, 0.009, 2, 190); } },
+      { id: 'rock', name: { it: 'Rocce', en: 'Rocks' }, zone: 'shore', orig: true, view: [220, 110],
+        sample: (c) => { rock(c, 80, 95, { wid: 60, hei: 40 }); rock(c, 150, 100, { wid: 34, hei: 22 }); } },
+    ] },
+    { id: 'water', name: { it: 'Acqua', en: 'Water' }, items: [
+      { id: 'waves', name: { it: 'Onde', en: 'Waves' }, zone: 'water', orig: true, view: [520, 110],
+        sample: (c) => water(c, 260, 80, { len: 520, clu: 9 }) },
+      { id: 'boat', name: { it: 'Barca da pesca', en: 'Fishing boat' }, zone: 'water', needs: 'water.waves', view: [260, 120],
+        sample: (c) => { water(c, 130, 110, { len: 240, clu: 5 }); boat(c, 70, 85); } },
+      { id: 'poler', name: { it: 'Barcaiolo', en: 'Boatman' }, zone: 'water', needs: 'water.waves', orig: true, view: [260, 120],
+        sample: (c) => { water(c, 130, 110, { len: 240, clu: 5 }); boat(c, 70, 85, { poler: true }); } },
+      { id: 'bridge', name: { it: 'Ponte', en: 'Bridge' }, zone: 'water', needs: 'water.waves', view: [240, 120],
+        sample: (c) => bridge(c, 120, 70, { len: 120 }) },
+    ] },
+    { id: 'trees', name: { it: 'Alberi', en: 'Trees' }, items: [
+      { id: 'shrubs', name: { it: 'Cespugli', en: 'Shrubs' }, zone: 'slopes', orig: true, view: [200, 100],
+        sample: (c) => { for (let i = 0; i < 4; i++) tree02(c, 50 + i * 35, 60 + (i % 2) * 10, { a: 0.5 }); } },
+      { id: 'saplings', name: { it: 'Alberelli', en: 'Saplings' }, zone: 'slopes', orig: true, view: [200, 160],
+        sample: (c) => { for (let i = 0; i < 3; i++) tree01(c, 60 + i * 40, 150, { hei: 90 + i * 15, wid: 3, a: 0.35 }); } },
+      { id: 'leafy', name: { it: 'Albero frondoso', en: 'Leafy tree' }, zone: 'slopes', orig: true, view: [200, 200],
+        sample: (c) => tree03(c, 100, 190, { hei: 150, wid: 8, ben: (v) => Math.sin(v * 2) * 0.15 }) },
+      { id: 'big', name: { it: 'Grande albero', en: 'Big tree' }, zone: 'plateaus', orig: true, view: [360, 360],
+        sample: (c) => tree04(c, 180, 350, { hei: 300 }) },
+      { id: 'pine', name: { it: 'Pino', en: 'Pine' }, zone: 'plateaus', orig: true, view: [260, 340],
+        sample: (c) => tree05(c, 130, 330, { hei: 300 }) },
+      { id: 'bare', name: { it: 'Albero spoglio', en: 'Bare tree' }, zone: 'plateaus', orig: true, view: [320, 360],
+        sample: (c) => tree06(c, 160, 350, { hei: 100 }) },
+      { id: 'dark', name: { it: 'Albero scuro', en: 'Dark tree' }, zone: 'plateaus', orig: true, view: [220, 150],
+        sample: (c) => { for (let i = 0; i < 4; i++) tree07(c, 50 + i * 40, 140, { hei: 70 + i * 6 }); } },
+      { id: 'crooked', name: { it: 'Albero contorto', en: 'Crooked tree' }, zone: 'plateaus', orig: true, view: [200, 160],
+        sample: (c) => { for (let i = 0; i < 3; i++) tree08(c, 60 + i * 40, 150, { hei: 90 }); } },
+    ] },
+    { id: 'buildings', name: { it: 'Architetture', en: 'Buildings' }, items: [
+      { id: 'house', name: { it: 'Casa', en: 'House' }, zone: 'shore', view: [140, 110], sample: (c) => house(c, 70, 100, { wid: 46 }) },
+      { id: 'village', name: { it: 'Villaggio', en: 'Village' }, zone: 'shore', view: [200, 140], sample: (c) => village(c, 100, 120) },
+      { id: 'hall', name: { it: 'Casa a piani', en: 'Storeyed house' }, zone: 'feet', orig: true, view: [140, 120],
+        sample: (c) => hall(c, 70, 110, { wid: 60, sto: 3, sty: 1 + ((R() * 3) | 0), rot: R() }) },
+      { id: 'lodge', name: { it: 'Capanna sul terrazzo', en: 'Terrace lodge' }, zone: 'plateaus', needs: 'mountains.plateau', orig: true, view: [260, 150],
+        sample: (c) => lodgeHall(c, 130, 135, { wid: 180, hei: 90, per: R() }) },
+      { id: 'gazebo', name: { it: 'Gazebo', en: 'Gazebo' }, zone: 'feet', orig: true, view: [110, 110],
+        sample: (c) => gazebo(c, 55, 100, { sto: 2, wid: 36 }) },
+      { id: 'pavilion', name: { it: 'Padiglione', en: 'Pavilion' }, zone: 'shore', view: [140, 140], sample: (c) => pavilion(c, 70, 130, { wid: 54 }) },
+      { id: 'pagoda', name: { it: 'Pagoda sulla collina', en: 'Hill pagoda' }, zone: 'shore', view: [200, 220], sample: (c) => pagoda(c, 100, 200, { sto: 4 }) },
+      { id: 'tower', name: { it: 'Pagoda in vetta', en: 'Summit pagoda' }, zone: 'peaks', needs: 'mountains.mount', orig: true, view: [130, 230],
+        sample: (c) => tallPagoda(c, 65, 220, { sto: 7, wid: 48 }) },
+      { id: 'pylon', name: { it: 'Traliccio', en: 'Pylon' }, zone: 'feet', orig: true, view: [90, 130], sample: (c) => pylon(c, 45, 120) },
+    ] },
+    { id: 'figures', name: { it: 'Figure e animali', en: 'Figures and animals' }, items: [
+      { id: 'walker', name: { it: 'Viandante', en: 'Wanderer' }, zone: 'shore', view: [140, 70], sample: (c) => walker(c, 70, 55) },
+      { id: 'people', name: { it: 'Figure', en: 'People' }, zone: 'shore', orig: true, view: [200, 90],
+        sample: (c) => {
+          man(c, 40, 80, { sca: 0.5, hat: capHat, fli: false });
+          man(c, 110, 80, { sca: 0.5, hat: strawHat, ite: staff });
+          man(c, 165, 80, { sca: 0.45, hat: capHat });
+        } },
+      { id: 'birds', name: { it: 'Stormi', en: 'Flocks' }, zone: 'sky', view: [200, 90], sample: (c) => birds(c, 100, 50, { n: 5 }) },
+    ] },
+  ];
+
   // ---------- the scroll ----------
 
   return class Shanshui {
@@ -637,6 +1413,35 @@ const Shanshui = (() => {
       this.plans = new Map();
       this.X = 0;
       this.idle = null;
+    }
+
+    static get catalog() { return CATALOG; }
+
+    // One element alone on paper, `scale` canvas pixels per world unit.
+    static sample(canvas, key, { seed = 1, scale = 1 } = {}) {
+      const [cat, id] = key.split('.');
+      const it = CATALOG.find((k) => k.id === cat)?.items.find((k) => k.id === id);
+      if (!it) return false;
+      if (!perlin) noiseSeed(seed);
+      const [w, h] = it.view;
+      canvas.width = Math.ceil(w * scale);
+      canvas.height = Math.ceil(h * scale);
+      const ink = document.createElement('canvas');
+      ink.width = canvas.width; ink.height = canvas.height;
+      const c = ink.getContext('2d');
+      c.fillStyle = '#fff';
+      c.fillRect(0, 0, ink.width, ink.height);
+      c.setTransform(scale, 0, 0, scale, 0, 0);
+      c.lineJoin = 'round';
+      R = mulberry32(seed);
+      try { it.sample(c); } finally { R = Math.random; }
+      const p = canvas.getContext('2d');
+      p.fillStyle = p.createPattern(PAPER || (PAPER = paperTile()), 'repeat');
+      p.fillRect(0, 0, canvas.width, canvas.height);
+      p.globalCompositeOperation = 'multiply';
+      p.drawImage(ink, 0, 0);
+      p.globalCompositeOperation = 'source-over';
+      return true;
     }
 
     resize(w, h, dpr) {
