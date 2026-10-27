@@ -87,3 +87,11 @@ taken from the HSK syllabus; see
 the Mandarin syllables read by Chen Wang and the HSK words and characters read
 by Yue Tan, both under CC BY-SA, shared under the same licence. See
 `public/cinese/audio/LICENSES.md`.
+
+## Chinese Open Wordnet and Princeton WordNet 3.0
+
+`public/cinese/data/relations.json` (synonyms and antonyms) is derived from the
+Chinese Open Wordnet (Copyright 2013, 2014 Francis Bond and Shan Wang) and from
+Princeton WordNet 3.0 (Copyright 2006 by Princeton University), under their
+licences, reproduced in full in `public/cinese/data/licenses/COW.txt` and
+`public/cinese/data/licenses/WordNet-3.0.txt`.

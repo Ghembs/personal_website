@@ -46,7 +46,7 @@ public/          the site, served as is (no build step)
   style.css
   _headers       Cloudflare Pages response headers
   cinese/        the Chinese section: page, data/, fonts/, audio/ (voice.js plays it)
-scripts/         build-hanzi.mjs and build-audio.mjs, the data pipeline for cinese/
+scripts/         build-hanzi.mjs, build-audio.mjs and build-relations.mjs, the data pipeline for cinese/
 wrangler.toml    Cloudflare Pages project config
 ```
 
@@ -75,6 +75,11 @@ else its syllables chained with the tone changes of speech (3+3, 不, 一).
 Sentences use the device's speech synthesis when it has a Chinese voice, the
 chained syllables otherwise.
 
+Search takes a character, pinyin (tones optional) or an English word, matched
+in the meanings of characters and words. Cards also list synonyms and antonyms
+(Chinese Open Wordnet and WordNet, filtered with the CC-CEDICT meanings by
+`scripts/build-relations.mjs`) within the chosen levels.
+
 Its data and font subset are built by:
 
 ```bash
@@ -95,6 +100,13 @@ node scripts/build-audio.mjs ../audio-cmn
 ```
 
 Their licences: [public/cinese/audio/LICENSES.md](public/cinese/audio/LICENSES.md).
+
+Synonyms and antonyms (downloads the Chinese Open Wordnet and WordNet 3.0 into
+`data/raw/`):
+
+```bash
+node scripts/build-relations.mjs
+```
 
 ## Run locally
 

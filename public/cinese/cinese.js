@@ -36,6 +36,7 @@ const TEXT = {
     rings: 'anelli: numero di tratti', strokes: '{n} tratti', radical: 'Radicale', radicalN: 'Radicale · {n} tratti', component: 'Componente fonetica',
     meaning: 'Significato', meanings: 'Significati', readsAs: 'Come si legge la famiglia', nChars: '{n} caratteri · {lv}',
     composition: 'Composizione', what: "cos'è?", phon: 'Fonetico {p}, semantico {s}', picto: 'Pittogramma', ideo: 'Ideogramma',
+    relations: 'Sinonimi e contrari · {lv}', syn: 'simile', ant: 'contrario',
     family: 'Famiglia fonetica di {p}', examples: "Frasi d'esempio", examplesLv: "Frasi d'esempio · {lv}", loading: 'caricamento…',
     listen: 'ascolta', noSentences: 'Nessuna frase in questi livelli.', words: 'Parole · {lv}', noWords: 'Nessuna parola in questi livelli.',
     measure: 'classificatore', all: 'tutte', char1: 'carattere', charN: 'caratteri', clear: 'Annulla ricerca',
@@ -44,8 +45,8 @@ const TEXT = {
       介: 'preposizioni', 连: 'congiunzioni', 叹: 'interiezioni', 拟声: 'onomatopee', 前缀: 'prefissi', 后缀: 'suffissi' },
     // page
     home: '← giulianogambacorta', intro: 'introduzione', vLevels: 'livelli', vRadicals: 'radicali', vPhonetic: 'famiglie fonetiche',
-    cLevel: 'colore: livello', cTone: 'colore: tono', search: '字 o pinyin', strokesBtn: 'tratti', done: 'fine',
-    sources: 'Pronuncia: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Dati: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), sillabo HSK 2025. Frasi: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
+    cLevel: 'colore: livello', cTone: 'colore: tono', search: '字, pinyin o inglese', word1: 'parola', wordN: 'parole', strokesBtn: 'tratti', done: 'fine',
+    sources: 'Pronuncia: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Sinonimi e contrari: <a href="https://github.com/omwn/omw-data/tree/main/wns/cow" target="_blank" rel="noopener">Chinese Open Wordnet</a> e <a href="https://wordnet.princeton.edu/" target="_blank" rel="noopener">WordNet</a>. Dati: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), sillabo HSK 2025. Frasi: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
     lang: 'EN', langName: 'English', theme: 'Tema chiaro / scuro', aView: 'Vista', aLevels: 'Livelli visibili', aDim: 'Dimensioni', aColor: 'Colore',
     aClose: 'Chiudi', aGrip: 'Riduci o espandi la scheda', title: '汉字 · HSK 1–4 · Giuliano Gambacorta',
   },
@@ -54,6 +55,7 @@ const TEXT = {
     rings: 'rings: number of strokes', strokes: '{n} strokes', radical: 'Radical', radicalN: 'Radical · {n} strokes', component: 'Phonetic component',
     meaning: 'Meaning', meanings: 'Meanings', readsAs: 'How the family reads', nChars: '{n} characters · {lv}',
     composition: 'Composition', what: 'what is it?', phon: 'Phonetic {p}, semantic {s}', picto: 'Pictogram', ideo: 'Ideogram',
+    relations: 'Synonyms and antonyms · {lv}', syn: 'like', ant: 'opposite',
     family: 'Phonetic family of {p}', examples: 'Example sentences', examplesLv: 'Example sentences · {lv}', loading: 'loading…',
     listen: 'listen', noSentences: 'No sentences in these levels.', words: 'Words · {lv}', noWords: 'No words in these levels.',
     measure: 'measure word', all: 'all', char1: 'character', charN: 'characters', clear: 'Clear search',
@@ -61,8 +63,8 @@ const TEXT = {
     pos: { 名: 'nouns', 动: 'verbs', 形: 'adjectives', 副: 'adverbs', 量: 'measure words', 代: 'pronouns', 数: 'numerals', 助: 'particles',
       介: 'prepositions', 连: 'conjunctions', 叹: 'interjections', 拟声: 'onomatopoeia', 前缀: 'prefixes', 后缀: 'suffixes' },
     home: '← giulianogambacorta', intro: 'introduction', vLevels: 'levels', vRadicals: 'radicals', vPhonetic: 'phonetic families',
-    cLevel: 'colour: level', cTone: 'colour: tone', search: '字 or pinyin', strokesBtn: 'strokes', done: 'done',
-    sources: 'Pronunciation: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Data: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), HSK syllabus 2025. Sentences: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Strokes: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
+    cLevel: 'colour: level', cTone: 'colour: tone', search: '字, pinyin or English', word1: 'word', wordN: 'words', strokesBtn: 'strokes', done: 'done',
+    sources: 'Pronunciation: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Synonyms and antonyms: <a href="https://github.com/omwn/omw-data/tree/main/wns/cow" target="_blank" rel="noopener">Chinese Open Wordnet</a> and <a href="https://wordnet.princeton.edu/" target="_blank" rel="noopener">WordNet</a>. Data: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), HSK syllabus 2025. Sentences: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Strokes: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
     lang: 'IT', langName: 'Italiano', theme: 'Light / dark theme', aView: 'View', aLevels: 'Shown levels', aDim: 'Dimensions', aColor: 'Colour',
     aClose: 'Close', aGrip: 'Fold or unfold the card', title: '汉字 · HSK 1–4 · Giuliano Gambacorta',
   },
@@ -420,6 +422,12 @@ async function main() {
   fetch('data/sentences.json').then((r) => r.json()).then((d) => {
     sentences = d;
     if (selected >= 0 && !isNode(selected)) renderExamples(selected);
+  });
+  // synonyms and antonyms (scripts/build-relations.mjs): { item: [synonyms, antonyms] }
+  let relations = null;
+  fetch('data/relations.json').then((r) => r.json()).then((d) => {
+    relations = d;
+    if (selected >= 0 && !isNode(selected)) renderRelations(selected);
   });
   let selected = -1, hovered = -1, open = -1;   // open: radical node whose column is up
   let related = new Set(), highlight = new Set(), column_ = new Set();
@@ -921,6 +929,7 @@ async function main() {
         Object.entries(byLv).map(([lv, l]) => `<div class="ety">HSK ${lv}</div><div class="chips">${l.map((i) => chip(chars[i].c)).join('')}</div>`).join('');
     }
     card.querySelector('.family').innerHTML = '';
+    card.querySelector('.relations').innerHTML = '';
     card.querySelector('.examples').innerHTML = '';
     card.querySelector('.words').innerHTML = '';
     showWriter(r);
@@ -960,10 +969,34 @@ async function main() {
         fam.filter((j) => j !== i).map((j) => chip(chars[j].c)).join('') + `</div>`
       : '';
 
+    renderRelations(i);
     renderExamples(i);
     renderWords(i);
     showWriter(c);
     card.scrollTop = 0;
+  }
+
+  // Synonyms and antonyms of the character and of its words, those in the
+  // chosen levels only: characters open their card, words can be listened to.
+  const wordInfo = new Map(hsk.words.map((w) => [w.w, w]));
+  const levelOf = (x) => (index.has(x) ? chars[index.get(x)].level : wordInfo.get(x)?.level ?? 9);
+  function renderRelations(i) {
+    const { c } = chars[i];
+    const el = card.querySelector('.relations');
+    if (!relations) { el.innerHTML = ''; return; }
+    const shown = (list) => list.filter((x) => levels.has(levelOf(x)));
+    const item = (x) => (x.length === 1 && index.has(x) ? chip(x)
+      : `<button class="chip say" data-word="${x}" data-py="${wordInfo.get(x)?.py || ''}"><span class="hz">${x}</span><small>${wordInfo.get(x)?.py || ''}</small></button>`);
+    const own = [c, ...(wordsOf.get(c) || []).filter((w) => levels.has(w.level) && w.w !== c).map((w) => w.w)];
+    const rows = own.map((x) => [x, ...(relations[x] || [[], []]).map(shown)])
+      .filter(([, s, a]) => s.length || a.length).slice(0, 6);
+    el.innerHTML = rows.length
+      ? `<h2>${t('relations', { lv: levelText() })}</h2>` + rows.map(([x, s, a]) => `<div class="rel">` +
+        `<span class="hz head">${x}</span>` +
+        (s.length ? `<span class="kind">≈ ${t('syn')}</span><div class="chips">${s.map(item).join('')}</div>` : '') +
+        (a.length ? `<span class="kind">↔ ${t('ant')}</span><div class="chips">${a.map(item).join('')}</div>` : '') +
+        `</div>`).join('')
+      : '';
   }
 
   // Example sentences up to the chosen level, a couple per level, the
@@ -1092,9 +1125,47 @@ async function main() {
 
   // A character selects it; pinyin (tones optional) highlights every match
   // among the shown levels. Run again when the levels change.
+  // Search by meaning: an English word or phrase, as a whole word (eat, eats,
+  // eaten, eating), in the CC-CEDICT glosses of the characters and HSK words.
+  // A gloss that is just the query ("to eat") ranks first, then main meanings.
+  let found = { chars: [], words: [] };
+  function byMeaning(q) {
+    const lq = q.toLowerCase().trim();
+    const e = lq.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    const stem = e.length > 4 ? e.replace(/(e?s|ed|ing)$/, '') : e;
+    // short words only take a plural: "he" is not "heed" nor "hen"
+    const re = new RegExp(`\\b(${e}|${stem})(${lq.length <= 3 ? 's' : 's|es|d|ed|n|en|ing'})?\\b`, 'i');
+    const rank = (defs) => {
+      let best = -1;
+      defs.forEach((d, k) => d.split(/;\s*/).forEach((seg) => {
+        const g = seg.replace(/\([^)]*\)/g, '').trim().toLowerCase();
+        if (!re.test(g) || /^surname /.test(g)) return;
+        const r = (g === lq || g === `to ${lq}` ? 0 : 20) + k;
+        if (best < 0 || r < best) best = r;
+      }));
+      return best;
+    };
+    const hits = [], words = [];
+    chars.forEach(({ c }, i) => {
+      if (!inLevel(i)) return;
+      const r = rank((ced.chars[c] || []).flatMap(([, d]) => d));
+      if (r >= 0) hits.push([r, i]);
+    });
+    for (const w of hsk.words) {
+      if (w.w.length < 2 || !levels.has(w.level)) continue;
+      const r = rank(ced.words[w.w]?.d || []);
+      if (r >= 0) words.push([r, w]);
+    }
+    return {
+      chars: hits.sort((a, b) => a[0] - b[0] || chars[a[1]].level - chars[b[1]].level).map(([, i]) => i),
+      words: words.sort((a, b) => a[0] - b[0] || a[1].level - b[1].level).slice(0, 40).map(([, w]) => w),
+    };
+  }
+
   function runSearch(pickChar = true) {
     const q = $('#search').value.trim();
     highlight = new Set();
+    found = { chars: [], words: [] };
     if (q) {
       const han = [...q].find((ch) => index.has(ch));
       if (han) { if (pickChar) select(index.get(han)); }
@@ -1106,6 +1177,12 @@ async function main() {
           const ok = (ced.chars[chars[i].c] || []).some(([py]) => plain(py) === base && (!toneQ || toneOf(py) === toneQ));
           if (ok && inLevel(i)) highlight.add(i);
         });
+        // and by meaning, from two letters on: its characters, and those of its words, light up too
+        if (/^[a-z][a-z' -]+$/i.test(q)) {
+          found = byMeaning(q);
+          for (const i of found.chars) highlight.add(i);
+          for (const w of found.words) for (const ch of w.w) if (index.has(ch) && inLevel(index.get(ch))) highlight.add(index.get(ch));
+        }
       }
     }
     showResults();
@@ -1116,20 +1193,35 @@ async function main() {
   // keeps only them, and they are listed in a column under the bar.
   const narrowSearch = () => canvas.clientWidth <= 700 && highlight.size > 0;
   const results = $('#results');
+  // The list: on phones every match; on wider screens the matches by meaning,
+  // whose words the cloud alone can't show.
   function showResults() {
-    const on = narrowSearch() && card.hidden;
+    const meaning = found.chars.length + found.words.length > 0;
+    const narrow = canvas.clientWidth <= 700;
+    const on = card.hidden && (narrowSearch() || meaning);
     results.hidden = !on;
+    results.classList.toggle('side', !narrow);
     if (!on) return;
-    const list = [...highlight].sort((a, b) => chars[a].level - chars[b].level || tone[a] - tone[b]);
+    const inWords = new Set(found.words.flatMap((w) => [...w.w]));
+    const pinyin = [...highlight].filter((i) => !found.chars.includes(i) && !inWords.has(chars[i].c))
+      .sort((a, b) => chars[a].level - chars[b].level || tone[a] - tone[b]);
+    const list = meaning ? found.chars : pinyin;
+    const charRow = (i) => {
+      const gl = (ced.chars[chars[i].c]?.[0]?.[1] || [])[0] || '';
+      return `<button class="row" data-go="${chars[i].c}"><span class="hz">${chars[i].c}</span>` +
+        `<span class="py" style="color:${COLORS.tone[tone[i]]}">${reading[i]}</span>` +
+        `<span class="gl">${gl}</span><span class="lv">HSK ${chars[i].level}</span></button>`;
+    };
+    // a word opens the card of its first character
+    const wordRow = (w) => `<button class="row wrow" data-go="${[...w.w].find((ch) => index.has(ch))}"><span class="hz">${w.w}</span>` +
+      `<span class="py">${w.py}</span><span class="gl">${ced.words[w.w]?.d?.[0] || ''}</span><span class="lv">HSK ${w.level}</span></button>`;
     results.style.top = `${$('#bar').offsetHeight + 4}px`;
-    results.innerHTML = `<div class="rhead">${list.length} ${list.length === 1 ? t('char1') : t('charN')} · ${levelText()}` +
+    results.innerHTML = `<div class="rhead">${list.length} ${list.length === 1 ? t('char1') : t('charN')}` +
+      `${meaning ? ` · ${found.words.length} ${found.words.length === 1 ? t('word1') : t('wordN')}` : ''} · ${levelText()}` +
       `<button data-clear aria-label="${t('clear')}">×</button></div>` +
-      list.map((i) => {
-        const gl = (ced.chars[chars[i].c]?.[0]?.[1] || [])[0] || '';
-        return `<button class="row" data-go="${chars[i].c}"><span class="hz">${chars[i].c}</span>` +
-          `<span class="py" style="color:${COLORS.tone[tone[i]]}">${reading[i]}</span>` +
-          `<span class="gl">${gl}</span><span class="lv">HSK ${chars[i].level}</span></button>`;
-      }).join('');
+      list.map(charRow).join('') +
+      (found.words.length ? `<div class="rsub">${t('wordN')}</div>${found.words.map(wordRow).join('')}` : '') +
+      (meaning && pinyin.length && narrow ? `<div class="rsub">pinyin</div>${pinyin.map(charRow).join('')}` : '');
   }
   results.addEventListener('click', (e) => {
     if (e.target.closest('[data-clear]')) { $('#search').value = ''; runSearch(); return; }

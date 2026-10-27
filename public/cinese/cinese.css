@@ -286,6 +286,19 @@ a { color: inherit; }
 #results .row .hz { font-size: 28px; }
 #results .row .gl { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #results .row .lv { font-size: 12px; color: var(--dim); }
+/* synonyms and antonyms: a row per character or word */
+.rel { display: grid; grid-template-columns: auto auto 1fr; gap: 2px 10px; align-items: baseline; padding: 6px 0; border-top: 1px solid rgba(var(--fg), 0.07); }
+.rel .head { font-size: 24px; grid-row: span 2; }
+.rel .kind { font-size: 13px; color: var(--dim); white-space: nowrap; }
+.rel .kind + .chips { grid-column: 3; }
+.rel .chips { margin: 0; }
+.rel .chip.say::after { content: none; }
+#results .row.wrow { grid-template-columns: minmax(44px, auto) minmax(70px, auto) 1fr auto; }
+#results .row.wrow .hz { font-size: 24px; }
+#results .row .py { white-space: nowrap; }
+#results .rsub { padding: 10px 10px 2px; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+/* on wider screens, the matches by meaning: a panel under the bar, on the right */
+#results.side { left: auto; right: 16px; width: min(440px, 46vw); bottom: auto; max-height: 68vh; }
 
 /* --- practice: the writer alone, large --- */
 #card .grip { display: none; }
