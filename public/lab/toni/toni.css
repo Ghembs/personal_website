@@ -100,6 +100,27 @@ h1 { font-size: 26px; font-weight: 400; margin: 10px 0 2px; letter-spacing: 0.04
 .tone.wrong { border-color: var(--red); box-shadow: inset 0 0 0 2px var(--red); opacity: 0.8; }
 .answered .tone .d::after { content: " ▸"; color: var(--red); font-style: normal; }
 
+.modes { display: flex; justify-content: center; gap: 6px; margin: 14px 0 0; }
+.modes button { padding: 2px 14px; border: 1px solid var(--line); border-radius: 999px; font-size: 17px; }
+.modes button.on { border-color: var(--paper); box-shadow: inset 0 0 0 1px var(--paper); }
+
+/* speaking */
+#speak .prompt { margin-top: 22px; display: flex; gap: 18px; align-items: center; justify-content: center; text-align: left; }
+.mic svg { width: 40px; height: 40px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.mic.on { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 10px rgba(200, 80, 60, 0.12); } }
+.plot { margin: 0 0 12px; padding: 8px 10px 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.plot svg { width: 100%; height: auto; display: block; }
+.plot .grid { stroke: var(--line); stroke-width: 0.6; }
+.plot .ref { fill: none; stroke-width: 1.6; opacity: 0.28; }
+.plot .target { fill: none; stroke-width: 3; stroke-dasharray: 6 4; opacity: 0.95; }
+.plot .you { fill: none; stroke: var(--paper); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.plot figcaption { font-size: 14px; color: var(--dim); font-style: italic; min-height: 1.3em; }
+.heard .tone { padding: 6px 4px; }
+.heard .tone svg { height: 34px; }
+.heard .tone .d { font-style: normal; }
+.privacy { font-size: 13px; color: var(--dim); font-style: italic; margin: 14px 0 0; }
+
 #answer { margin-top: 22px; text-align: left; }
 #answer .row { display: flex; gap: 18px; align-items: center; justify-content: center; }
 .glyph { font-size: 84px; line-height: 1; min-width: 1em; text-align: center; }

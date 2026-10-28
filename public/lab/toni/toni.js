@@ -1,7 +1,10 @@
-// The tone trainer: a hidden character is pronounced (its syllable, from the
-// recordings of voice.js) and its tone is to be guessed; then the character,
-// and its card on request. The tone is drawn first, then a character with it,
-// so that the four come up equally often (the fourth is far the most common).
+// The tone trainer. Listening: a hidden character is pronounced (its
+// syllable, from the recordings of voice.js) and its tone is to be guessed;
+// then the character, and its card on request. Speaking: a character is shown
+// and said into the microphone; pitch.js draws its pitch against the
+// recording's and tells which tone it sounds like. Either way the tone is
+// drawn first, then a character with it, so that the four come up equally
+// often (the fourth is far the most common).
 
 const TEXT = {
   it: {
@@ -12,6 +15,13 @@ const TEXT = {
     reveal: 'mostra la scheda', next: 'prossimo →', reset: 'azzera',
     score: 'giuste {ok} su {n} · di fila {streak} · record {best}', none: 'ancora nessuna risposta',
     meanings: 'significati', words: 'parole', open: 'apri nella sezione di cinese →',
+    hintSpeak: 'pronuncia il carattere e guarda come sale e scende la tua voce', mListen: 'ascolta', mSpeak: 'parla', model: 'ascolta il modello', micLabel: 'registra',
+    sayStart: 'tieni premuto e pronuncia la sillaba', recording: 'ti ascolto… (rilascia quando hai finito)', analysing: 'analizzo…',
+    sayRight: 'giusto: suona come un {n}° tono', sayNear: 'quasi: il {n}° tono è vicino, ma suona più come un {g}°',
+    sayWrong: 'suona come un {g}° tono: il {n}° {d}', notHeard: 'non ho sentito bene: riprova, un po\' più forte o più lungo',
+    micDenied: 'il microfono non è autorizzato: permettilo nelle impostazioni del browser', micNone: 'nessun microfono disponibile',
+    legend: 'tratteggiata: il modello ({n}° tono) · piena: la tua voce', legendCal: ' · la tua altezza si calibra dopo qualche sillaba',
+    privacy: 'L\'audio resta nel tuo browser: viene analizzato qui e non viene inviato a nessuno.',
     langName: 'English', tone: '{n}° tono', d1: 'alto e piatto', d2: 'sale', d3: 'scende e risale', d4: 'scende deciso',
     foot: 'Registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Caratteri e significati dalla <a href="../../cinese/">sezione di cinese</a> (HSK 2025, CC-CEDICT).',
   },
@@ -23,6 +33,13 @@ const TEXT = {
     reveal: 'show the card', next: 'next →', reset: 'reset',
     score: '{ok} right out of {n} · streak {streak} · best {best}', none: 'no answers yet',
     meanings: 'meanings', words: 'words', open: 'open in the Chinese section →',
+    hintSpeak: 'say the character and see how your voice rises and falls', mListen: 'listen', mSpeak: 'speak', model: 'hear the model', micLabel: 'record',
+    sayStart: 'hold down and say the syllable', recording: 'listening… (let go when you\'re done)', analysing: 'analysing…',
+    sayRight: 'right: it sounds like tone {n}', sayNear: 'almost: tone {n} is close, but it sounds more like {g}',
+    sayWrong: 'it sounds like tone {g}: tone {n} {d}', notHeard: 'I didn\'t catch that: try again, a little louder or longer',
+    micDenied: 'the microphone isn\'t allowed: allow it in the browser\'s settings', micNone: 'no microphone available',
+    legend: 'dashed: the model (tone {n}) · solid: your voice', legendCal: ' · your pitch is calibrated after a few syllables',
+    privacy: 'The audio stays in your browser: it is analysed here and sent to no one.',
     langName: 'Italiano', tone: 'tone {n}', d1: 'high and level', d2: 'rising', d3: 'dips and rises', d4: 'falling',
     foot: 'Recordings from <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Characters and meanings from the <a href="../../cinese/">Chinese section</a> (HSK 2025, CC-CEDICT).',
   },
@@ -54,7 +71,10 @@ function contourSvg(k) {
 // ---------- data ----------
 
 let level = store.get('toni-level', 1);
-let stats = store.get('toni-stats', null) || { n: 0, ok: 0, streak: 0, best: 0, per: { 1: [0, 0], 2: [0, 0], 3: [0, 0], 4: [0, 0] } };
+const freshStats = () => ({ n: 0, ok: 0, streak: 0, best: 0, per: { 1: [0, 0], 2: [0, 0], 3: [0, 0], 4: [0, 0] } });
+let stats = store.get('toni-stats', null) || freshStats();
+let speakStats = store.get('toni-speak-stats', null) || freshStats();
+let mode = store.get('toni-mode', 'listen');
 let hsk = null, ced = null, current = null, answered = false;
 const recent = [];
 
@@ -75,15 +95,29 @@ function pools() {
 
 // ---------- the game ----------
 
-async function next() {
-  await loaded;
+// a tone, then a character with it, not one of the last ones
+function draw() {
   const by = pools(), tones = [1, 2, 3, 4].filter((k) => by[k].length);
   const k = tones[(Math.random() * tones.length) | 0];
   const fresh = by[k].filter((x) => !recent.includes(x.c));
   const list = fresh.length ? fresh : by[k];
-  current = list[(Math.random() * list.length) | 0];
-  recent.push(current.c);
+  const x = list[(Math.random() * list.length) | 0];
+  recent.push(x.c);
   if (recent.length > 24) recent.shift();
+  return x;
+}
+
+function count(st, key, k, ok) {
+  st.n++;
+  st.per[k][1]++;
+  if (ok) { st.ok++; st.streak++; st.per[k][0]++; } else st.streak = 0;
+  st.best = Math.max(st.best, st.streak);
+  store.set(key, st);
+}
+
+async function next() {
+  await loaded;
+  current = draw();
   answered = false;
   document.body.classList.remove('answered');
   document.querySelectorAll('.tone').forEach((b) => b.classList.remove('right', 'wrong'));
@@ -110,11 +144,7 @@ function guess(g) {
   answered = true;
   document.body.classList.add('answered');
   const ok = g === current.k;
-  stats.n++;
-  stats.per[current.k][1]++;
-  if (ok) { stats.ok++; stats.streak++; stats.per[current.k][0]++; } else stats.streak = 0;
-  stats.best = Math.max(stats.best, stats.streak);
-  store.set('toni-stats', stats);
+  count(stats, 'toni-stats', current.k, ok);
   document.querySelector(`.tone[data-tone="${current.k}"]`).classList.add('right');
   if (!ok) document.querySelector(`.tone[data-tone="${g}"]`).classList.add('wrong');
   setStatus(ok ? 'right' : 'wrong', { n: current.k, g }, ok ? 'ok' : 'no');
@@ -150,9 +180,10 @@ function setStatus(key, vars = {}, cls = '') {
 }
 
 function showStats() {
-  $('#score').textContent = stats.n ? t('score', stats) : t('none');
+  const st = mode === 'speak' ? speakStats : stats;
+  $('#score').textContent = st.n ? t('score', st) : t('none');
   $('#bars').innerHTML = [1, 2, 3, 4].map((k) => {
-    const [ok, n] = stats.per[k], pc = n ? Math.round((100 * ok) / n) : 0;
+    const [ok, n] = st.per[k], pc = n ? Math.round((100 * ok) / n) : 0;
     return `<div class="bar">${t('tone', { n: k })} · ${n ? `${pc}%` : '–'}<i><b style="width:${pc}%;background:var(--t${k})"></b></i></div>`;
   }).join('');
 }
@@ -172,6 +203,128 @@ function render() {
   const s = $('#status');
   setStatus(s.dataset.key || 'start', current ? { n: current.k, g: '?' } : {}, s.className.replace('status', '').trim());
   if (!$('#card').hidden) reveal();
+  $('.hint').textContent = t(mode === 'speak' ? 'hintSpeak' : 'hint');
+  if (target) {
+    const sk = $('#say-status').dataset.key;
+    if (sk) setSay(sk, { n: target.k, g: '?', d: t(`d${target.k}`) }, $('#say-status').className.replace('status', '').trim());
+    heard(null);
+    plot(null);
+  }
+  showStats();
+}
+
+// ---------- speaking ----------
+
+let target = null;                          // the character to say, with its recorded syllables
+let voiceMeans = store.get('toni-voice', []);   // how high the speaker's last syllables sat
+// the speaker's centre, once a few syllables are known (the tones come up evenly)
+const centre = () => (voiceMeans.length >= 4 ? voiceMeans.reduce((a, b) => a + b, 0) / voiceMeans.length : null);
+
+function setSay(key, vars = {}, cls = '') {
+  const s = $('#say-status');
+  s.dataset.key = key;
+  s.className = `status ${cls}`;
+  s.textContent = t(key, vars);
+}
+
+async function nextSay() {
+  await loaded;
+  target = draw();
+  const base = plain(target.py);
+  target.base = base;
+  target.models = Promise.all([1, 2, 3, 4].map((k) => (Voice.has(base + k) ? Pitch.reference(base + k) : null)))
+    .then((list) => Object.fromEntries(list.map((m, i) => [i + 1, m])));
+  $('#say-glyph').textContent = target.c;
+  $('#say-py').innerHTML = `<span style="color:var(--t${target.k})">${target.py}</span><small>HSK ${target.lv}</small>`;
+  setSay('sayStart');
+  heard(null);
+  plot(null);
+  target.models.then(() => plot(null));
+}
+
+// the curves: the four of the recording faint, the one to say dashed, the speaker's solid
+async function plot(user) {
+  const svg = $('#plot'), tg = target;
+  if (!tg) { svg.innerHTML = ''; return; }
+  const models = await tg.models;
+  if (tg !== target) return;
+  const ks = [1, 2, 3, 4].filter((k) => models[k]);
+  const mc = ks.reduce((a, k) => a + models[k].mean, 0) / (ks.length || 1);
+  const X = (i) => 12 + (i / (Pitch.POINTS - 1)) * 276, Y = (v) => 75 - Math.max(-10, Math.min(10, v)) * 6.5;
+  const line = (c, off) => c.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v - off).toFixed(1)}`).join('');
+  let out = [-6, -3, 0, 3, 6].map((v) => `<line class="grid" x1="6" x2="294" y1="${Y(v)}" y2="${Y(v)}"/>`).join('');
+  for (const k of ks) out += `<path class="${k === tg.k ? 'target' : 'ref'}" stroke="var(--t${k})" d="${line(models[k].contour, mc)}"/>`;
+  if (user) {
+    // the speaker's curve about their own centre; until it is known, level with the model's
+    const c = centre(), off = c !== null ? c : user.mean - (models[tg.k] ? models[tg.k].mean - mc : 0);
+    out += `<path class="you" d="${line(user.contour, off)}"/>`;
+  }
+  svg.innerHTML = out;
+  $('#legend').textContent = t('legend', { n: tg.k }) + (centre() === null ? t('legendCal') : '');
+}
+
+// the four tones, the one heard marked; tapping one plays the syllable in it
+function heard(ranked) {
+  $('#heard').innerHTML = [1, 2, 3, 4].map((k) => {
+    const cls = !ranked ? '' : k === ranked[0].tone ? (k === target.k ? ' right' : ' wrong') : '';
+    return `<button class="tone${cls}" data-say-tone="${k}">${contourSvg(k)}<span class="d" style="color:var(--t${k})">${t('tone', { n: k })}</span></button>`;
+  }).join('');
+}
+
+let stream = null, rec = null, chunks = [], pressed = 0, stopTimer = 0;
+async function startRec() {
+  if (rec) return;
+  if (!target) await nextSay();
+  try {
+    stream ||= await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true, channelCount: 1 } });
+  } catch (e) {
+    setSay(e.name === 'NotAllowedError' ? 'micDenied' : 'micNone', {}, 'no');
+    return;
+  }
+  chunks = [];
+  rec = new MediaRecorder(stream);
+  rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+  rec.onstop = take;
+  rec.start();
+  $('#mic').classList.add('on');
+  setSay('recording');
+  stopTimer = setTimeout(stopRec, 3000);
+}
+function stopRec() {
+  clearTimeout(stopTimer);
+  if (rec && rec.state === 'recording') rec.stop();
+}
+
+// a take: its curve, the closest tone, the verdict
+async function take() {
+  const type = rec.mimeType, tg = target;
+  rec = null;
+  $('#mic').classList.remove('on');
+  setSay('analysing');
+  let user = null;
+  try { user = Pitch.analyse(await Pitch.decode(await new Blob(chunks, { type }).arrayBuffer())); } catch (e) { /* unreadable: as not heard */ }
+  if (!user) { setSay('notHeard', {}, 'no'); return; }
+  const ranked = Pitch.classify(user, await tg.models, centre());
+  voiceMeans = [...voiceMeans, user.mean].slice(-16);
+  store.set('toni-voice', voiceMeans);
+  const g = ranked[0].tone, k = tg.k, ok = g === k;
+  // the right tone a close second: not quite wrong
+  const near = !ok && ranked[1]?.tone === k && ranked[1].dist - ranked[0].dist < 0.12 + 0.15 * ranked[0].dist;
+  count(speakStats, 'toni-speak-stats', k, ok);
+  setSay(ok ? 'sayRight' : near ? 'sayNear' : 'sayWrong', { n: k, g, d: t(`d${k}`) }, ok ? 'ok' : near ? '' : 'no');
+  heard(ranked);
+  plot(user);
+  showStats();
+}
+
+function setMode(m) {
+  mode = m;
+  store.set('toni-mode', m);
+  document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
+  $('#listen').hidden = m !== 'listen';
+  $('#speak').hidden = m !== 'speak';
+  $('.hint').textContent = t(m === 'speak' ? 'hintSpeak' : 'hint');
+  if (m === 'speak' && !target) nextSay();
   showStats();
 }
 
@@ -190,12 +343,32 @@ document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('cli
   recent.length = 0;
 }));
 $('#reset').addEventListener('click', () => {
-  stats = { n: 0, ok: 0, streak: 0, best: 0, per: { 1: [0, 0], 2: [0, 0], 3: [0, 0], 4: [0, 0] } };
-  store.set('toni-stats', stats);
+  if (mode === 'speak') { speakStats = freshStats(); store.set('toni-speak-stats', speakStats); } else { stats = freshStats(); store.set('toni-stats', stats); }
   showStats();
 });
+document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+// the microphone: held down, it records until let go; tapped, until tapped again (or 3 s)
+$('#mic').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (rec) { stopRec(); return; }
+  pressed = performance.now();
+  startRec();
+});
+$('#mic').addEventListener('pointerup', () => { if (rec && performance.now() - pressed > 400) stopRec(); });
+$('#model').addEventListener('click', () => target && Voice.syllable(target.name));
+$('#say-next').addEventListener('click', nextSay);
+$('#say-glyph').addEventListener('click', () => target && Voice.syllable(target.name));
+$('#heard').addEventListener('click', (e) => { const b = e.target.closest('[data-say-tone]'); if (b && target) Voice.syllable(target.base + b.dataset.sayTone); });
+addEventListener('keyup', (e) => { if (mode === 'speak' && e.key === ' ' && rec && performance.now() - pressed > 400) stopRec(); });
 addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (mode === 'speak') {
+    if (e.key === ' ') { e.preventDefault(); if (e.repeat) return; if (rec) stopRec(); else { pressed = performance.now(); startRec(); } }
+    else if (e.key === 'Enter') { e.preventDefault(); nextSay(); }
+    else if (/^[1-4]$/.test(e.key) && target) Voice.syllable(target.base + e.key);
+    else if (e.key === 'm' || e.key === 'M') target && Voice.syllable(target.name);
+    return;
+  }
   if (e.key === ' ') { e.preventDefault(); answered ? next() : play(); }
   else if (e.key === 'Enter') { e.preventDefault(); next(); }
   else if (/^[1-4]$/.test(e.key)) guess(+e.key);
@@ -212,3 +385,4 @@ $('#theme').addEventListener('click', () => {
 render();
 setStatus('loading');
 loaded.then(() => setStatus('start'));
+setMode(mode);

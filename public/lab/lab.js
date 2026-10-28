@@ -42,8 +42,8 @@ const EXPERIMENTS = [
     id: 'tones', href: 'toni/', tags: ['cinese', 'audio'],
     title: { it: 'Allenamento sui toni', en: 'Tone trainer' },
     text: {
-      it: 'Ascolta un carattere che non vedi e indovinane il tono, fino al livello HSK che vuoi; poi la sua scheda. Registrazioni di madrelingua.',
-      en: 'Hear a character you can\'t see and guess its tone, up to the HSK level you choose; then its card. Native speakers\' recordings.',
+      it: 'Ascolta un carattere che non vedi e indovinane il tono, fino al livello HSK che vuoi; poi la sua scheda. Oppure pronuncialo, e guarda la tua voce accanto a quella di una madrelingua.',
+      en: 'Hear a character you can\'t see and guess its tone, up to the HSK level you choose; then its card. Or say it, and see your voice beside a native speaker\'s.',
     },
     sketch: ['  ā   á   ǎ   à', ' ___  /  \\_/  \\', '               \\'],
   },

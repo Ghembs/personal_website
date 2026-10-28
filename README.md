@@ -40,7 +40,9 @@ public/          the site, served as is (no build step)
                  of 2-6 panels or a screen-sized frame (Shanshui.paint); save as PNG
   lab/toni/      the tone trainer: a hidden HSK character is pronounced (its
                  syllable, from cinese/voice.js) and its tone guessed, tones
-                 drawn evenly; then the character, its card on request
+                 drawn evenly; then the character, its card on request. Or
+                 spoken: pitch.js tracks the voice (YIN), draws it against the
+                 recording's and tells the closest tone, all in the browser
   img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders
   style.css

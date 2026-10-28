@@ -29,11 +29,17 @@
     <h1 data-i18n="title">allenamento sui toni</h1>
     <p class="hint" data-i18n="hint">ascolta un carattere che non vedi e indovinane il tono</p>
 
+    <div class="modes" role="group">
+      <button data-mode="listen" class="on" data-i18n="mListen">ascolta</button>
+      <button data-mode="speak" data-i18n="mSpeak">parla</button>
+    </div>
+
     <div class="levels">
       <span data-i18n="upTo">fino a</span>
       <button data-level="1">HSK 1</button><button data-level="2">HSK 2</button><button data-level="3">HSK 3</button><button data-level="4">HSK 4</button>
     </div>
 
+    <section id="listen">
     <button id="play" class="play" data-i18n-attr="aria-label:listen"><span>▶</span></button>
     <p id="status" class="status" data-i18n="start">premi ▶ (o spazio) per ascoltare</p>
 
@@ -52,6 +58,31 @@
       </div>
       <div id="card" class="card" hidden></div>
     </section>
+    </section>
+
+    <!-- speaking: say the syllable, see your pitch against the recording's -->
+    <section id="speak" hidden>
+      <div class="row prompt">
+        <span id="say-glyph" class="glyph hz">　</span>
+        <div>
+          <div id="say-py" class="reading"></div>
+          <div class="acts">
+            <button id="model" data-i18n="model">ascolta il modello</button>
+            <button id="say-next" class="primary" data-i18n="next">prossimo →</button>
+          </div>
+        </div>
+      </div>
+      <button id="mic" class="play mic" data-i18n-attr="aria-label:micLabel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5M8.5 21.5h7"/></svg>
+      </button>
+      <p id="say-status" class="status" data-i18n="sayStart">tieni premuto e pronuncia la sillaba</p>
+      <figure class="plot">
+        <svg id="plot" viewBox="0 0 300 150" aria-hidden="true"></svg>
+        <figcaption id="legend"></figcaption>
+      </figure>
+      <div id="heard" class="tones heard"></div>
+      <p class="privacy" data-i18n="privacy">L'audio resta nel tuo browser: viene analizzato qui e non viene inviato a nessuno.</p>
+    </section>
 
     <section class="stats">
       <div id="score" class="score"></div>
@@ -64,6 +95,7 @@
 
   <script src="../../i18n.js"></script>
   <script src="../../cinese/voice.js"></script>
+  <script src="pitch.js"></script>
   <script src="toni.js"></script>
 </body>
 </html>
