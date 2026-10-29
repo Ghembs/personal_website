@@ -16,7 +16,8 @@ const TEXT = {
     score: 'giuste {ok} su {n} · di fila {streak} · record {best}', none: 'ancora nessuna risposta',
     meanings: 'significati', words: 'parole', open: 'apri nella sezione di cinese →',
     hintSpeak: 'pronuncia il carattere e guarda come sale e scende la tua voce', mListen: 'ascolta', mSpeak: 'parla', model: 'ascolta il modello', micLabel: 'registra',
-    sayStart: 'tieni premuto e pronuncia la sillaba', recording: 'ti ascolto… (rilascia quando hai finito)', analysing: 'analizzo…',
+    sayStart: 'tieni premuto e pronuncia la sillaba (o tocca, e parla)', recording: 'ti ascolto…', recordingFree: 'ti sento…', analysing: 'analizzo…',
+    free: 'mani libere', listeningFree: 'mani libere: pronuncia quando vuoi', notHeardFree: 'non ho sentito bene: riprova quando vuoi',
     sayRight: 'giusto: suona come un {n}° tono', sayNear: 'quasi: il {n}° tono è vicino, ma suona più come un {g}°',
     sayWrong: 'suona come un {g}° tono: il {n}° {d}', notHeard: 'non ho sentito bene: riprova, un po\' più forte o più lungo',
     micDenied: 'il microfono non è autorizzato: permettilo nelle impostazioni del browser', micNone: 'nessun microfono disponibile',
@@ -34,7 +35,8 @@ const TEXT = {
     score: '{ok} right out of {n} · streak {streak} · best {best}', none: 'no answers yet',
     meanings: 'meanings', words: 'words', open: 'open in the Chinese section →',
     hintSpeak: 'say the character and see how your voice rises and falls', mListen: 'listen', mSpeak: 'speak', model: 'hear the model', micLabel: 'record',
-    sayStart: 'hold down and say the syllable', recording: 'listening… (let go when you\'re done)', analysing: 'analysing…',
+    sayStart: 'hold down and say the syllable (or tap, and speak)', recording: 'listening…', recordingFree: 'I hear you…', analysing: 'analysing…',
+    free: 'hands free', listeningFree: 'hands free: speak whenever you like', notHeardFree: 'I didn\'t catch that: try again whenever you like',
     sayRight: 'right: it sounds like tone {n}', sayNear: 'almost: tone {n} is close, but it sounds more like {g}',
     sayWrong: 'it sounds like tone {g}: tone {n} {d}', notHeard: 'I didn\'t catch that: try again, a little louder or longer',
     micDenied: 'the microphone isn\'t allowed: allow it in the browser\'s settings', micNone: 'no microphone available',
@@ -236,7 +238,7 @@ async function nextSay() {
     .then((list) => Object.fromEntries(list.map((m, i) => [i + 1, m])));
   $('#say-glyph').textContent = target.c;
   $('#say-py').innerHTML = `<span style="color:var(--t${target.k})">${target.py}</span><small>HSK ${target.lv}</small>`;
-  setSay('sayStart');
+  setSay(handsFree && MIC.ctx ? 'listeningFree' : 'sayStart');
   heard(null);
   plot(null);
   target.models.then(() => plot(null));
@@ -271,39 +273,121 @@ function heard(ranked) {
   }).join('');
 }
 
-let stream = null, rec = null, chunks = [], pressed = 0, stopTimer = 0;
-async function startRec() {
-  if (rec) return;
-  if (!target) await nextSay();
+// The microphone. Once allowed it stays open and keeps its last seconds, so a
+// take starts a little before the press and ends a little after the release
+// (we start speaking as we press, and stop as we let go). Every block of about
+// 20 ms is weighed against the room's own noise: that moves the level ring,
+// ends a tapped take when the voice stops and, hands free, starts the takes.
+const MIC = { ctx: null, rate: 48000, chunks: [], pos: 0, noise: 0.003, run: 0 };
+const PRE = 0.35, POST = 0.3, KEEP = 6;      // seconds
+let taking = null;          // the take being recorded: { mode: 'hold' | 'tap' | 'free', start, voiced, last }
+let analysing = false, pressed = 0, released = false;
+let handsFree = store.get('toni-free', false), quietUntil = 0;
+const now = () => MIC.pos / MIC.rate;
+
+async function openMic() {
+  if (MIC.ctx) {
+    if (MIC.ctx.state === 'suspended') await MIC.ctx.resume();
+    return true;
+  }
+  let stream;
   try {
-    stream ||= await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true, channelCount: 1 } });
+    // echo cancellation keeps the model's voice, from the speakers, out of the takes
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true, channelCount: 1 } });
   } catch (e) {
     setSay(e.name === 'NotAllowedError' ? 'micDenied' : 'micNone', {}, 'no');
-    return;
+    return false;
   }
-  chunks = [];
-  rec = new MediaRecorder(stream);
-  rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-  rec.onstop = take;
-  rec.start();
-  $('#mic').classList.add('on');
-  setSay('recording');
-  stopTimer = setTimeout(stopRec, 3000);
+  const ctx = new AudioContext();
+  const src = ctx.createMediaStreamSource(stream);
+  const node = ctx.createScriptProcessor(1024, 1, 1);
+  node.onaudioprocess = (e) => hear(e.inputBuffer.getChannelData(0));
+  src.connect(node);
+  node.connect(ctx.destination);               // silent: its output stays empty
+  Object.assign(MIC, { ctx, rate: ctx.sampleRate, src, node });
+  return true;
 }
-function stopRec() {
-  clearTimeout(stopTimer);
-  if (rec && rec.state === 'recording') rec.stop();
+
+function hear(block) {
+  const x = new Float32Array(block);
+  MIC.chunks.push([MIC.pos, x]);
+  MIC.pos += x.length;
+  while (MIC.chunks.length && MIC.chunks[0][0] < MIC.pos - KEEP * MIC.rate) MIC.chunks.shift();
+  let e = 0;
+  for (const v of x) e += v * v;
+  const rms = Math.sqrt(e / x.length);
+  // the room's noise: follows a quieter moment at once, a louder one slowly
+  MIC.noise = rms < MIC.noise ? MIC.noise * 0.6 + rms * 0.4 : MIC.noise * 1.002;
+  const voice = rms > Math.max(MIC.noise * 4, 0.0005);
+  meter(Math.min(1, Math.log10(Math.max(1, rms / MIC.noise)) / 1.6));
+  const t = now();
+  if (taking) {
+    if (voice) { taking.voiced = true; taking.last = t; }
+    // a tapped or hands-free take ends a little after the voice does
+    if (taking.mode !== 'hold' && taking.voiced && t - taking.last > 0.45) finish();
+    else if (t - taking.start > 3.5) finish();
+  } else if (handsFree && mode === 'speak' && !analysing && performance.now() > quietUntil) {
+    MIC.run = voice ? MIC.run + 1 : 0;
+    if (MIC.run >= 3) { MIC.run = 0; begin('free', t - 0.07); }
+  }
+}
+
+let meterRaf = 0, meterLevel = 0;
+function meter(v) {
+  meterLevel = Math.max(v, meterLevel * 0.85);
+  if (!meterRaf) meterRaf = requestAnimationFrame(() => { meterRaf = 0; $('#mic').style.setProperty('--lvl', meterLevel.toFixed(2)); });
+}
+
+function begin(m, at = now()) {
+  taking = { mode: m, start: at, voiced: m === 'free', last: at };
+  $('#mic').classList.add('on');
+  setSay(m === 'free' ? 'recordingFree' : 'recording');
+}
+
+// the take, with a little before and after; a hold waits for its last bit to arrive
+function finish() {
+  if (!taking) return;
+  const tk = taking, t1 = now() + (tk.mode === 'hold' ? POST : 0.1);
+  taking = null;
+  $('#mic').classList.remove('on');
+  const a = Math.max(0, Math.round((tk.start - PRE) * MIC.rate)), b = Math.round(t1 * MIC.rate);
+  setTimeout(() => analyseTake(slice(a, b)), Math.max(0, (t1 - now()) * 1000) + 40);
+}
+function slice(a, b) {
+  const out = new Float32Array(Math.max(0, b - a));
+  for (const [at, x] of MIC.chunks) {
+    const lo = Math.max(a, at), hi = Math.min(b, at + x.length);
+    if (hi > lo) out.set(x.subarray(lo - at, hi - at), lo - a);
+  }
+  return out;
+}
+
+async function press() {
+  released = false;
+  pressed = performance.now();
+  if (!target) await nextSay();
+  if (!(await openMic())) return;
+  if (taking) { finish(); return; }              // a tapped take, tapped again
+  begin(released ? 'tap' : 'hold');
+}
+function release() {
+  released = true;
+  if (!taking || taking.mode !== 'hold') return;
+  // a quick tap: the take goes on until the voice stops
+  if (performance.now() - pressed < 400) taking.mode = 'tap';
+  else finish();
 }
 
 // a take: its curve, the closest tone, the verdict
-async function take() {
-  const type = rec.mimeType, tg = target;
-  rec = null;
-  $('#mic').classList.remove('on');
+async function analyseTake(samples) {
+  const tg = target;
+  analysing = true;
   setSay('analysing');
   let user = null;
-  try { user = Pitch.analyse(await Pitch.decode(await new Blob(chunks, { type }).arrayBuffer())); } catch (e) { /* unreadable: as not heard */ }
-  if (!user) { setSay('notHeard', {}, 'no'); return; }
+  try { user = Pitch.analyse(await Pitch.resample(samples, MIC.rate)); } catch (e) { /* unreadable: as not heard */ }
+  analysing = false;
+  quietUntil = performance.now() + 500;
+  if (!user) { setSay(handsFree ? 'notHeardFree' : 'notHeard', {}, 'no'); return; }
   const ranked = Pitch.classify(user, await tg.models, centre());
   voiceMeans = [...voiceMeans, user.mean].slice(-16);
   store.set('toni-voice', voiceMeans);
@@ -317,6 +401,22 @@ async function take() {
   showStats();
 }
 
+// the recordings played here are not takes
+function model(name) {
+  quietUntil = performance.now() + 1800;
+  if (taking?.mode === 'free') { taking = null; $('#mic').classList.remove('on'); }
+  Voice.syllable(name);
+}
+
+async function setFree(on) {
+  handsFree = on;
+  store.set('toni-free', on);
+  $('#free').checked = on;
+  $('#speak').classList.toggle('hands-free', on);
+  if (on && mode === 'speak' && (await openMic())) setSay('listeningFree');
+  else if (!on) { if (taking?.mode === 'free') { taking = null; $('#mic').classList.remove('on'); } setSay('sayStart'); }
+}
+
 function setMode(m) {
   mode = m;
   store.set('toni-mode', m);
@@ -325,6 +425,10 @@ function setMode(m) {
   $('#speak').hidden = m !== 'speak';
   $('.hint').textContent = t(m === 'speak' ? 'hintSpeak' : 'hint');
   if (m === 'speak' && !target) nextSay();
+  // hands free again: the microphone opens on the first touch (browsers want a gesture)
+  $('#free').checked = handsFree;
+  $('#speak').classList.toggle('hands-free', handsFree);
+  if (m === 'speak' && handsFree && MIC.ctx) setSay('listeningFree');
   showStats();
 }
 
@@ -348,25 +452,23 @@ $('#reset').addEventListener('click', () => {
 });
 document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 // the microphone: held down, it records until let go; tapped, until tapped again (or 3 s)
-$('#mic').addEventListener('pointerdown', (e) => {
-  e.preventDefault();
-  if (rec) { stopRec(); return; }
-  pressed = performance.now();
-  startRec();
-});
-$('#mic').addEventListener('pointerup', () => { if (rec && performance.now() - pressed > 400) stopRec(); });
-$('#model').addEventListener('click', () => target && Voice.syllable(target.name));
+$('#mic').addEventListener('pointerdown', (e) => { e.preventDefault(); press(); });
+$('#mic').addEventListener('pointerup', release);
+$('#mic').addEventListener('pointerleave', () => { if (taking?.mode === 'hold') release(); });
+$('#free').addEventListener('change', (e) => setFree(e.target.checked));
+addEventListener('pointerdown', () => { if (handsFree && mode === 'speak' && !MIC.ctx) setFree(true); });
+$('#model').addEventListener('click', () => target && model(target.name));
 $('#say-next').addEventListener('click', nextSay);
-$('#say-glyph').addEventListener('click', () => target && Voice.syllable(target.name));
-$('#heard').addEventListener('click', (e) => { const b = e.target.closest('[data-say-tone]'); if (b && target) Voice.syllable(target.base + b.dataset.sayTone); });
-addEventListener('keyup', (e) => { if (mode === 'speak' && e.key === ' ' && rec && performance.now() - pressed > 400) stopRec(); });
+$('#say-glyph').addEventListener('click', () => target && model(target.name));
+$('#heard').addEventListener('click', (e) => { const b = e.target.closest('[data-say-tone]'); if (b && target) model(target.base + b.dataset.sayTone); });
+addEventListener('keyup', (e) => { if (mode === 'speak' && e.key === ' ') release(); });
 addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
   if (mode === 'speak') {
-    if (e.key === ' ') { e.preventDefault(); if (e.repeat) return; if (rec) stopRec(); else { pressed = performance.now(); startRec(); } }
+    if (e.key === ' ') { e.preventDefault(); if (!e.repeat) press(); }
     else if (e.key === 'Enter') { e.preventDefault(); nextSay(); }
-    else if (/^[1-4]$/.test(e.key) && target) Voice.syllable(target.base + e.key);
-    else if (e.key === 'm' || e.key === 'M') target && Voice.syllable(target.name);
+    else if (/^[1-4]$/.test(e.key) && target) model(target.base + e.key);
+    else if (e.key === 'm' || e.key === 'M') target && model(target.name);
     return;
   }
   if (e.key === ' ') { e.preventDefault(); answered ? next() : play(); }

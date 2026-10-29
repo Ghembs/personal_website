@@ -107,8 +107,12 @@ h1 { font-size: 26px; font-weight: 400; margin: 10px 0 2px; letter-spacing: 0.04
 /* speaking */
 #speak .prompt { margin-top: 22px; display: flex; gap: 18px; align-items: center; justify-content: center; text-align: left; }
 .mic svg { width: 40px; height: 40px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
-.mic.on { animation: pulse 1s ease-in-out infinite; }
-@keyframes pulse { 50% { box-shadow: 0 0 0 10px rgba(200, 80, 60, 0.12); } }
+/* the ring grows with the voice it hears (--lvl, 0-1) */
+.mic { --lvl: 0; box-shadow: 0 0 0 calc(var(--lvl) * 16px) rgba(200, 80, 60, 0.16); transition: transform 0.15s, background 0.2s, box-shadow 0.08s; }
+.mic.on { border-color: var(--red); color: var(--red); }
+#speak.hands-free .mic { border-style: dashed; }
+.free-toggle { display: inline-flex; gap: 6px; align-items: center; margin: -2px 0 8px; color: var(--dim); font-size: 15px; font-style: italic; cursor: pointer; }
+.free-toggle input { accent-color: var(--red); margin: 0; }
 .plot { margin: 0 0 12px; padding: 8px 10px 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
 .plot svg { width: 100%; height: auto; display: block; }
 .plot .grid { stroke: var(--line); stroke-width: 0.6; }

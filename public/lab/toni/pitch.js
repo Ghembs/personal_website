@@ -1,5 +1,6 @@
 // Pitch contours of a spoken syllable, and which tone they look like.
 //   - decode(): any audio the browser reads, as mono samples at 16 kHz;
+//     resample(): the microphone's samples, the same;
 //   - analyse(): the pitch of every 10 ms frame (YIN), the longest voiced
 //     stretch, octave slips mended and smoothed, as semitones over 24 points;
 //   - reference(): the same for a recorded syllable (voice.js's audio-cmn);
@@ -28,6 +29,19 @@ const Pitch = (() => {
     return out;
   }
 
+  // samples recorded at another rate (the microphone's), at 16 kHz
+  async function resample(x, rate) {
+    if (rate === SR) return x;
+    const ctx = new OfflineAudioContext(1, Math.ceil((x.length * SR) / rate), SR);
+    const b = ctx.createBuffer(1, x.length, rate);
+    b.copyToChannel(x, 0);
+    const src = ctx.createBufferSource();
+    src.buffer = b;
+    src.connect(ctx.destination);
+    src.start();
+    return (await ctx.startRendering()).getChannelData(0);
+  }
+
   // YIN (de Cheveigné & Kawahara 2002): the period where the cumulative mean
   // normalised difference first dips under a threshold; 0 when unvoiced.
   const TMIN = Math.floor(SR / FMAX), TMAX = Math.ceil(SR / FMIN);
@@ -43,7 +57,7 @@ const Pitch = (() => {
     }
     // the first dip under 0.15; else the deepest, if periodic enough (a
     // falling voice turns creaky, and would be lost)
-    let pick = -1, low = 0.35;
+    let pick = -1, low = 0.42;
     for (let tau = TMIN; tau <= TMAX; tau++) {
       if (d[tau] < 0.15) {
         while (tau < TMAX && d[tau + 1] < d[tau]) tau++;
@@ -61,7 +75,14 @@ const Pitch = (() => {
   const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
   const st = (f) => 12 * Math.log2(f / 100);       // semitones above 100 Hz
 
-  function analyse(x) {
+  function analyse(x0) {
+    // level the take: no offset, the loudest sample at 0.5 (a distant or quiet
+    // microphone gives a faint signal, but its pitch is all there)
+    let dc = 0, top = 0;
+    for (const v of x0) dc += v / x0.length;
+    for (const v of x0) top = Math.max(top, Math.abs(v - dc));
+    if (top < 1e-4) return null;                         // nothing at all
+    const x = x0.map((v) => ((v - dc) * 0.5) / top);
     // the frames: pitch and loudness
     const frames = [];
     for (let at = 0; at + WIN + TMAX + 2 <= x.length; at += HOP) {
@@ -70,9 +91,12 @@ const Pitch = (() => {
       frames.push({ f: 0, rms: Math.sqrt(e / WIN), at });
     }
     if (!frames.length) return null;
+    // the voice against the room's own noise (its quietest frames)
     const loud = Math.max(...frames.map((fr) => fr.rms));
-    if (loud < 0.005) return null;                       // silence
-    for (const fr of frames) if (fr.rms > loud * 0.08) fr.f = yin(x, fr.at);
+    const noise = [...frames.map((fr) => fr.rms)].sort((a, b) => a - b)[Math.floor(frames.length * 0.15)];
+    if (loud < noise * 3) return null;                   // no voice above the noise
+    const gate = Math.max(loud * 0.08, noise * 2);
+    for (const fr of frames) if (fr.rms > gate) fr.f = yin(x, fr.at);
     // the longest voiced stretch, gaps of up to five frames bridged
     let best = [0, -1], start = -1, gap = 0;
     frames.forEach((fr, i) => {
@@ -167,5 +191,5 @@ const Pitch = (() => {
     }).sort((a, b) => a.dist - b.dist);
   }
 
-  return { SR, POINTS, W, decode, analyse, reference, classify };
+  return { SR, POINTS, W, decode, resample, analyse, reference, classify };
 })();
