@@ -4,9 +4,10 @@
 //   - analyse(): the pitch of every 10 ms frame (YIN), the longest voiced
 //     stretch, octave slips mended and smoothed, as semitones over 24 points;
 //   - reference(): the same for a recorded syllable (voice.js's audio-cmn);
-//   - classify(): the closest of the four tones of that syllable, by the shape
-//     of the curve (dynamic time warping) and, once the voice is known, by how
-//     high it sits in the speaker's own range.
+//   - classify(): which of the four tones it is: by what the curve does (how far
+//     it falls and rises, where it turns, how long it lasts, how high it sits in
+//     the speaker's own range), and a little by how close it comes to the
+//     recordings of that very syllable.
 // Everything runs in the browser: the voice never leaves it.
 
 const Pitch = (() => {
@@ -14,8 +15,18 @@ const Pitch = (() => {
   const HOP = 160, WIN = 480;            // 10 ms frames, 30 ms windows (a fourth tone falls fast)
   const FMIN = 70, FMAX = 500;
   const POINTS = 24;
-  // weights of the classifier, tuned on audio-cmn's characters read by another voice
-  const W = { way: 1, level: 0.35 };
+  // matching the recordings: a different direction, a different height
+  const W = { way: 1, level: 0.35, match: 0.3 };
+  // The shape of each tone: weights of a logistic regression over features(),
+  // fitted to Chen Wang's 1040 syllables, each also narrowed, widened, tilted
+  // and shifted as other voices would be (91% on Yue Tan's characters; as
+  // likely to hear a level first tone that sags, or a third that rises high).
+  const TONE = [
+    [-0.0031, -0.0561, -0.0762, -0.3901, -0.6213, -0.5901, -0.0498, 0.6648, -0.8282, -0.2833, 0.0874, -1.0994, 0.7793, 0.6698, -0.0222, 1.4274],
+    [0.1028, -0.1286, 0.1294, 0.0159, -0.0965, 1.1486, -0.7461, -0.1713, 0.7972, -0.5127, 0.11, 0.4379, -0.2545, 0.0409, 0.0003, -1.0045],
+    [-0.0285, 0.1597, 0.1132, 0.132, 0.646, -0.6779, -0.105, -0.7245, -0.4563, 0.6358, -0.0527, 0.324, -0.33, 0.648, -0.0086, -2.3975],
+    [-0.0715, 0.0254, -0.1667, 0.2422, 0.0718, 0.1194, 0.9014, 0.231, 0.4873, 0.1602, -0.1447, 0.3385, -0.1959, -1.3587, 0.0304, 1.9753],
+  ];
 
   async function decode(buf) {
     const ctx = new OfflineAudioContext(1, SR, SR);
@@ -174,20 +185,37 @@ const Pitch = (() => {
   // tone leaves only the start of its fall: short, but clearly down)
   const way = (c) => { const dv = (c[c.length - 1] + c[c.length - 2]) / 2 - (c[0] + c[1]) / 2; return dv < -1.5 ? -1 : dv > 1.5 ? 1 : 0; };
 
+  // what a curve does, in semitones: overall, its fall to the lowest point and
+  // rise after it, where it turns, how it bends; how high it sits against the
+  // speaker's centre (when known); how long it lasts, how fast it falls
+  function features(u, voice) {
+    const c = u.contour, n = c.length;
+    const st = (c[0] + c[1] + c[2]) / 3, en = (c[n - 1] + c[n - 2] + c[n - 3]) / 3;
+    let lo = 0, hi = 0;
+    for (let i = 1; i < n; i++) { if (c[i] < c[lo]) lo = i; if (c[i] > c[hi]) hi = i; }
+    const fall = st - c[lo], rise = en - c[lo], net = en - st, p = lo / (n - 1);
+    const known = voice === null ? 0 : 1, lv = known ? u.mean - voice : 0;
+    return [net, fall, rise, c[hi] - c[lo], p, hi / (n - 1), (c[11] + c[12]) / 2 - (st + en) / 2, lv, known,
+      Math.min(fall, rise), (net * net) / 10, p * rise, (1 - p) * fall, Math.min(u.dur, 0.5) * 10, Math.max(0, -net) / Math.max(u.dur, 0.08)];
+  }
+
   // user: analyse() of the speaker; models: { 1..4: analyse() of the syllable };
   // voice: the speaker's centre (mean of their recent syllables), or null.
-  // Returns the tones by distance, closest first.
+  // Returns the tones by distance, closest first, each with its likelihood.
   function classify(user, models, voice) {
     const tones = Object.keys(models).filter((k) => models[k]).map(Number);
     const centre = tones.reduce((a, k) => a + models[k].mean, 0) / tones.length;
     const shape = centred(user.contour, user.mean);
+    const f = features(user, voice);
+    const z = TONE.map((w) => f.reduce((a, v, i) => a + v * w[i], w[f.length]));
+    const top = Math.max(...z), sum = z.reduce((a, v) => a + Math.exp(v - top), 0);
     return tones.map((k) => {
-      const m = models[k];
-      let dist = dtw(shape, centred(m.contour, m.mean));
-      if (way(user.contour) !== way(m.contour)) dist += W.way;
+      const m = models[k], p = Math.exp(z[k - 1] - top) / sum;
+      let match = dtw(shape, centred(m.contour, m.mean));
+      if (way(user.contour) !== way(m.contour)) match += W.way;
       // how high, against each speaker's own centre: tone 1 sits high, tone 3 low
-      if (voice !== null) dist += W.level * Math.abs((user.mean - voice) - (m.mean - centre));
-      return { tone: k, dist };
+      if (voice !== null) match += W.level * Math.abs((user.mean - voice) - (m.mean - centre));
+      return { tone: k, p, dist: -Math.log(p) + W.match * match };
     }).sort((a, b) => a.dist - b.dist);
   }
 

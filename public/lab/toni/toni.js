@@ -157,21 +157,22 @@ function guess(g) {
   setTimeout(() => { if (answered && $('#status').dataset.key !== 'compare') setStatus('compare', {}, ''); }, 2200);
 }
 
-// the card, on request: readings, meanings, a few words
-function reveal() {
-  if (!current) return;
-  const { c } = current;
+// the card, on request: readings, meanings, a few words (of the character
+// guessed, or of the one to say)
+function reveal(it = current, card = $('#card')) {
+  if (!it) return;
+  const { c } = it;
   const entries = ced.chars[c] || [];
   const [first, ...others] = entries;
   const words = hsk.words.filter((w) => w.level <= level && w.w !== c && w.w.includes(c)).slice(0, 6);
-  $('#card').innerHTML =
+  card.innerHTML =
     `<b>${t('meanings')}</b>` +
     (first ? `<ol>${first[1].slice(0, 4).map((x) => `<li>${x}</li>`).join('')}</ol>` : '') +
     others.filter(([, d]) => d.length).map(([py, d]) => `<div class="other">${py}: ${d.slice(0, 2).join('; ')}</div>`).join('') +
     (words.length ? `<div class="words"><b>${t('words')}</b> · ${words.map((w) =>
       `<button data-word="${w.w}" data-py="${w.py}"><span class="hz">${w.w}</span> ${w.py}</button>`).join(' · ')}</div>` : '') +
     `<a href="../../cinese/#${encodeURIComponent(c)}">${t('open')}</a>`;
-  $('#card').hidden = false;
+  card.hidden = false;
 }
 
 function setStatus(key, vars = {}, cls = '') {
@@ -205,6 +206,7 @@ function render() {
   const s = $('#status');
   setStatus(s.dataset.key || 'start', current ? { n: current.k, g: '?' } : {}, s.className.replace('status', '').trim());
   if (!$('#card').hidden) reveal();
+  if (!$('#say-card').hidden) reveal(target, $('#say-card'));
   $('.hint').textContent = t(mode === 'speak' ? 'hintSpeak' : 'hint');
   if (target) {
     const sk = $('#say-status').dataset.key;
@@ -237,6 +239,7 @@ async function nextSay() {
   target.models = Promise.all([1, 2, 3, 4].map((k) => (Voice.has(base + k) ? Pitch.reference(base + k) : null)))
     .then((list) => Object.fromEntries(list.map((m, i) => [i + 1, m])));
   $('#say-glyph').textContent = target.c;
+  $('#say-card').hidden = true;
   $('#say-py').innerHTML = `<span style="color:var(--t${target.k})">${target.py}</span><small>HSK ${target.lv}</small>`;
   setSay(handsFree && MIC.ctx ? 'listeningFree' : 'sayStart');
   heard(null);
@@ -393,7 +396,7 @@ async function analyseTake(samples) {
   store.set('toni-voice', voiceMeans);
   const g = ranked[0].tone, k = tg.k, ok = g === k;
   // the right tone a close second: not quite wrong
-  const near = !ok && ranked[1]?.tone === k && ranked[1].dist - ranked[0].dist < 0.12 + 0.15 * ranked[0].dist;
+  const near = !ok && ranked[1]?.tone === k && ranked[1].dist - ranked[0].dist < 0.7;
   count(speakStats, 'toni-speak-stats', k, ok);
   setSay(ok ? 'sayRight' : near ? 'sayNear' : 'sayWrong', { n: k, g, d: t(`d${k}`) }, ok ? 'ok' : near ? '' : 'no');
   heard(ranked);
@@ -438,7 +441,7 @@ $('#play').addEventListener('click', () => (answered ? next() : play()));
 $('#tones').addEventListener('click', (e) => { const b = e.target.closest('.tone'); if (b) guess(+b.dataset.tone); });
 $('#next').addEventListener('click', next);
 $('#reveal').addEventListener('click', reveal);
-$('#card').addEventListener('click', (e) => { const w = e.target.closest('[data-word]'); if (w) Voice.word(w.dataset.word, w.dataset.py); });
+for (const card of ['#card', '#say-card']) $(card).addEventListener('click', (e) => { const w = e.target.closest('[data-word]'); if (w) Voice.word(w.dataset.word, w.dataset.py); });
 $('#glyph').addEventListener('click', () => current && answered && Voice.word(current.c, current.py));
 document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('click', () => {
   level = +b.dataset.level;
@@ -459,6 +462,7 @@ $('#free').addEventListener('change', (e) => setFree(e.target.checked));
 addEventListener('pointerdown', () => { if (handsFree && mode === 'speak' && !MIC.ctx) setFree(true); });
 $('#model').addEventListener('click', () => target && model(target.name));
 $('#say-next').addEventListener('click', nextSay);
+$('#say-reveal').addEventListener('click', () => reveal(target, $('#say-card')));
 $('#say-glyph').addEventListener('click', () => target && model(target.name));
 $('#heard').addEventListener('click', (e) => { const b = e.target.closest('[data-say-tone]'); if (b && target) model(target.base + b.dataset.sayTone); });
 addEventListener('keyup', (e) => { if (mode === 'speak' && e.key === ' ') release(); });
@@ -469,6 +473,7 @@ addEventListener('keydown', (e) => {
     else if (e.key === 'Enter') { e.preventDefault(); nextSay(); }
     else if (/^[1-4]$/.test(e.key) && target) model(target.base + e.key);
     else if (e.key === 'm' || e.key === 'M') target && model(target.name);
+    else if (e.key === 's' || e.key === 'S') reveal(target, $('#say-card'));
     return;
   }
   if (e.key === ' ') { e.preventDefault(); answered ? next() : play(); }

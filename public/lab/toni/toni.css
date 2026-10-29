@@ -120,6 +120,7 @@ h1 { font-size: 26px; font-weight: 400; margin: 10px 0 2px; letter-spacing: 0.04
 .plot .target { fill: none; stroke-width: 3; stroke-dasharray: 6 4; opacity: 0.95; }
 .plot .you { fill: none; stroke: var(--paper); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
 .plot figcaption { font-size: 14px; color: var(--dim); font-style: italic; min-height: 1.3em; }
+#say-card { text-align: left; margin: 0 0 14px; }
 .heard .tone { padding: 6px 4px; }
 .heard .tone svg { height: 34px; }
 .heard .tone .d { font-style: normal; }

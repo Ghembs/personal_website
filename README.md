@@ -42,7 +42,10 @@ public/          the site, served as is (no build step)
                  syllable, from cinese/voice.js) and its tone guessed, tones
                  drawn evenly; then the character, its card on request. Or
                  spoken: pitch.js tracks the voice (YIN), draws it against the
-                 recording's and tells the closest tone, all in the browser.
+                 recording's and tells the tone by the shape of the curve (a
+                 small logistic regression, fitted to one voice's syllables),
+                 a little by the recording's; all in the browser. The card
+                 opens there too.
                  The microphone keeps its last seconds, so a take starts a
                  little before the press and ends after the release; tapped,
                  it ends when the voice does; hands free, the voice starts it
