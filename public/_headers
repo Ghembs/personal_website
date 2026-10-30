@@ -3,6 +3,10 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
+# the tone trainer listens (a later value of the same feature wins)
+/lab/toni/*
+  Permissions-Policy: microphone=(self)
+
 /*.js
   Cache-Control: public, max-age=3600, must-revalidate
 
