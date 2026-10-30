@@ -440,7 +440,7 @@ function setMode(m) {
 $('#play').addEventListener('click', () => (answered ? next() : play()));
 $('#tones').addEventListener('click', (e) => { const b = e.target.closest('.tone'); if (b) guess(+b.dataset.tone); });
 $('#next').addEventListener('click', next);
-$('#reveal').addEventListener('click', reveal);
+$('#reveal').addEventListener('click', () => reveal());
 for (const card of ['#card', '#say-card']) $(card).addEventListener('click', (e) => { const w = e.target.closest('[data-word]'); if (w) Voice.word(w.dataset.word, w.dataset.py); });
 $('#glyph').addEventListener('click', () => current && answered && Voice.word(current.c, current.py));
 document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('click', () => {
