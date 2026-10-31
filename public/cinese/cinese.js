@@ -84,6 +84,7 @@ const IDS = /[⿰-⿻？]/;
 const GLYPH = 1.1;            // world size of a character
 const TRANSITION = 1.4;       // seconds
 const SPREAD = 1.3;           // breathing room between characters, in every view
+const GALAXY_BETA = 0.72;      // how far from above a galaxy is seen, in 3D
 
 const $ = (s) => document.querySelector(s);
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
@@ -115,15 +116,16 @@ function layoutLevels(chars, out) {
   }
 }
 
-// Two-armed spiral of nodes, the busiest at the core.
-function layoutGalaxy(nodes, out, base) {
+// Two-armed spiral of nodes, the busiest at the core, as evenly spaced along
+// the arms as the arms are apart: the same disc in 2D and 3D. `plane` maps
+// (x, y) on the disc, and the k-th node, to world coordinates.
+function layoutGalaxy(nodes, out, base, plane) {
+  const step = SPREAD * 2.2, pitch = (SPREAD * 3.2) / Math.PI, r0 = SPREAD * 2.5;
   nodes.forEach((n, k) => {
-    const t = k / nodes.length;
-    const arm = k % 2;
-    const a = arm * Math.PI + t * Math.PI * 3.4 + Math.sin(k * 2.1) * 0.12;
-    const r = SPREAD * (3 + 27 * Math.sqrt(t));
-    const y = Math.sin(k * 1.3) * (0.4 + t * 1.2);
-    out.set([Math.cos(a) * r, y, Math.sin(a) * r], (base + k) * 3);
+    const along = ((k >> 1) + 0.5) * step;       // how far down its arm
+    const r = Math.sqrt(r0 * r0 + 2 * pitch * along);
+    const a = (r - r0) / pitch + (k % 2) * Math.PI;
+    out.set(plane(Math.cos(a) * r, Math.sin(a) * r, k), (base + k) * 3);
   });
 }
 
@@ -200,10 +202,6 @@ function layoutLevels2D(chars, out, wide, shown) {
     const [x, y] = phyllo(j, step);
     out.set([centres[k][0] + x, centres[k][1] + y, 0], i * 3);
   }));
-}
-
-function layoutGalaxy2D(keys, out, base) {
-  keys.forEach((_, k) => out.set([...phyllo(k, SPREAD * 1.6), 0], (base + k) * 3));
 }
 
 // Concentric rings around a centre, as many per ring as fit; returns the outer radius.
@@ -286,7 +284,7 @@ async function main() {
 
   // Layouts cover all T instances; nodes rest on their galaxy, hidden outside their view.
   const galaxy = new Float32Array(T * 3);
-  layoutGalaxy(GROUPS.phonetic.keys, galaxy, GROUPS.phonetic.base);
+  layoutGalaxy(GROUPS.phonetic.keys, galaxy, GROUPS.phonetic.base, (x, y, k) => [x, Math.sin(k * 1.3) * 0.8, y]);
   const jitter = (j) => Math.sin(j * 1.3) * 0.5;
   const orbits3D = layoutOrbits(GROUPS.radicals.keys, strokesOf, galaxy, GROUPS.radicals.base,
     -Math.PI / 2, (x, y, j) => [x, jitter(j), y]);
@@ -294,7 +292,7 @@ async function main() {
   const LAYOUTS = { levels: new Float32Array(galaxy) };
   layoutLevels(chars, LAYOUTS.levels);
   const galaxy2D = new Float32Array(T * 3);
-  layoutGalaxy2D(GROUPS.phonetic.keys, galaxy2D, GROUPS.phonetic.base);
+  layoutGalaxy(GROUPS.phonetic.keys, galaxy2D, GROUPS.phonetic.base, (x, y) => [x, y, 0]);
   const orbits2D = layoutOrbits(GROUPS.radicals.keys, strokesOf, galaxy2D, GROUPS.radicals.base,
     Math.PI / 2, (x, y) => [x, y, 0]);
   orbits2D.forEach((o, k) => galaxy2D.set([0, o.r, 0], (NL + k) * 3));
@@ -519,7 +517,7 @@ async function main() {
   let betaGoal = null;
   function setView(v) {
     view = v;
-    if (!flat) betaGoal = v === 'levels' ? Math.PI / 2.35 : 0.95;
+    if (!flat) betaGoal = v === 'levels' ? Math.PI / 2.35 : GALAXY_BETA;
     open = -1;
     lonely = -1;
     moveTo(currentLayout());
@@ -532,7 +530,7 @@ async function main() {
     if (open === node && lonely === alone) return;
     open = node;
     lonely = alone;
-    if (!flat) betaGoal = node >= 0 ? 1.3 : 0.95;
+    if (!flat) betaGoal = node >= 0 ? 1.3 : GALAXY_BETA;
     moveTo(galaxyLayout());
   }
 
@@ -732,7 +730,7 @@ async function main() {
       camera.useAutoRotationBehavior = true;
       camera.autoRotationBehavior.idleRotationSpeed = 0.04;
       camera.radius = 68;
-      betaGoal = view === 'levels' ? Math.PI / 2.35 : open >= 0 ? 1.3 : 0.95;
+      betaGoal = view === 'levels' ? Math.PI / 2.35 : open >= 0 ? 1.3 : GALAXY_BETA;
     }
     document.querySelectorAll('[data-dim]').forEach((b) => b.classList.toggle('on', (b.dataset.dim === '2') === flat));
   }
