@@ -246,6 +246,17 @@ a { color: inherit; }
 }
 .pos button.on { color: var(--paper); background: rgba(var(--fg), 0.08); }
 
+/* the words: no strokes in the card, and a heading that fits them */
+body.lex-words #bar .only-chars { display: none; }
+#card.is-word .strokes { display: none; }
+#card.is-word .head { grid-template-columns: auto 1fr; }
+#card.is-word .big { font-size: 60px; white-space: nowrap; }
+#card.is-word .big[data-len="3"] { font-size: 50px; }
+#card.is-word .big[data-len="4"] { font-size: 42px; }
+.word { position: relative; }
+.word .to { position: absolute; right: 0; top: 3px; color: var(--dim); font-size: 15px; }
+.word .to:hover { color: var(--red); }
+
 #card .sources { margin-top: 18px; font-size: 12px; color: var(--dim); }
 
 /* --- search results, phones only --- */

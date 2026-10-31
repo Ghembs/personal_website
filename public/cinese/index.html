@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="cinese.css">
+  <link rel="stylesheet" href="cinese.css?v=3">
 </head>
 <body>
   <canvas id="scene" touch-action="none"></canvas>
@@ -17,7 +17,11 @@
     <a class="home" href="../" data-i18n="home">← giulianogambacorta</a>
     <h1><span class="hz">汉字</span> HSK 1–4</h1>
     <a class="intro" href="introduzione/" data-i18n="intro">introduzione</a>
-    <div class="group" role="group" aria-label="Vista" data-i18n-attr="aria-label:aView">
+    <div class="group" role="group" aria-label="Caratteri o parole" data-i18n-attr="aria-label:aLex">
+      <button data-lex="chars" class="on" data-i18n="lexChars">caratteri</button>
+      <button data-lex="words" data-i18n="lexWords">parole</button>
+    </div>
+    <div class="group only-chars" role="group" aria-label="Vista" data-i18n-attr="aria-label:aView">
       <button data-view="levels" class="on" data-i18n="vLevels">livelli</button>
       <button data-view="radicals" data-i18n="vRadicals">radicali</button>
       <button data-view="phonetic" data-i18n="vPhonetic">famiglie fonetiche</button>
@@ -28,7 +32,7 @@
       <button data-level="3">3</button>
       <button data-level="4">4</button>
     </div>
-    <div class="group" role="group" aria-label="Dimensioni" data-i18n-attr="aria-label:aDim">
+    <div class="group only-chars" role="group" aria-label="Dimensioni" data-i18n-attr="aria-label:aDim">
       <button data-dim="2">2D</button>
       <button data-dim="3">3D</button>
     </div>
@@ -78,6 +82,6 @@
   <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.28.0/babylon.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7.2/dist/hanzi-writer.min.js"></script>
   <script src="voice.js"></script>
-  <script src="cinese.js?v=2"></script>
+  <script src="cinese.js?v=3"></script>
 </body>
 </html>
