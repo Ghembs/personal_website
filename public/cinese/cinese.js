@@ -1006,6 +1006,7 @@ async function main() {
     relationsOf([w.w]);
     examplesOf(w.w, sentences ? sentences.s.filter((x) => x[1].includes(w.w)).slice(0, 6) : []);
     card.querySelector('.words').innerHTML = '';
+    showWriter(w.w);
     card.scrollTop = 0;
   }
 
@@ -1099,7 +1100,7 @@ async function main() {
   // ---------- card ----------
 
   const card = $('#card');
-  let writer = null;
+  let writers = [], writing = 0;           // writing: the run in progress, newer ones cancel it
 
   const chip = (c, extra = '') => {
     const d = dec[c], go = index.has(c) || (galactic() && nodeOf[view].has(c));
@@ -1111,27 +1112,64 @@ async function main() {
 
   // Practice mode: the writer alone in the card, as large as it fits.
   const practicing = () => card.classList.contains('practice');
-  function writerSize() {
-    if (!practicing()) return 96;
-    const r = card.getBoundingClientRect();
-    return Math.max(160, Math.floor(Math.min(r.width - 48, r.height - 120, 440)));
+  function writerSize(n = 1) {
+    if (practicing()) {
+      const r = card.getBoundingClientRect();
+      return Math.max(160, Math.floor(Math.min(r.width - 48, r.height - 120, 440)));
+    }
+    return n === 1 ? 96 : Math.min(96, Math.floor((card.clientWidth - 46 - (n - 1) * 6) / n));
   }
 
-  let writerChar = null;
-  function showWriter(c, quiz = practicing()) {
-    writerChar = c;
-    const el = $('#writer');
-    el.innerHTML = '';
-    const size = writerSize();
-    el.style.width = el.style.height = `${size}px`;
-    writer = window.HanziWriter ? HanziWriter.create(el, c, {
+  function strokeBox(c, size) {
+    const box = document.createElement('div');
+    box.className = 'stroke-box';
+    box.style.width = box.style.height = `${size}px`;
+    $('#writer').append(box);
+    return window.HanziWriter ? HanziWriter.create(box, c, {
       width: size, height: size, padding: practicing() ? 14 : 6,
       ...COLORS.writer,
       showCharacter: false, strokeAnimationSpeed: 1.3, delayBetweenStrokes: 140,
-      onLoadCharDataError: () => { el.innerHTML = ''; },
+      onLoadCharDataError: () => { box.innerHTML = ''; },
     }) : null;
-    if (quiz) writer?.quiz({ showHintAfterMisses: 2 });
-    else writer?.animateCharacter();
+  }
+
+  // A character or a word: a box each, its strokes drawn one after the other.
+  let writerChar = null;
+  function showWriter(text, quiz = practicing()) {
+    writerChar = text;
+    const list = [...text];
+    $('#writer').innerHTML = '';
+    $('#write-step').innerHTML = '';
+    if (quiz) { writeFrom(list, 0); return; }
+    const size = writerSize(list.length);
+    writers = list.map((c) => strokeBox(c, size));
+    playWriters();
+  }
+  function playWriters() {
+    const run = ++writing, list = writers;
+    list.forEach((w) => w?.hideCharacter());
+    const next = (i) => {
+      if (run === writing && i < list.length) list[i]?.animateCharacter({ onComplete: () => next(i + 1) });
+    };
+    next(0);
+  }
+  // Practice: one character at a time, the word as far as it got above it.
+  function writeFrom(list, k) {
+    const run = ++writing;
+    $('#writer').innerHTML = '';
+    const mark = (at) => {
+      if (list.length > 1) $('#write-step').innerHTML = list.map((c, i) => `<span class="hz${i === at ? ' now' : i < at ? ' done' : ''}">${c}</span>`).join('');
+    };
+    mark(k);
+    const w = strokeBox(list[k], writerSize());
+    writers = [w];
+    w?.quiz({
+      showHintAfterMisses: 2,
+      onComplete: () => {
+        if (k + 1 === list.length) mark(k + 1);
+        else setTimeout(() => { if (run === writing) writeFrom(list, k + 1); }, 600);
+      },
+    });
   }
 
   function setPractice(on) {
@@ -1368,7 +1406,7 @@ async function main() {
       const act = w.dataset.writer;
       if (act === 'quiz') practicing() ? showWriter(writerChar, true) : setPractice(true);
       else if (act === 'done') setPractice(false);
-      else writer?.animateCharacter();
+      else playWriters();
     }
   });
   card.querySelector('.close').addEventListener('click', deselect);

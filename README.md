@@ -80,7 +80,8 @@ A switch shows the words instead (`?vista=parole`, `#词语` opens one): a list 
 part of speech and level, a word under each of its parts of speech. An opened
 word becomes a 2D constellation of the words sharing its characters, a second
 layer of instances over the same glyph atlas; its card links to those
-characters, and a character's card to its words.
+characters, and a character's card to its words. The card draws the word's
+strokes character by character, and practises them the same way.
 
 Pronunciation (`public/cinese/voice.js`), in the cards and in the introduction,
 is the same on every device: native recordings from audio-cmn (CC BY-SA), each

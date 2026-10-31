@@ -190,7 +190,12 @@ a { color: inherit; }
 .say:hover::after { opacity: 1; }
 #card .readings .say { font-size: 22px; }
 #card .strokes { text-align: center; }
-#writer { width: 96px; height: 96px; border: 1px solid var(--line); border-radius: 8px; }
+#writer { display: flex; gap: 6px; justify-content: center; min-height: 96px; }
+.stroke-box { flex: none; border: 1px solid var(--line); border-radius: 8px; }
+#write-step { font-size: 34px; letter-spacing: 0.06em; color: var(--dim); }
+#write-step:empty { display: none; }
+#write-step .now { color: var(--red); }
+#write-step .done { color: var(--paper); }
 .writer-tools { display: flex; gap: 2px; justify-content: center; margin-top: 4px; }
 .writer-tools button { font-size: 13px; color: var(--dim); padding: 0 6px; }
 .writer-tools button:hover { color: var(--paper); }
@@ -248,7 +253,8 @@ a { color: inherit; }
 
 /* the words: no strokes in the card, and a heading that fits them */
 body.lex-words #bar .only-chars { display: none; }
-#card.is-word .strokes { display: none; }
+#card.is-word .strokes { grid-column: 1 / -1; }
+#card.is-word:not(.practice) #writer { min-height: 0; }
 #card.is-word .head { grid-template-columns: auto 1fr; }
 #card.is-word .big { font-size: 60px; white-space: nowrap; }
 #card.is-word .big[data-len="3"] { font-size: 50px; }
@@ -343,7 +349,7 @@ body.lex-words #legend { padding: 2px 8px; background: rgb(var(--bg)); border-ra
 [data-writer="done"] { display: none; }
 #card.practice > section, #card.practice .big, #card.practice .meta, #card.practice .sources { display: none; }
 #card.practice .head { grid-template-columns: 1fr; justify-items: center; }
-#card.practice #writer { border-color: var(--dim); }
+#card.practice .stroke-box { border-color: var(--dim); }
 #card.practice { background: rgb(var(--bg)); backdrop-filter: none; -webkit-backdrop-filter: none; }
 #card.practice [data-writer="done"] { display: inline; }
 #card.practice .writer-tools { gap: 14px; margin-top: 10px; }
