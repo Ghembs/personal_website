@@ -40,7 +40,7 @@ const TEXT = {
     family: 'Famiglia fonetica di {p}', examples: "Frasi d'esempio", examplesLv: "Frasi d'esempio · {lv}", loading: 'caricamento…',
     listen: 'ascolta', noSentences: 'Nessuna frase in questi livelli.', words: 'Parole · {lv}', noWords: 'Nessuna parola in questi livelli.',
     lexChars: 'caratteri', lexWords: 'parole', aLex: 'Caratteri o parole', hChars: '汉字', hWords: '词语',
-    wordChars: 'Caratteri', sameChars: 'Parole con gli stessi caratteri · {lv}', openWord: 'apri la scheda di {w}',
+    posOther: 'altre', wordChars: 'Caratteri', sameChars: 'Parole con gli stessi caratteri · {lv}', openWord: 'apri la scheda di {w}',
     measure: 'classificatore', all: 'tutte', char1: 'carattere', charN: 'caratteri', clear: 'Annulla ricerca',
     practice: 'esercitati', again: 'ricomincia', failed: 'Qualcosa è andato storto nel caricamento.',
     pos: { 名: 'nomi', 动: 'verbi', 形: 'aggettivi', 副: 'avverbi', 量: 'classificatori', 代: 'pronomi', 数: 'numerali', 助: 'particelle',
@@ -61,7 +61,7 @@ const TEXT = {
     family: 'Phonetic family of {p}', examples: 'Example sentences', examplesLv: 'Example sentences · {lv}', loading: 'loading…',
     listen: 'listen', noSentences: 'No sentences in these levels.', words: 'Words · {lv}', noWords: 'No words in these levels.',
     lexChars: 'characters', lexWords: 'words', aLex: 'Characters or words', hChars: '汉字', hWords: '词语',
-    wordChars: 'Characters', sameChars: 'Words sharing its characters · {lv}', openWord: 'open the card of {w}',
+    posOther: 'other', wordChars: 'Characters', sameChars: 'Words sharing its characters · {lv}', openWord: 'open the card of {w}',
     measure: 'measure word', all: 'all', char1: 'character', charN: 'characters', clear: 'Clear search',
     practice: 'practise', again: 'start again', failed: 'Something went wrong while loading.',
     pos: { 名: 'nouns', 动: 'verbs', 形: 'adjectives', 副: 'adverbs', 量: 'measure words', 代: 'pronouns', 数: 'numerals', 助: 'particles',
@@ -212,33 +212,7 @@ function layoutLevels2D(chars, out, wide, shown) {
   }));
 }
 
-// Words as a disc of text: rows as long as the circle is wide there, the words
-// spread to its edge, the disc as small as holds them all. Returns its radius;
-// place(k, x, y) gets each word's centre.
-const WORD_ADV = GLYPH * 0.84, WORD_ROW = GLYPH * 1.6, WORD_GAP = GLYPH * 1;
-function layoutWordDisc(list, widthOf, place) {
-  const area = list.reduce((a, k) => a + (widthOf(k) + WORD_GAP) * WORD_ROW, 0);
-  for (let R = Math.sqrt(area / Math.PI); ; R *= 1.015) {
-    const rows = [];
-    let j = 0;
-    for (let y = R - WORD_ROW / 2; y > -R && j < list.length; y -= WORD_ROW) {
-      const half = Math.sqrt(Math.max(0, R * R - y * y));
-      const row = [];
-      let used = 0;
-      while (j < list.length && used + widthOf(list[j]) <= 2 * half) { used += widthOf(list[j]) + WORD_GAP; row.push(list[j++]); }
-      rows.push({ y, half, row, used });
-    }
-    if (j < list.length) continue;
-    for (const { y, half, row, used } of rows) {
-      if (!row.length) continue;
-      const free = 2 * half - (used - WORD_GAP), last = rows.at(-1).row === row;
-      const gap = WORD_GAP + (row.length > 1 && !last ? free / (row.length - 1) : 0);
-      let x = last || row.length === 1 ? -(used - WORD_GAP) / 2 : -half;
-      for (const k of row) { place(k, x + widthOf(k) / 2, y); x += widthOf(k) + gap; }
-    }
-    return R;
-  }
-}
+const WORD_ADV = GLYPH * 0.84;      // from one character of a word to the next
 
 // Concentric rings around a centre, as many per ring as fit; returns the outer radius.
 function rings2D(list, cx, cy, r0, out, gap = SPREAD * 1.4) {
@@ -841,12 +815,16 @@ async function main() {
 
   // ---------- words ----------
 
-  // A layer of its own over the same atlas, 2D only: every word as its
-  // characters, one instance each, placed as discs of text per level.
+  // A list by part of speech, in the page itself: nearly two thousand words
+  // can only be read as text. A word opened from it shows as a constellation,
+  // the words sharing its characters around it: a layer of its own over the
+  // same atlas, 2D only, every word as its characters, one instance each.
   let lexicon = 'chars', was3D = false;
-  let wordSel = -1, wordNear = new Set(), wordHits = [];
+  let wordSel = -1, wordNear = new Set(), wordHits = null;    // wordHits: what was searched, if anything
   const wordWidth = (k) => [...words[k].w].length * WORD_ADV;
-  const gloss = (w) => (ced.words[w.w]?.d?.[0] || ced.chars[w.w]?.[0]?.[1]?.[0] || '').split(';')[0];
+  // a short meaning: the first, without measure words or Chinese in brackets
+  const gloss = (w) => (ced.words[w.w]?.d?.[0] || ced.chars[w.w]?.[0]?.[1]?.[0] || '').split(';')[0]
+    .replace(/\s*\(?CL:.*$/, '').replace(/\s*\([^)]*[一-鿿][^)]*\)/g, '').trim();
   const wordMesh = BABYLON.MeshBuilder.CreatePlane('words', { size: 1 }, scene);
   wordMesh.material = mat;
   wordMesh.alwaysSelectAsActiveMesh = true;
@@ -870,25 +848,58 @@ async function main() {
       wTints.set(hex(colorMode === 'level' ? COLORS.level[w.level] : COLORS.tone[wordTones[k][j]]), (wordFirst[k] + j) * 4);
     }));
     wordMesh.thinInstanceBufferUpdated('tint');
+    if (lexicon === 'words') renderWordList();
   }
 
-  // Where each word goes: the discs of the shown levels, the selected word's
-  // kin gathered around it. Hidden words stay where they were.
+  // Each word under each of its parts of speech; the rarest share a section.
+  const SECTIONS = ['名', '动', '形', '副', '代', '量', 'other'];
+  const sectionsOf = (w) => {
+    const list = posTags(w.pos).map((p) => (SECTIONS.includes(p) ? p : 'other'));
+    return list.length ? [...new Set(list)] : ['other'];
+  };
+  const wordList = $('#wordlist');
+  const closedSections = new Set();
+  const inkOf = (k) => [...words[k].w].map((ch, j) =>
+    `<span style="color:${colorMode === 'level' ? COLORS.level[words[k].level] : COLORS.tone[wordTones[k][j]]}">${ch}</span>`).join('');
+  const listRow = (k) => `<div class="lw"><button class="open" data-open="${k}"><span class="hz">${inkOf(k)}</span>` +
+    `<span class="py">${words[k].py}</span><span class="gl">${gloss(words[k])}</span></button>` +
+    `<button class="say" data-word="${words[k].w}" data-py="${words[k].py}" aria-label="${t('listen')} ${words[k].w}">▸</button></div>`;
+  function renderWordList() {
+    wordList.style.paddingTop = `${$('#bar').offsetHeight + 4}px`;
+    const shown = (wordHits ?? words.map((_, k) => k)).filter((k) => levels.has(words[k].level));
+    const count = new Set(shown).size;
+    const groups = SECTIONS.map((sec) => {
+      const list = shown.filter((k) => sectionsOf(words[k]).includes(sec));
+      if (!list.length) return '';
+      const name = sec === 'other' ? t('posOther') : POS_NAMES[sec];
+      const byLevel = [1, 2, 3, 4].map((lv) => [lv, list.filter((k) => words[k].level === lv)]).filter(([, l]) => l.length);
+      return `<details class="sec" data-sec="${sec}"${closedSections.has(sec) ? '' : ' open'}>` +
+        `<summary>${sec === 'other' ? '' : `<span class="hz">${sec}</span> `}${name} <small>${list.length}</small></summary>` +
+        byLevel.map(([lv, l]) => `<h3>HSK ${lv} <small>${l.length}</small></h3><div class="lws">${l.map(listRow).join('')}</div>`).join('') +
+        `</details>`;
+    }).join('');
+    wordList.innerHTML = `<div class="count">${count} ${count === 1 ? t('word1') : t('wordN')} · ${levelText()}</div>` +
+      (groups || `<p class="muted">${t('noWords')}</p>`);
+  }
+  wordList.addEventListener('toggle', (e) => {
+    const sec = e.target.dataset?.sec;
+    if (sec) { if (e.target.open) closedSections.delete(sec); else closedSections.add(sec); }
+  }, true);
+  wordList.addEventListener('click', (e) => {
+    const say = e.target.closest('.say');
+    if (say) { Voice.word(say.dataset.word, say.dataset.py); return; }
+    const row = e.target.closest('[data-open]');
+    if (row) selectWord(+row.dataset.open);
+  });
+
+  // The constellation: the word at the centre, its kin around it; the others
+  // wait there, unseen.
   const wordPos = new Float32Array(words.length * 3);
   let wordFrom = new Float32Array(wordPos), wordTo = new Float32Array(wordPos), wordStart = -1;
   const wordAlpha = new Float32Array(words.length), wordScale = new Float32Array(words.length).fill(1);
   function wordLayout() {
-    const out = new Float32Array(wordTo);
-    const shown = [1, 2, 3, 4].filter((lv) => levels.has(lv));
-    const lists = shown.map((lv) => words.flatMap((w, k) => (w.level === lv ? [k] : [])));
-    const places = lists.map(() => new Map());
-    const radii = lists.map((l, n) => layoutWordDisc(l, wordWidth, (k, x, y) => places[n].set(k, [x, y])));
-    const centres = discCentres(radii, window.innerWidth > window.innerHeight * 1.2);
-    places.forEach((m, n) => m.forEach(([x, y], k) => out.set([centres[n][0] + x, centres[n][1] + y, 0], k * 3)));
-    if (wordSel >= 0) {
-      const [cx, cy] = out.subarray(wordSel * 3, wordSel * 3 + 2);
-      rings2D([...wordNear], cx, cy, SPREAD * 4.5, out, SPREAD * 3);
-    }
+    const out = new Float32Array(words.length * 3);
+    if (wordSel >= 0) rings2D([...wordNear], 0, 0, SPREAD * 4.5, out, SPREAD * 3);
     return out;
   }
   function moveWords() {
@@ -897,12 +908,11 @@ async function main() {
     wordStart = performance.now() / 1000;
     fitWords();
   }
-  // Framed like the characters: all of it, the selection, or what was searched.
+  // Framed like the characters.
   function fitWords() {
-    const show = wordSel >= 0 ? [wordSel, ...wordNear] : wordHits.length ? wordHits
-      : words.flatMap((w, k) => (levels.has(w.level) ? [k] : []));
+    if (wordSel < 0) return;
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const k of show) {
+    for (const k of [wordSel, ...wordNear]) {
       const x = wordTo[k * 3], y = wordTo[k * 3 + 1], h = wordWidth(k) / 2;
       x0 = Math.min(x0, x - h); x1 = Math.max(x1, x + h);
       y0 = Math.min(y0, y); y1 = Math.max(y1, y);
@@ -913,10 +923,8 @@ async function main() {
     if (lexicon !== 'words') return;
     const t = wordStart < 0 ? 1 : Math.min(1, (now - wordStart) / (TRANSITION * 0.7)), e = ease(t);
     if (t >= 1) wordStart = -1;
-    const hits = new Set(wordHits), dim = canvas.clientWidth <= 700 ? 0 : 0.1;
     words.forEach((w, n) => {
-      const a = !levels.has(w.level) ? 0 : wordSel >= 0 ? (n === wordSel || wordNear.has(n) ? 1 : dim * 0.6)
-        : hits.size ? (hits.has(n) ? 1 : dim) : 1;
+      const a = n === wordSel || wordNear.has(n) ? 1 : 0;
       wordAlpha[n] += (a - wordAlpha[n]) * k;
       wordScale[n] += ((n === wordSel ? 1.9 : 1) - wordScale[n]) * k;
       const x = wordFrom[n * 3] + (wordTo[n * 3] - wordFrom[n * 3]) * e;
@@ -943,8 +951,7 @@ async function main() {
     words.forEach((w, k) => {
       if (wordAlpha[k] < 0.05) return;
       const dx = Math.abs(x - wordPos[k * 3]), dy = Math.abs(y - wordPos[k * 3 + 1]);
-      const fg = k === wordSel || wordNear.has(k) || wordHits.includes(k);
-      if (dx < (wordWidth(k) * wordScale[k]) / 2 + pad && dy < (GLYPH * wordScale[k]) / 2 + pad && (fg ? dx : dx + 100) < bestD) { bestD = fg ? dx : dx + 100; best = k; }
+      if (dx < (wordWidth(k) * wordScale[k]) / 2 + pad && dy < (GLYPH * wordScale[k]) / 2 + pad && dx < bestD) { bestD = dx; best = k; }
     });
     return best;
   }
@@ -961,6 +968,8 @@ async function main() {
     wordNear = k >= 0 ? kinOf(k) : new Set();
     card.classList.toggle('is-word', k >= 0);
     card.hidden = k < 0;
+    wordList.classList.toggle('away', k >= 0);
+    hoverEl.hidden = true;
     if (k >= 0) {
       renderWordCard();
       history.replaceState(null, '', `?vista=parole#${encodeURIComponent(words[k].w)}`);
@@ -975,8 +984,7 @@ async function main() {
   // The levels changed, or the window: the selection may be gone.
   function refreshWords() {
     if (wordSel >= 0 && !levels.has(words[wordSel].level)) selectWord(-1);
-    else if (wordSel >= 0) { selectWord(wordSel); }
-    else moveWords();
+    else if (wordSel >= 0) selectWord(wordSel);
   }
 
   const wordChip = (w) => `<button class="chip go" data-open="${wordId(w)}"><span class="hz">${w.w}</span><small>${w.py}</small></button>`;
@@ -1019,13 +1027,12 @@ async function main() {
     clearLines();
     mesh.setEnabled(m === 'chars');
     wordMesh.setEnabled(m === 'words');
+    wordList.hidden = m !== 'words';
     if (m === 'words') {
       was3D = !flat;
       if (was3D) { flat = true; applyCamera(); }
-      moveWords();
-      wordPos.set(wordTo); wordFrom = new Float32Array(wordTo);
-      wordAlpha.fill(0);
-      half = halfGoal;
+      wordList.classList.remove('away');
+      renderWordList();
     } else {
       if (was3D) { flat = false; applyCamera(); }
       moveTo(currentLayout());
@@ -1447,7 +1454,7 @@ async function main() {
       return plain(w.py).replace(/[\s']+/g, '') === base && (!toneQ || tonesOf(w).includes(toneQ)) ? [k] : [];
     });
     const meant = !han && /^[a-z][a-z' -]+$/i.test(q) ? byMeaning(q, true).words.map(wordId) : [];
-    return [...new Set([...hit, ...meant])].sort((a, b) => words[a].w.length - words[b].w.length || words[a].level - words[b].level);
+    return [...new Set([...hit, ...meant])];
   }
 
   function runSearch(pickChar = true) {
@@ -1455,9 +1462,10 @@ async function main() {
     highlight = new Set();
     found = { chars: [], words: [] };
     if (lexicon === 'words') {
-      wordHits = q ? searchWords(q) : [];
-      fit();
-      showResults();
+      wordHits = q ? searchWords(q) : null;
+      if (pickChar && wordSel >= 0) selectWord(-1);
+      renderWordList();
+      if (pickChar) wordList.scrollTop = 0;
       return;
     }
     if (q) {
@@ -1492,16 +1500,7 @@ async function main() {
   // The list: on phones every match; on wider screens the matches by meaning,
   // whose words the cloud alone can't show.
   function showResults() {
-    if (lexicon === 'words') {
-      const q = $('#search').value.trim(), on = card.hidden && !!q;
-      results.hidden = !on;
-      results.classList.toggle('side', canvas.clientWidth > 700);
-      if (!on) return;
-      results.style.top = `${$('#bar').offsetHeight + 4}px`;
-      results.innerHTML = `<div class="rhead">${wordHits.length} ${wordHits.length === 1 ? t('word1') : t('wordN')} · ${levelText()}` +
-        `<button data-clear aria-label="${t('clear')}">×</button></div>` + wordHits.slice(0, 60).map((k) => wordRow(words[k])).join('');
-      return;
-    }
+    if (lexicon === 'words') { results.hidden = true; return; }
     const meaning = found.chars.length + found.words.length > 0;
     const narrow = canvas.clientWidth <= 700;
     const on = card.hidden && (narrowSearch() || meaning);

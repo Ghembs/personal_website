@@ -253,6 +253,33 @@ body.lex-words #bar .only-chars { display: none; }
 #card.is-word .big { font-size: 60px; white-space: nowrap; }
 #card.is-word .big[data-len="3"] { font-size: 50px; }
 #card.is-word .big[data-len="4"] { font-size: 42px; }
+/* the words, as a list over the canvas; away (not gone: it keeps its place) while one is open */
+#wordlist {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  padding: 0 max(16px, calc(50vw - 640px)) 56px;
+  background: radial-gradient(ellipse at 50% 40%, var(--ink2), var(--ink) 70%) fixed;
+  transition: opacity 0.35s, visibility 0.35s;
+}
+#wordlist.away { opacity: 0; visibility: hidden; }
+#wordlist .count { color: var(--dim); font-style: italic; margin-bottom: 6px; }
+#wordlist .sec { border-top: 1px solid var(--line); padding: 6px 0 10px; }
+#wordlist summary { cursor: pointer; font-size: 21px; padding: 4px 0; }
+#wordlist summary .hz { color: var(--red); margin-right: 4px; }
+#wordlist small { font-size: 13px; color: var(--dim); }
+#wordlist h3 { margin: 10px 0 4px; font-size: 13px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+.lws { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 0 22px; content-visibility: auto; contain-intrinsic-size: auto 400px; }
+.lw { display: flex; align-items: baseline; border-bottom: 1px solid rgba(var(--fg), 0.07); }
+.lw .open { flex: 1; min-width: 0; display: flex; gap: 10px; align-items: baseline; padding: 4px 0; text-align: left; }
+.lw .open:hover .gl { color: var(--paper); }
+.lw .hz { font-size: 21px; white-space: nowrap; }
+.lw .py { color: var(--dim); font-size: 15px; white-space: nowrap; }
+.lw .gl { font-size: 15px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lw .say { color: var(--dim); font-size: 13px; padding: 4px 2px 4px 8px; }
+.lw .say:hover { color: var(--red); }
+body.lex-words #bar { padding-bottom: 12px; background: rgb(var(--bg)); }
+body.lex-words #legend { padding: 2px 8px; background: rgb(var(--bg)); border-radius: 8px; }
 .word { position: relative; }
 .word .to { position: absolute; right: 0; top: 3px; color: var(--dim); font-size: 15px; }
 .word .to:hover { color: var(--red); }

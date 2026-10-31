@@ -76,11 +76,11 @@ Italian: the tones (with their changes), pinyin and the sounds that trip up an
 Italian speaker, how characters are built (with links into the radicals and
 phonetic views) and stroke order, and ten points of basic grammar.
 
-A switch shows the words instead (2D only, `?vista=parole`, `#词语` opens one):
-the HSK 1–4 words by reading, a disc of text per level, drawn as a second layer
-of instances over the same glyph atlas. A selected word gathers the words
-sharing its characters; its card links to those characters, and a character's
-card to its words.
+A switch shows the words instead (`?vista=parole`, `#词语` opens one): a list by
+part of speech and level, a word under each of its parts of speech. An opened
+word becomes a 2D constellation of the words sharing its characters, a second
+layer of instances over the same glyph atlas; its card links to those
+characters, and a character's card to its words.
 
 Pronunciation (`public/cinese/voice.js`), in the cards and in the introduction,
 is the same on every device: native recordings from audio-cmn (CC BY-SA), each
