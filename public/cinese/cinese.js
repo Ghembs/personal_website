@@ -40,10 +40,10 @@ const TEXT = {
     family: 'Famiglia fonetica di {p}', examples: "Frasi d'esempio", examplesLv: "Frasi d'esempio · {lv}", loading: 'caricamento…',
     listen: 'ascolta', noSentences: 'Nessuna frase in questi livelli.', words: 'Parole · {lv}', noWords: 'Nessuna parola in questi livelli.',
     lexChars: 'caratteri', lexWords: 'parole', aLex: 'Caratteri o parole', hChars: '汉字', hWords: '词语',
-    posOther: 'altre', wordChars: 'Caratteri', sameChars: 'Parole con gli stessi caratteri · {lv}', openWord: 'apri la scheda di {w}',
+    posNone: 'senza categoria', wordChars: 'Caratteri', sameChars: 'Parole con gli stessi caratteri · {lv}', openWord: 'apri la scheda di {w}',
     measure: 'classificatore', all: 'tutte', char1: 'carattere', charN: 'caratteri', clear: 'Annulla ricerca',
     practice: 'esercitati', again: 'ricomincia', failed: 'Qualcosa è andato storto nel caricamento.',
-    pos: { 名: 'nomi', 动: 'verbi', 形: 'aggettivi', 副: 'avverbi', 量: 'classificatori', 代: 'pronomi', 数: 'numerali', 助: 'particelle',
+    pos: { 名: 'nomi', 动: 'verbi', 形: 'aggettivi', 副: 'avverbi', 量: 'classificatori', 代: 'pronomi', 数: 'numerali', 数量: 'numerali con classificatore', 助: 'particelle',
       介: 'preposizioni', 连: 'congiunzioni', 叹: 'interiezioni', 拟声: 'onomatopee', 前缀: 'prefissi', 后缀: 'suffissi' },
     // page
     home: '← giulianogambacorta', intro: 'introduzione', vLevels: 'livelli', vRadicals: 'radicali', vPhonetic: 'famiglie fonetiche',
@@ -61,10 +61,10 @@ const TEXT = {
     family: 'Phonetic family of {p}', examples: 'Example sentences', examplesLv: 'Example sentences · {lv}', loading: 'loading…',
     listen: 'listen', noSentences: 'No sentences in these levels.', words: 'Words · {lv}', noWords: 'No words in these levels.',
     lexChars: 'characters', lexWords: 'words', aLex: 'Characters or words', hChars: '汉字', hWords: '词语',
-    posOther: 'other', wordChars: 'Characters', sameChars: 'Words sharing its characters · {lv}', openWord: 'open the card of {w}',
+    posNone: 'no category', wordChars: 'Characters', sameChars: 'Words sharing its characters · {lv}', openWord: 'open the card of {w}',
     measure: 'measure word', all: 'all', char1: 'character', charN: 'characters', clear: 'Clear search',
     practice: 'practise', again: 'start again', failed: 'Something went wrong while loading.',
-    pos: { 名: 'nouns', 动: 'verbs', 形: 'adjectives', 副: 'adverbs', 量: 'measure words', 代: 'pronouns', 数: 'numerals', 助: 'particles',
+    pos: { 名: 'nouns', 动: 'verbs', 形: 'adjectives', 副: 'adverbs', 量: 'measure words', 代: 'pronouns', 数: 'numerals', 数量: 'numerals with measure word', 助: 'particles',
       介: 'prepositions', 连: 'conjunctions', 叹: 'interjections', 拟声: 'onomatopoeia', 前缀: 'prefixes', 后缀: 'suffixes' },
     home: '← giulianogambacorta', intro: 'introduction', vLevels: 'levels', vRadicals: 'radicals', vPhonetic: 'phonetic families',
     cLevel: 'colour: level', cTone: 'colour: tone', search: '字, pinyin or English', word1: 'word', wordN: 'words', strokesBtn: 'strokes', done: 'done',
@@ -851,12 +851,10 @@ async function main() {
     if (lexicon === 'words') renderWordList();
   }
 
-  // Each word under each of its parts of speech; the rarest share a section.
-  const SECTIONS = ['名', '动', '形', '副', '代', '量', 'other'];
-  const sectionsOf = (w) => {
-    const list = posTags(w.pos).map((p) => (SECTIONS.includes(p) ? p : 'other'));
-    return list.length ? [...new Set(list)] : ['other'];
-  };
+  // Each word under each of the syllabus's parts of speech, the commonest
+  // first; it leaves a few set phrases without one.
+  const SECTIONS = ['名', '动', '形', '副', '量', '代', '连', '介', '数', '助', '后缀', '数量', '前缀', '叹', 'none'];
+  const sectionsOf = (w) => { const list = posTags(w.pos); return list.length ? list : ['none']; };
   const wordList = $('#wordlist');
   const closedSections = new Set();
   const inkOf = (k) => [...words[k].w].map((ch, j) =>
@@ -871,10 +869,10 @@ async function main() {
     const groups = SECTIONS.map((sec) => {
       const list = shown.filter((k) => sectionsOf(words[k]).includes(sec));
       if (!list.length) return '';
-      const name = sec === 'other' ? t('posOther') : POS_NAMES[sec];
+      const name = sec === 'none' ? t('posNone') : POS_NAMES[sec];
       const byLevel = [1, 2, 3, 4].map((lv) => [lv, list.filter((k) => words[k].level === lv)]).filter(([, l]) => l.length);
       return `<details class="sec" data-sec="${sec}"${closedSections.has(sec) ? '' : ' open'}>` +
-        `<summary>${sec === 'other' ? '' : `<span class="hz">${sec}</span> `}${name} <small>${list.length}</small></summary>` +
+        `<summary>${sec === 'none' ? '' : `<span class="hz">${sec}</span> `}${name} <small>${list.length}</small></summary>` +
         byLevel.map(([lv, l]) => `<h3>HSK ${lv} <small>${l.length}</small></h3><div class="lws">${l.map(listRow).join('')}</div>`).join('') +
         `</details>`;
     }).join('');
