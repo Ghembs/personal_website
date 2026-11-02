@@ -49,6 +49,10 @@ public/          the site, served as is (no build step)
                  The microphone keeps its last seconds, so a take starts a
                  little before the press and ends after the release; tapped,
                  it ends when the voice does; hands free, the voice starts it
+  lab/parole/    the word trainer: the HSK words up to a level, three ways:
+                 their meaning out of four (distractors of the same part of
+                 speech), written by hand from their meaning (Hanzi Writer, a
+                 character at a time), their pinyin typed with its tones
   img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders
   style.css

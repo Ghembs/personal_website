@@ -8,7 +8,7 @@
 
 const TEXT = {
   it: {
-    back: '← cesta dei giochi', section: 'la sezione di cinese', theme: 'Tema chiaro / scuro', lang: 'EN', title: 'allenamento sui toni', docTitle: 'Allenamento sui toni · Giuliano Gambacorta',
+    back: '← cesta dei giochi', words: 'parole', section: 'la sezione di cinese', theme: 'Tema chiaro / scuro', lang: 'EN', title: 'allenamento sui toni', docTitle: 'Allenamento sui toni · Giuliano Gambacorta',
     hint: 'ascolta un carattere che non vedi e indovinane il tono', upTo: 'fino a', listen: 'ascolta',
     start: 'premi ▶ (o spazio) per ascoltare', loading: 'carico i caratteri…', listening: 'quale tono è? (1–4)',
     right: 'giusto: {n}° tono', wrong: 'no: era il {n}° tono, non il {g}°', compare: 'tocca un tono per sentire la stessa sillaba',
@@ -27,7 +27,7 @@ const TEXT = {
     foot: 'Registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Caratteri e significati dalla <a href="../../cinese/">sezione di cinese</a> (HSK 2025, CC-CEDICT).',
   },
   en: {
-    back: '← the toy box', section: 'the Chinese section', theme: 'Light / dark theme', lang: 'IT', title: 'tone trainer', docTitle: 'Tone trainer · Giuliano Gambacorta',
+    back: '← the toy box', words: 'words', section: 'the Chinese section', theme: 'Light / dark theme', lang: 'IT', title: 'tone trainer', docTitle: 'Tone trainer · Giuliano Gambacorta',
     hint: 'listen to a character you can\'t see and guess its tone', upTo: 'up to', listen: 'listen',
     start: 'press ▶ (or space) to listen', loading: 'loading the characters…', listening: 'which tone is it? (1–4)',
     right: 'right: tone {n}', wrong: 'no: it was tone {n}, not {g}', compare: 'tap a tone to hear the same syllable in it',

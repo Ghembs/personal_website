@@ -1,0 +1,57 @@
+/* The word trainer, on the tone trainer's dress (../toni/toni.css): its
+   palettes, serif, bar and buttons; here only what is its own. */
+[hidden] { display: none !important; }
+#top .sib { font-style: italic; }
+
+.prompt { margin: 26px 0 6px; min-height: 96px; display: grid; place-items: center; }
+.prompt .word { font-size: 76px; line-height: 1.1; }
+.prompt .word:hover { color: var(--red); }
+.prompt .meaning { font-size: 26px; line-height: 1.25; max-width: 30em; }
+.prompt .meta { color: var(--dim); font-size: 15px; letter-spacing: 0.06em; margin-top: 6px; }
+.py-hint { min-height: 1.4em; color: var(--red); font-size: 20px; }
+
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.choice {
+  display: flex; gap: 10px; align-items: baseline; text-align: left;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+  font-size: 18px; line-height: 1.25; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.choice:hover:not(:disabled) { border-color: var(--dim); }
+.choice kbd { font: 12px var(--serif); color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; }
+.choice.right { border-color: var(--t3); box-shadow: inset 0 0 0 2px var(--t3); }
+.choice.wrong { border-color: var(--red); box-shadow: inset 0 0 0 2px var(--red); opacity: 0.8; }
+
+.boxes { display: flex; gap: 12px; justify-content: center; margin: 8px 0 4px; }
+.box { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); touch-action: none; }
+.box.now { border-color: var(--red); box-shadow: 0 0 0 1px var(--red); }
+#write .acts, #pinyin .acts { justify-content: center; margin-top: 10px; }
+
+.sylls { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 6px; }
+.syl { display: grid; justify-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.syl .hz { font-size: 30px; line-height: 1; }
+.syl input {
+  width: 6em; text-align: center; font: 20px var(--serif); color: var(--paper);
+  background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 2px 0;
+}
+.syl input:focus { outline: none; border-bottom-color: var(--red); }
+.syl .pick { display: flex; gap: 2px; }
+.syl .pick button { width: 28px; height: 28px; border-radius: 50%; font-size: 19px; line-height: 1; color: var(--dim); border: 1px solid transparent; }
+.syl .pick button:hover:not(:disabled) { color: var(--paper); }
+.syl .pick button.on { color: var(--c); border-color: var(--c); }
+.syl .want { min-height: 1.3em; font-size: 18px; }
+.syl.right { border-color: var(--t3); box-shadow: inset 0 0 0 1px var(--t3); }
+.syl.wrong { border-color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
+
+#answer { margin-top: 18px; text-align: left; }
+#answer .row { display: flex; gap: 18px; align-items: center; justify-content: center; }
+#answer .glyph { font-size: 64px; white-space: nowrap; }
+#answer .reading small { display: block; margin: 2px 0 0; }
+#answer .acts a { font-style: italic; color: var(--dim); text-decoration: underline; text-decoration-color: var(--red); text-underline-offset: 3px; }
+#answer .acts a:hover { color: var(--paper); }
+
+@media (max-width: 480px) {
+  .choices { grid-template-columns: 1fr; }
+  .prompt .word { font-size: 60px; }
+  .prompt .meaning { font-size: 22px; }
+  #answer .glyph { font-size: 48px; }
+}

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Allenamento sulle parole · Giuliano Gambacorta</title>
+  <meta name="description" content="Le parole HSK 1–4: riconoscine il significato, scrivile a mano a partire dal significato, ricordane il pinyin e i toni.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../toni/toni.css?v=3">
+  <link rel="stylesheet" href="parole.css?v=1">
+  <script>
+    // the same theme as the Chinese section
+    try {
+      const t = localStorage.getItem('hanzi-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.dataset.theme = t;
+    } catch (e) { /* private mode */ }
+  </script>
+</head>
+<body>
+  <header id="top">
+    <a class="back" href="../" data-i18n="back">← cesta dei giochi</a>
+    <a class="zh hz" href="../../cinese/?vista=parole" data-i18n-attr="title:section">词语</a>
+    <a class="sib" href="../toni/" data-i18n="tones">toni</a>
+    <button id="theme" aria-label="Tema chiaro o scuro" title="Tema chiaro / scuro" data-i18n-attr="title:theme;aria-label:theme">◐</button>
+    <button id="lang" title="English">EN</button>
+  </header>
+
+  <main>
+    <h1 data-i18n="title">allenamento sulle parole</h1>
+    <p class="hint"></p>
+
+    <div class="modes" role="group">
+      <button data-mode="meaning" data-i18n="mMeaning">significato</button>
+      <button data-mode="write" data-i18n="mWrite">scrittura</button>
+      <button data-mode="pinyin" data-i18n="mPinyin">pinyin</button>
+    </div>
+
+    <div class="levels">
+      <span data-i18n="upTo">fino a</span>
+      <button data-level="1">HSK 1</button><button data-level="2">HSK 2</button><button data-level="3">HSK 3</button><button data-level="4">HSK 4</button>
+    </div>
+
+    <!-- the question: a word, or a meaning -->
+    <section id="ask">
+      <div id="prompt" class="prompt"></div>
+      <p id="status" class="status"></p>
+      <!-- meaning: four meanings to choose from -->
+      <div id="choices" class="choices" hidden></div>
+      <!-- writing: a box per character -->
+      <div id="write" hidden>
+        <div id="boxes" class="boxes"></div>
+        <div class="acts">
+          <button id="outline" data-i18n="outline">mostra il contorno</button>
+          <button id="hintPy" data-i18n="hintPy">suggerisci il pinyin</button>
+          <button id="giveUp" data-i18n="giveUp">non lo so</button>
+        </div>
+      </div>
+      <!-- pinyin: letters and a tone per syllable -->
+      <form id="pinyin" hidden autocomplete="off">
+        <div id="sylls" class="sylls"></div>
+        <div class="acts">
+          <button type="submit" class="primary" data-i18n="check">controlla</button>
+          <button type="button" id="pyGiveUp" data-i18n="giveUp">non lo so</button>
+        </div>
+      </form>
+      <!-- after the answer: the word, its card and the next one -->
+      <div id="answer" hidden>
+        <div class="row">
+          <button id="glyph" class="glyph hz"></button>
+          <div>
+            <div id="reading" class="reading"></div>
+            <div class="acts">
+              <button id="listen" data-i18n="listen">ascolta</button>
+              <a id="open" data-i18n="open">apri la scheda →</a>
+              <button id="next" class="primary" data-i18n="next">prossima →</button>
+            </div>
+          </div>
+        </div>
+        <div id="gloss" class="card"></div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div id="score" class="score"></div>
+      <button id="reset" data-i18n="reset">azzera</button>
+    </section>
+  </main>
+
+  <footer data-i18n="foot"></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7.2/dist/hanzi-writer.min.js"></script>
+  <script src="../../i18n.js"></script>
+  <script src="../../cinese/voice.js"></script>
+  <script src="parole.js?v=1"></script>
+</body>
+</html>

@@ -47,6 +47,15 @@ const EXPERIMENTS = [
     },
     sketch: ['  ā   á   ǎ   à', ' ___  /  \\_/  \\', '               \\'],
   },
+  {
+    id: 'words', href: 'parole/', tags: ['cinese'],
+    title: { it: 'Allenamento sulle parole', en: 'Word trainer' },
+    text: {
+      it: 'Le parole HSK fino al livello che vuoi, in tre esercizi: riconoscine il significato tra quattro, scrivile a mano partendo dal significato, ricordane il pinyin con i toni.',
+      en: 'The HSK words up to the level you choose, three ways: pick their meaning out of four, write them by hand from their meaning, recall their pinyin with its tones.',
+    },
+    sketch: ['  飞机  →  airplane', '  ┌──┐┌──┐', '  │飞││  │  fēi jī'],
+  },
 ];
 
 const TAGS = { en: { generativo: 'generative', domotica: 'home-automation', cinese: 'chinese' } };
