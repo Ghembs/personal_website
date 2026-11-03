@@ -74,10 +74,10 @@ function readHsk(pdf) {
     for (let k = 1; k <= n; k++) chars.push({ c: seen.get(k), level });
   });
 
-  // Words: rows "序号 等级 词语 拼音 [词性]"; the level can read "1（4）" (a second
-  // sense at a later level) and words carry a sense index ("本1").
+  // Words: rows "序号 等级 词语 拼音 [词性]"; the level can read "1（4）" or "1（2）（4）" (later
+  // senses at later levels, "（7-9）" included) and words carry a sense index ("本1").
   const words = [];
-  const row = /^(\d+) (\d)(?:（\d）)?(?:-\d)? (\S+) (\S+)(?: (.+))?$/;
+  const row = /^(\d+) (\d)(?:（[\d-]+）)*(?:-\d)? (\S+) (\S+)(?: (.+))?$/;
   for (const line of text.split('\n')) {
     const m = row.exec(line.trim());
     if (!m || +m[2] > MAX_LEVEL || !HAN.test(m[3])) continue;
@@ -329,8 +329,9 @@ async function main() {
 
   // Font subset: every character the page can draw.
   const used = new Set(UI_CHARS);
-  // ...and every character written in the pages of the section (the introduction).
-  for (const page of ['index.html', 'introduzione/index.html']) {
+  // ...and every character written in the pages of the section (the grammar,
+  // its introduction and levels).
+  for (const page of ['index.html', 'grammatica/index.html', 'grammatica/livelli.js']) {
     const file = join(ROOT, 'public', 'cinese', page);
     if (existsSync(file)) for (const ch of readFileSync(file, 'utf8')) if (HAN.test(ch)) used.add(ch);
   }

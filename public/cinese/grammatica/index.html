@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Introduzione al cinese · Giuliano Gambacorta</title>
-  <meta name="description" content="Le basi del cinese mandarino per chi parte da zero: i toni, il pinyin e la pronuncia, come sono fatti i caratteri, la grammatica essenziale.">
+  <meta name="description" content="Le basi del cinese mandarino per chi parte da zero (i toni, il pinyin, i caratteri, la grammatica essenziale) e la grammatica dei livelli HSK 1–4, voce per voce, con esempi da ascoltare.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="intro.css">
+  <link rel="stylesheet" href="intro.css?v=2">
   <script>
     // same theme as the character page
     try {
@@ -20,7 +20,14 @@
 <body>
   <header id="top">
     <a class="back" href="../" data-i18n="back">← i caratteri HSK 1–4</a>
-    <nav>
+    <nav id="tabs" aria-label="Schede" data-i18n-attr="aria-label:aTabs">
+      <a href="#introduzione" data-tab="intro" data-i18n="tIntro">introduzione</a>
+      <a href="#hsk1" data-tab="1">HSK 1</a>
+      <a href="#hsk2" data-tab="2">HSK 2</a>
+      <a href="#hsk3" data-tab="3">HSK 3</a>
+      <a href="#hsk4" data-tab="4">HSK 4</a>
+    </nav>
+    <nav id="sections">
       <a href="#toni" data-i18n="nTones">toni</a>
       <a href="#pinyin" data-i18n="nPinyin">pinyin</a>
       <a href="#caratteri" data-i18n="nChars">caratteri</a>
@@ -29,6 +36,9 @@
     <button id="theme" aria-label="Tema chiaro o scuro" title="Tema chiaro / scuro" data-i18n-attr="title:theme;aria-label:theme">◐</button>
     <button id="lang" title="English">EN</button>
   </header>
+
+  <!-- a level's grammar, drawn from livelli.js; the introduction is <main> -->
+  <div id="level" hidden></div>
 
   <main>
     <section class="hero">
@@ -740,6 +750,7 @@
   <script src="../../i18n.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7.2/dist/hanzi-writer.min.js"></script>
   <script src="../voice.js"></script>
-  <script src="intro.js"></script>
+  <script src="livelli.js?v=1"></script>
+  <script src="intro.js?v=2"></script>
 </body>
 </html>

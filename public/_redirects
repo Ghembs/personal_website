@@ -1,0 +1,4 @@
+# the introduction to Chinese became the grammar page (its first tab)
+/cinese/introduzione /cinese/grammatica/ 301
+/cinese/introduzione/ /cinese/grammatica/ 301
+/cinese/introduzione/* /cinese/grammatica/:splat 301

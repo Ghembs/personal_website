@@ -75,10 +75,15 @@ radicals sit on orbits by stroke count; a switch toggles a light and a dark
 theme. `#字` in the URL opens a character directly, `?vista=radicali|fonetica`
 picks a view (then `#氵` opens a radical, `#青` a phonetic component).
 
-`public/cinese/introduzione/` is an introduction for complete beginners, in
-Italian: the tones (with their changes), pinyin and the sounds that trip up an
-Italian speaker, how characters are built (with links into the radicals and
-phonetic views) and stroke order, and ten points of basic grammar.
+`public/cinese/grammatica/` (the old `introduzione/` redirects there, see
+`public/_redirects`) opens with an introduction for complete beginners, in
+Italian and English: the tones (with their changes), pinyin and the sounds that
+trip up an Italian speaker, how characters are built (with links into the
+radicals and phonetic views) and stroke order, and ten points of basic grammar.
+Its other tabs (`#hsk1`…`#hsk4`) follow the grammar syllabus of the HSK syllabus
+level by level (`grammatica/livelli.js`): each item under the syllabus's heading,
+with an explanation and examples of ours, which `scripts/check-grammar.mjs`
+keeps within that level's words. HSK 1 is written; 2–4 are to come.
 
 A switch shows the words instead (`?vista=parole`, `#词语` opens one): a list by
 part of speech and level, a word under each of its parts of speech. An opened
