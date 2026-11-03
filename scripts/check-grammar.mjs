@@ -19,11 +19,13 @@ const ctx = {};
 vm.runInNewContext(`${readFileSync(join(ROOT, 'public', 'cinese', 'grammatica', 'livelli.js'), 'utf8')}; this.G = GRAMMAR;`, ctx);
 
 const NAMES = new Set(['王', '北京']);
+// readings the syllabus gives that CC-CEDICT lacks
+const MORE = { 嗯: ['ng'] };
 const HAN = /[㐀-鿿〇]/;
 const flat = (py) => py.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ü/g, 'v').toLowerCase();
 
 // every syllable some HSK character is read with
-const SYLLABLES = new Set(Object.values(ced.chars).flatMap((e) => e.map(([r]) => flat(r).replace(/[^a-z]/g, ''))).concat(['r']));
+const SYLLABLES = new Set(Object.values(ced.chars).flatMap((e) => e.map(([r]) => flat(r).replace(/[^a-z]/g, ''))).concat(['r', 'ng']));
 
 let problems = 0;
 for (const [lv, items] of Object.entries(ctx.G)) {
@@ -50,7 +52,7 @@ for (const [lv, items] of Object.entries(ctx.G)) {
       const bad = [];
       if (sylls.length !== chars.length) bad.push(`${sylls.length} syllables for ${chars.length} characters`);
       else chars.forEach((c, i) => {
-        const ok = c === '〇' ? sylls[i] === 'ling' : (ced.chars[c] || []).some(([r]) => flat(r).replace(/[^a-z]/g, '') === sylls[i]);
+        const ok = c === '〇' ? sylls[i] === 'ling' : MORE[c]?.includes(sylls[i]) || (ced.chars[c] || []).some(([r]) => flat(r).replace(/[^a-z]/g, '') === sylls[i]);
         if (!ok && !NAMES.has(c)) bad.push(`${c} ${sylls[i]}`);
       });
       if (out.length || bad.length) {
@@ -69,6 +71,8 @@ function splitSyllables(s) {
     best[i] = null;
     for (let n = 1; n <= 6 && n <= i; n++) {
       const prev = best[i - n], part = s.slice(i - n, i);
+      // a syllable starting with a, e or o inside a word would need an apostrophe (dàngāo, not dàng'āo)
+      if (i - n > 0 && /^[aeo]/.test(part)) continue;
       if (prev && SYLLABLES.has(part) && (!best[i] || best[i].length > prev.length + 1)) best[i] = [...prev, part];
     }
   }

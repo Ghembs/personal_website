@@ -83,7 +83,7 @@ radicals and phonetic views) and stroke order, and ten points of basic grammar.
 Its other tabs (`#hsk1`…`#hsk4`) follow the grammar syllabus of the HSK syllabus
 level by level (`grammatica/livelli.js`): each item under the syllabus's heading,
 with an explanation and examples of ours, which `scripts/check-grammar.mjs`
-keeps within that level's words. HSK 1 is written; 2–4 are to come.
+keeps within that level's words (`node scripts/check-grammar.mjs`).
 
 A switch shows the words instead (`?vista=parole`, `#词语` opens one): a list by
 part of speech and level, a word under each of its parts of speech. An opened
