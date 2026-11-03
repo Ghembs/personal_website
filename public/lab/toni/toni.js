@@ -9,7 +9,7 @@
 const TEXT = {
   it: {
     back: '← cesta dei giochi', words: 'parole', section: 'la sezione di cinese', theme: 'Tema chiaro / scuro', lang: 'EN', title: 'allenamento sui toni', docTitle: 'Allenamento sui toni · Giuliano Gambacorta',
-    hint: 'ascolta un carattere che non vedi e indovinane il tono', upTo: 'fino a', listen: 'ascolta',
+    hint: 'ascolta un carattere che non vedi e indovinane il tono', upTo: 'livelli', listen: 'ascolta',
     start: 'premi ▶ (o spazio) per ascoltare', loading: 'carico i caratteri…', listening: 'quale tono è? (1–4)',
     right: 'giusto: {n}° tono', wrong: 'no: era il {n}° tono, non il {g}°', compare: 'tocca un tono per sentire la stessa sillaba',
     reveal: 'mostra la scheda', next: 'prossimo →', reset: 'azzera',
@@ -28,7 +28,7 @@ const TEXT = {
   },
   en: {
     back: '← the toy box', words: 'words', section: 'the Chinese section', theme: 'Light / dark theme', lang: 'IT', title: 'tone trainer', docTitle: 'Tone trainer · Giuliano Gambacorta',
-    hint: 'listen to a character you can\'t see and guess its tone', upTo: 'up to', listen: 'listen',
+    hint: 'listen to a character you can\'t see and guess its tone', upTo: 'levels', listen: 'listen',
     start: 'press ▶ (or space) to listen', loading: 'loading the characters…', listening: 'which tone is it? (1–4)',
     right: 'right: tone {n}', wrong: 'no: it was tone {n}, not {g}', compare: 'tap a tone to hear the same syllable in it',
     reveal: 'show the card', next: 'next →', reset: 'reset',
@@ -72,7 +72,11 @@ function contourSvg(k) {
 
 // ---------- data ----------
 
-let level = store.get('toni-level', 1);
+// the HSK levels in play, each on its own (at least one); "up to 3" is 1, 2 and 3
+const levels = (() => {
+  const v = store.get('toni-level', 1);
+  return new Set(Array.isArray(v) && v.length ? v : [1, 2, 3, 4].filter((lv) => lv <= v));
+})();
 const freshStats = () => ({ n: 0, ok: 0, streak: 0, best: 0, per: { 1: [0, 0], 2: [0, 0], 3: [0, 0], 4: [0, 0] } });
 let stats = store.get('toni-stats', null) || freshStats();
 let speakStats = store.get('toni-speak-stats', null) || freshStats();
@@ -83,12 +87,12 @@ const recent = [];
 const loaded = Promise.all(['hsk', 'cedict'].map((f) => fetch(`../../cinese/data/${f}.json`).then((r) => r.json())))
   .then(async ([h, c]) => { hsk = h; ced = c; await Voice.ready; });
 
-// characters up to the level, by tone: their first reading, if recorded
+// characters of the chosen levels, by tone: their first reading, if recorded
 function pools() {
   const by = { 1: [], 2: [], 3: [], 4: [] };
   for (const { c, level: lv } of hsk.chars) {
     const py = ced.chars[c]?.[0]?.[0];
-    if (lv > level || !py) continue;
+    if (!levels.has(lv) || !py) continue;
     const k = toneOf(py), name = plain(py) + k;
     if (k < 5 && Voice.has(name)) by[k].push({ c, lv, py, k, name });
   }
@@ -164,7 +168,7 @@ function reveal(it = current, card = $('#card')) {
   const { c } = it;
   const entries = ced.chars[c] || [];
   const [first, ...others] = entries;
-  const words = hsk.words.filter((w) => w.level <= level && w.w !== c && w.w.includes(c)).slice(0, 6);
+  const words = hsk.words.filter((w) => levels.has(w.level) && w.w !== c && w.w.includes(c)).slice(0, 6);
   card.innerHTML =
     `<b>${t('meanings')}</b>` +
     (first ? `<ol>${first[1].slice(0, 4).map((x) => `<li>${x}</li>`).join('')}</ol>` : '') +
@@ -202,7 +206,7 @@ function render() {
   if (current && answered) {
     document.querySelector(`.tone[data-tone="${current.k}"]`).classList.add('right');
   }
-  document.querySelectorAll('[data-level]').forEach((b) => b.classList.toggle('on', +b.dataset.level === level));
+  document.querySelectorAll('[data-level]').forEach((b) => b.classList.toggle('on', levels.has(+b.dataset.level)));
   const s = $('#status');
   setStatus(s.dataset.key || 'start', current ? { n: current.k, g: '?' } : {}, s.className.replace('status', '').trim());
   if (!$('#card').hidden) reveal();
@@ -444,9 +448,10 @@ $('#reveal').addEventListener('click', () => reveal());
 for (const card of ['#card', '#say-card']) $(card).addEventListener('click', (e) => { const w = e.target.closest('[data-word]'); if (w) Voice.word(w.dataset.word, w.dataset.py); });
 $('#glyph').addEventListener('click', () => current && answered && Voice.word(current.c, current.py));
 document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('click', () => {
-  level = +b.dataset.level;
-  store.set('toni-level', level);
-  document.querySelectorAll('[data-level]').forEach((x) => x.classList.toggle('on', x === b));
+  const lv = +b.dataset.level;
+  if (levels.has(lv)) { if (levels.size > 1) levels.delete(lv); } else levels.add(lv);
+  store.set('toni-level', [...levels].sort());
+  document.querySelectorAll('[data-level]').forEach((x) => x.classList.toggle('on', levels.has(+x.dataset.level)));
   recent.length = 0;
 }));
 $('#reset').addEventListener('click', () => {

@@ -8,7 +8,7 @@
 const TEXT = {
   it: {
     back: '← cesta dei giochi', section: 'le parole nella sezione di cinese', tones: 'toni', theme: 'Tema chiaro / scuro', lang: 'EN',
-    title: 'allenamento sulle parole', docTitle: 'Allenamento sulle parole · Giuliano Gambacorta', upTo: 'fino a',
+    title: 'allenamento sulle parole', docTitle: 'Allenamento sulle parole · Giuliano Gambacorta', upTo: 'livelli',
     mMeaning: 'significato', mWrite: 'scrittura', mPinyin: 'pinyin',
     hMeaning: 'che cosa vuol dire questa parola?', hWrite: 'scrivi la parola che ha questo significato', hPinyin: 'come si legge? scrivi il pinyin e scegli i toni',
     loading: 'carico le parole…', choose: 'scegli il significato (1–4)', writeNow: 'traccia i tratti, un carattere alla volta',
@@ -26,7 +26,7 @@ const TEXT = {
   },
   en: {
     back: '← the toy box', section: 'the words in the Chinese section', tones: 'tones', theme: 'Light / dark theme', lang: 'IT',
-    title: 'word trainer', docTitle: 'Word trainer · Giuliano Gambacorta', upTo: 'up to',
+    title: 'word trainer', docTitle: 'Word trainer · Giuliano Gambacorta', upTo: 'levels',
     mMeaning: 'meaning', mWrite: 'writing', mPinyin: 'pinyin',
     hMeaning: 'what does this word mean?', hWrite: 'write the word with this meaning', hPinyin: 'how is it read? type the pinyin and pick the tones',
     loading: 'loading the words…', choose: 'choose the meaning (1–4)', writeNow: 'trace the strokes, a character at a time',
@@ -95,7 +95,11 @@ function syllablesOf(w) {
 
 // ---------- state ----------
 
-let level = store.get('parole-level', 1);
+// the HSK levels in play, each on its own (at least one); "up to 3" is 1, 2 and 3
+const levels = (() => {
+  const v = store.get('parole-level', 1);
+  return new Set(Array.isArray(v) && v.length ? v : [1, 2, 3, 4].filter((lv) => lv <= v));
+})();
 let mode = store.get('parole-mode', 'meaning');
 const freshStats = () => ({ n: 0, ok: 0, streak: 0, best: 0 });
 const stats = store.get('parole-stats', null) || { meaning: freshStats(), write: freshStats(), pinyin: freshStats() };
@@ -104,7 +108,7 @@ let current = null, answered = false;
 const recent = [];
 
 function draw() {
-  const pool = hsk.words.filter((w) => w.level <= level && defsOf(w).length && (mode !== 'pinyin' || syllablesOf(w)));
+  const pool = hsk.words.filter((w) => levels.has(w.level) && defsOf(w).length && (mode !== 'pinyin' || syllablesOf(w)));
   const fresh = pool.filter((w) => !recent.includes(w.w));
   const list = fresh.length ? fresh : pool;
   const w = list[(Math.random() * list.length) | 0];
@@ -326,7 +330,7 @@ function render() {
   $('#lang').textContent = t('lang');
   $('#lang').title = t('langName');
   $('.hint').textContent = t({ meaning: 'hMeaning', write: 'hWrite', pinyin: 'hPinyin' }[mode]);
-  document.querySelectorAll('[data-level]').forEach((b) => b.classList.toggle('on', +b.dataset.level === level));
+  document.querySelectorAll('[data-level]').forEach((b) => b.classList.toggle('on', levels.has(+b.dataset.level)));
   const s = $('#status');
   if (s.dataset.key) setStatus(s.dataset.key, JSON.parse(s.dataset.vars || '{}'), s.className.replace('status', '').trim());
   if (current) {
@@ -351,9 +355,10 @@ function render() {
 
 document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('click', () => {
-  level = +b.dataset.level;
-  store.set('parole-level', level);
-  document.querySelectorAll('[data-level]').forEach((x) => x.classList.toggle('on', x === b));
+  const lv = +b.dataset.level;
+  if (levels.has(lv)) { if (levels.size > 1) levels.delete(lv); } else levels.add(lv);
+  store.set('parole-level', [...levels].sort());
+  document.querySelectorAll('[data-level]').forEach((x) => x.classList.toggle('on', levels.has(+x.dataset.level)));
   recent.length = 0;
   next();
 }));
