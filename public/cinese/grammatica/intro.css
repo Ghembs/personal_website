@@ -170,7 +170,9 @@ article.g h3.sub { font-size: 18px; margin-top: 16px; }
 .next .go + .go { margin-left: 10px; }
 .s {
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  /* the Chinese first, then pinyin, then the translation: each wraps before
+     taking the others' room (the translation keeps a few words a line) */
+  grid-template-columns: fit-content(42%) fit-content(30%) minmax(9em, 1fr);
   gap: 4px 14px;
   align-items: baseline;
   margin: 6px 0;
