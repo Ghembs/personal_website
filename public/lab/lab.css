@@ -6,7 +6,6 @@
   --ink: #23272e;
   --pencil: #6b6f76;
   --red: #c4553f;
-  --tape: rgba(240, 214, 140, 0.75);
   --hand: "Caveat", "Comic Sans MS", cursive;
   --mono: "JetBrains Mono", ui-monospace, monospace;
 }
@@ -25,6 +24,7 @@ body {
     linear-gradient(var(--grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  overflow-x: clip; /* tape on the cards' edges may reach past the page */
 }
 /* the notebook margin */
 body::before {
@@ -74,23 +74,33 @@ main { padding: 0 22px 40px 84px; max-width: 1240px; }
   position: relative;
   display: block;
   padding: 14px 14px 12px;
-  background: #fffdf7;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 10px 24px rgba(40, 50, 60, 0.12);
   transform: rotate(var(--tilt, 0deg));
   text-decoration: none;
   transition: transform 0.25s, box-shadow 0.25s;
 }
-a.card:hover { transform: rotate(0deg) translateY(-4px); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 18px 34px rgba(40, 50, 60, 0.18); }
+a.card:hover { transform: rotate(0deg) translateY(-4px); }
+/* the sheet, drawn by lab.js: torn on a side or two, straight on the others */
+.card .paper { position: absolute; z-index: -1; background: #fffdf7; }
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  z-index: -2;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 12px 26px rgba(40, 50, 60, 0.14);
+  transition: box-shadow 0.25s;
+}
+a.card:hover::after { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 20px 36px rgba(40, 50, 60, 0.2); }
+/* tape, placed by lab.js on each load; the ends torn off by hand */
 .tape {
   position: absolute;
-  top: -12px;
-  left: 50%;
-  width: 96px;
-  height: 24px;
-  transform: translateX(-50%) rotate(-3deg);
-  background: var(--tape);
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 45%, rgba(0, 0, 0, 0.04)),
+    rgba(var(--tc, 240, 214, 140), var(--ta, 0.7));
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
+svg.defs { position: absolute; width: 0; height: 0; }
 .view {
   height: 190px;
   overflow: hidden;
