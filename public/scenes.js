@@ -714,7 +714,7 @@ const Scenes = (() => {
         if (h.slot === 'walk') {
           const top = B - DINO.length - 1 - s.y;
           g.float(walkX, top, DINO, C.fg, M.dino, true);
-          g.float(walkX, top + DINO.length, s.y > 0.2 ? DINO_AIR : DINO_LEGS[Math.floor(s.off / 1.6) % 2], C.fg, M.dino, true);
+          g.float(walkX, top + DINO.length, s.y > 0.2 ? DINO_AIR : DINO_LEGS[Math.floor(s.off / 1.6) & 1], C.fg, M.dino, true);
           walkX += widthOf(DINO) + 6;
         } else if (h.slot === 'rails') {
           const top = B - LOCO.length, lx = s.portrait ? g.cols - widthOf(LOCO) - 1 : Math.min(g.cols - widthOf(LOCO) - 1, Math.round(g.cols * 0.66));
