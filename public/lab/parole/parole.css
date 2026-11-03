@@ -39,6 +39,8 @@
 .syl .pick button:hover:not(:disabled) { color: var(--paper); }
 .syl .pick button.on { color: var(--c); border-color: var(--c); }
 .syl .want { min-height: 1.3em; font-size: 18px; }
+.also { margin: 8px 0 0; color: var(--dim); font-style: italic; }
+.also:empty { display: none; }
 .syl.right { border-color: var(--t3); box-shadow: inset 0 0 0 1px var(--t3); }
 .syl.wrong { border-color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
 

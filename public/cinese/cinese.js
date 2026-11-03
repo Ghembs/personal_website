@@ -265,6 +265,8 @@ async function main() {
   for (const [p, list] of families) if (list.length < 2) { families.delete(p); list.forEach((i) => familyOf.delete(chars[i].c)); }
 
   const strokesOf = (c) => dec[c]?.n || 1;
+  // a word's dictionary entry: of its own reading, when it is written like another (地 dì, de)
+  const entryOf = (w) => ced.words[`${w.w}|${w.py}`] || ced.words[w.w];
 
   // The words, by reading; a word spelt alike but read differently is another word.
   const words = [...hsk.words].sort((a, b) => plain(a.py).localeCompare(plain(b.py)) || a.level - b.level);
@@ -823,7 +825,7 @@ async function main() {
   let wordSel = -1, wordNear = new Set(), wordHits = null;    // wordHits: what was searched, if anything
   const wordWidth = (k) => [...words[k].w].length * WORD_ADV;
   // a short meaning: the first, without measure words or Chinese in brackets
-  const gloss = (w) => (ced.words[w.w]?.d?.[0] || ced.chars[w.w]?.[0]?.[1]?.[0] || '').split(';')[0]
+  const gloss = (w) => (entryOf(w)?.d?.[0] || ced.chars[w.w]?.[0]?.[1]?.[0] || '').split(';')[0]
     .replace(/\s*\(?CL:.*$/, '').replace(/\s*\([^)]*[一-鿿][^)]*\)/g, '').trim();
   const wordMesh = BABYLON.MeshBuilder.CreatePlane('words', { size: 1 }, scene);
   wordMesh.material = mat;
@@ -988,7 +990,7 @@ async function main() {
   const wordChip = (w) => `<button class="chip go" data-open="${wordId(w)}"><span class="hz">${w.w}</span><small>${w.py}</small></button>`;
   function renderWordCard() {
     const w = words[wordSel], list = [...new Set(w.w)];
-    const info = ced.words[w.w];
+    const info = entryOf(w);
     const pinyin = w.py.normalize('NFC');
     card.querySelector('.big').textContent = w.w;
     card.querySelector('.big').dataset.len = [...w.w].length;
@@ -1340,7 +1342,7 @@ async function main() {
       : '';
     card.querySelector('.words').innerHTML = `<h2>${t('words', { lv: levelText() })}</h2>` + filters + (words.length
       ? words.map((w) => {
-        const info = ced.words[w.w];
+        const info = entryOf(w);
         const gl = info?.d?.[0] || '';
         const cl = info?.cl ? ` · ${t('measure')} ${info.cl.map(([h, py]) => `<span class="hz">${h}</span> ${py}`).join(', ')}` : '';
         return `<div class="word"><button class="hz say" data-word="${w.w}" data-py="${w.py}" aria-label="${t('listen')} ${w.w}">${w.w}</button><span class="py">${w.py}</span><span class="gl">${gl}</span>` +
@@ -1471,7 +1473,7 @@ async function main() {
     });
     for (const w of hsk.words) {
       if ((w.w.length < 2 && !singles) || !levels.has(w.level)) continue;
-      const r = rank(ced.words[w.w]?.d || []);
+      const r = rank(entryOf(w)?.d || []);
       if (r >= 0) words.push([r, w]);
     }
     return {

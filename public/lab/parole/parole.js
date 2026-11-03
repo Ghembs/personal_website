@@ -18,7 +18,7 @@ const TEXT = {
     chars: '{n} caratteri', char1: '1 carattere', outline: 'mostra il contorno', noOutline: 'nascondi il contorno',
     hintPy: 'suggerisci il pinyin', giveUp: 'non lo so', check: 'controlla', listen: 'ascolta', open: 'apri la scheda →', next: 'prossima →',
     reset: 'azzera', score: 'giuste {ok} su {n} · di fila {streak} · record {best}', none: 'ancora nessuna risposta',
-    syllable: 'sillaba {n}', toneN: '{n}° tono', neutral: 'neutro', measure: 'classificatore',
+    also: 'si legge anche {py}, con un altro significato', syllable: 'sillaba {n}', toneN: '{n}° tono', neutral: 'neutro', measure: 'classificatore',
     langName: 'English',
     foot: 'Parole e livelli dal sillabo HSK 2025, significati da <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), tratti di <a href="https://hanziwriter.org/">Hanzi Writer</a>: tutto dalla <a href="../../cinese/?vista=parole">sezione di cinese</a>.',
     pos: { 名: 'nome', 动: 'verbo', 形: 'aggettivo', 副: 'avverbio', 量: 'classificatore', 代: 'pronome', 连: 'congiunzione', 介: 'preposizione',
@@ -36,7 +36,7 @@ const TEXT = {
     chars: '{n} characters', char1: '1 character', outline: 'show the outline', noOutline: 'hide the outline',
     hintPy: 'hint: pinyin', giveUp: 'I don\'t know', check: 'check', listen: 'listen', open: 'open the card →', next: 'next →',
     reset: 'reset', score: '{ok} right out of {n} · streak {streak} · best {best}', none: 'no answers yet',
-    syllable: 'syllable {n}', toneN: 'tone {n}', neutral: 'neutral', measure: 'measure word',
+    also: 'it also reads {py}, with another meaning', syllable: 'syllable {n}', toneN: 'tone {n}', neutral: 'neutral', measure: 'measure word',
     langName: 'Italiano',
     foot: 'Words and levels from the HSK syllabus 2025, meanings from <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), recordings from <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), strokes by <a href="https://hanziwriter.org/">Hanzi Writer</a>: all from the <a href="../../cinese/?vista=parole">Chinese section</a>.',
     pos: { 名: 'noun', 动: 'verb', 形: 'adjective', 副: 'adverb', 量: 'measure word', 代: 'pronoun', 连: 'conjunction', 介: 'preposition',
@@ -63,7 +63,11 @@ let hsk = null, ced = null;
 const loaded = Promise.all(['hsk', 'cedict'].map((f) => fetch(`../../cinese/data/${f}.json`).then((r) => r.json())))
   .then(async ([h, c]) => { hsk = h; ced = c; await Voice.ready; });
 
-const defsOf = (w) => (ced.words[w.w]?.d || []).map(clean).filter(Boolean);
+// a word's dictionary entry: of its own reading, when it is written like another (地 dì, de)
+const entryOf = (w) => ced.words[`${w.w}|${w.py}`] || ced.words[w.w];
+const defsOf = (w) => (entryOf(w)?.d || []).map(clean).filter(Boolean);
+// the syllabus's words written alike, this one first (长: cháng, zhǎng)
+const readingsOf = (w) => [w, ...hsk.words.filter((x) => x.w === w.w && x !== w && syllablesOf(x))];
 // a meaning to recognise: the first sense or two, short
 const meaningOf = (w) => {
   const d = defsOf(w), first = d[0] || '';
@@ -252,6 +256,7 @@ function askPinyin() {
     `<div class="want"></div></div>`).join('');
   $('#pyGiveUp').disabled = false;
   $('#pinyin [type=submit]').disabled = false;
+  $('#also').textContent = '';
   setStatus('typeNow');
   $('#sylls input')?.focus();
 }
@@ -261,14 +266,23 @@ function setTone(syl, k) {
 }
 function checkPinyin(giveUp = false) {
   if (answered) return;
+  const said = [...document.querySelectorAll('.syl')].map((el) => ({
+    base: plain(el.querySelector('input').value.trim().replace(/u:/g, 'v')), tone: +el.dataset.tone || 0,
+  }));
+  // 一 and 不 change their tone in speech: the dictionary's is fine too
+  const fits = (want, s) => !giveUp && s.base === want.base && (s.tone === want.tone || ('一不'.includes(want.c) && s.tone === want.own));
+  // a word written like another may be read as either: the closest reading counts
+  const options = readingsOf(current).map((w) => ({ w, sylls: syllablesOf(w) }));
+  const score = (o) => o.sylls.filter((want, i) => fits(want, said[i])).length;
+  const best = options.reduce((a, o) => (score(o) > score(a) ? o : a));
+  current = best.w;
+  current.sylls = best.sylls;
+  const also = options.filter((o) => o !== best).map((o) => o.w.py);
+  $('#also').textContent = also.length ? t('also', { py: also.join(', ') }) : '';
   let ok = 0;
   document.querySelectorAll('.syl').forEach((el, i) => {
     const want = current.sylls[i];
-    const base = plain(el.querySelector('input').value.trim().replace(/u:/g, 'v'));
-    const tone = +el.dataset.tone || 0;
-    // 一 and 不 change their tone in speech: the dictionary's is fine too
-    const toneOk = tone === want.tone || ('一不'.includes(want.c) && tone === want.own);
-    const right = !giveUp && base === want.base && toneOk;
+    const right = fits(want, said[i]);
     ok += right;
     el.classList.add(right ? 'right' : 'wrong');
     el.querySelector('input').disabled = true;
@@ -286,7 +300,7 @@ function checkPinyin(giveUp = false) {
 function finish(ok) {
   answered = true;
   count(ok);
-  const w = current, info = ced.words[w.w];
+  const w = current, info = entryOf(w);
   $('#write .acts').hidden = true;
   $('#glyph').textContent = w.w;
   $('#reading').innerHTML = `${w.py}<small>${metaOf(w)}</small>`;

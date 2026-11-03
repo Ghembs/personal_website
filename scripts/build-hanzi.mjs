@@ -120,16 +120,17 @@ function readCedict(buf) {
     if (line.startsWith('#')) continue;
     const m = /^(\S+) (\S+) \[([^\]]+)\] \/(.+)\/$/.exec(line);
     if (!m) continue;
-    const [, , simp, py, defs] = m;
+    const [, trad, simp, py, defs] = m;
     if (!map.has(simp)) map.set(simp, []);
-    map.get(simp).push({ py: toMarks(py), defs: defs.split('/') });
+    map.get(simp).push({ py: toMarks(py), defs: defs.split('/'), own: trad === simp });
   }
   return map;
 }
 
 // Surname-only and variant entries go last, then proper nouns (capitalised
 // pinyin, e.g. 青 Qīng for Qinghai): they rarely help a learner.
-const minor = (e) => e.defs.every((d) => /^(surname|variant of|old variant|archaic variant|see )/i.test(d));
+const MINOR = /^(surname|variant of|old variant|archaic variant|see |used in )/i;
+const minor = (e) => e.defs.every((d) => MINOR.test(d));
 
 // ---------- Tatoeba ----------
 
@@ -211,7 +212,9 @@ async function main() {
   );
 
   // CC-CEDICT: every reading of each character, main ones first; for words the
-  // entry whose pinyin matches the syllabus, else the first one.
+  // entry whose pinyin matches the syllabus, else the first one. A word the
+  // syllabus lists under two readings (地 dì and de, 长 cháng and zhǎng) keeps
+  // one entry per reading, as "地|de"; its plain key has the first of them.
   const ced = { chars: {}, words: {} };
   // Readings are ranked by how many HSK words containing the character use them.
   const usage = (c, py) => hsk.words.filter((x) => x.w.includes(c) && x.py.toLowerCase().includes(py.toLowerCase())).length;
@@ -221,11 +224,24 @@ async function main() {
     ced.chars[c] = entries.slice(0, 4).map((e) => [e.py, e.defs.filter((d) => !d.startsWith('CL:')).slice(0, 5)]);
   }
   let missing = 0;
-  for (const { w, py } of hsk.words) {
+  const readings = new Map();
+  for (const { w } of hsk.words) readings.set(w, (readings.get(w) || 0) + 1);
+  for (const { w, py, pos } of hsk.words) {
     const entries = cedict.get(w) || [];
     // Among entries with the syllabus pinyin, the one with most senses is
-    // usually the everyday word (大学 "university", not the Confucian classic).
-    const same = entries.filter((x) => flat(x.py) === flat(py)).sort((a, b) => b.defs.length - a.defs.length);
+    // usually the everyday word (大学 "university", not the Confucian classic);
+    // a classifier or a particle in the syllabus looks for one in its senses
+    // (只 zhī: "classifier for birds", not "grain that has begun to ripen");
+    // then the entry written the same in traditional characters (千 "thousand",
+    // not 韆 "used in 秋千").
+    const hint = /量/.test(pos) ? /classifier|measure word/i : /助/.test(pos) ? /particle|marker/i : null;
+    const fits = (x) => (hint && x.defs.some((d) => hint.test(d)) ? 1 : 0);
+    // (a measure word counts: a noun with one is an everyday thing, 苹果
+    // "apple" rather than the company, which is a proper noun anyway)
+    const senses = (x) => x.defs.filter((d) => !MINOR.test(d)).length;
+    const proper = (x) => /^[A-Z]/.test(x.py);
+    const same = entries.filter((x) => flat(x.py) === flat(py))
+      .sort((a, b) => minor(a) - minor(b) || proper(a) - proper(b) || fits(b) - fits(a) || senses(b) - senses(a) || b.own - a.own);
     const e = same[0] || entries.find((x) => !minor(x)) || entries[0];
     if (!e) { missing++; continue; }
     // "CL:個|个[ge4],家[jia1]" -> measure words [["个", "gè"], ["家", "jiā"]]
@@ -233,7 +249,9 @@ async function main() {
       .flatMap((d) => d.slice(3).split(','))
       .map((x) => /(?:[^|[]+\|)?([^|[]+)\[([^\]]+)\]/.exec(x)).filter(Boolean)
       .map((m) => [m[1], toMarks(m[2])]);
-    ced.words[w] = { d: e.defs.filter((d) => !d.startsWith('CL:')).slice(0, 3), ...(cl.length ? { cl } : {}) };
+    const entry = { d: e.defs.filter((d) => !d.startsWith('CL:')).slice(0, 5), ...(cl.length ? { cl } : {}) };
+    if (readings.get(w) > 1) ced.words[`${w}|${py}`] = entry;
+    ced.words[w] ??= entry;
   }
   const bare = Object.values(ced.chars).filter((e) => !e.length).length;
   console.log(`CC-CEDICT: ${Object.keys(ced.words).length} words found, ${missing} missing; ${bare} characters without entries`);
