@@ -48,7 +48,7 @@ const TEXT = {
     // page
     home: '← giulianogambacorta', intro: 'introduzione', vLevels: 'livelli', vRadicals: 'radicali', vPhonetic: 'famiglie fonetiche',
     cLevel: 'colore: livello', cTone: 'colore: tono', search: '字, pinyin o inglese', word1: 'parola', wordN: 'parole', strokesBtn: 'tratti', done: 'fine',
-    sources: 'Pronuncia: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Sinonimi e contrari: <a href="https://github.com/omwn/omw-data/tree/main/wns/cow" target="_blank" rel="noopener">Chinese Open Wordnet</a> e <a href="https://wordnet.princeton.edu/" target="_blank" rel="noopener">WordNet</a>. Dati: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), sillabo HSK 2025. Frasi: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
+    sources: 'Pronuncia: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Sinonimi e contrari: <a href="https://github.com/omwn/omw-data/tree/main/wns/cow" target="_blank" rel="noopener">Chinese Open Wordnet</a> e <a href="https://wordnet.princeton.edu/" target="_blank" rel="noopener">WordNet</a>. Significati: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0) e <a href="https://en.wiktionary.org/" target="_blank" rel="noopener">Wiktionary</a> (CC BY-SA 4.0, tramite <a href="https://kaikki.org/" target="_blank" rel="noopener">kaikki.org</a>). Dati: <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), sillabo HSK 2025. Frasi: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Tratti: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
     lang: 'EN', langName: 'English', theme: 'Tema chiaro / scuro', aView: 'Vista', aLevels: 'Livelli visibili', aDim: 'Dimensioni', aColor: 'Colore',
     aClose: 'Chiudi', aGrip: 'Riduci o espandi la scheda', title: '汉字 · HSK 1–4 · Giuliano Gambacorta',
   },
@@ -68,7 +68,7 @@ const TEXT = {
       介: 'prepositions', 连: 'conjunctions', 叹: 'interjections', 拟声: 'onomatopoeia', 前缀: 'prefixes', 后缀: 'suffixes' },
     home: '← giulianogambacorta', intro: 'introduction', vLevels: 'levels', vRadicals: 'radicals', vPhonetic: 'phonetic families',
     cLevel: 'colour: level', cTone: 'colour: tone', search: '字, pinyin or English', word1: 'word', wordN: 'words', strokesBtn: 'strokes', done: 'done',
-    sources: 'Pronunciation: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Synonyms and antonyms: <a href="https://github.com/omwn/omw-data/tree/main/wns/cow" target="_blank" rel="noopener">Chinese Open Wordnet</a> and <a href="https://wordnet.princeton.edu/" target="_blank" rel="noopener">WordNet</a>. Data: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0), <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), HSK syllabus 2025. Sentences: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Strokes: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
+    sources: 'Pronunciation: <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Synonyms and antonyms: <a href="https://github.com/omwn/omw-data/tree/main/wns/cow" target="_blank" rel="noopener">Chinese Open Wordnet</a> and <a href="https://wordnet.princeton.edu/" target="_blank" rel="noopener">WordNet</a>. Meanings: <a href="https://cc-cedict.org/" target="_blank" rel="noopener">CC-CEDICT</a> (CC BY-SA 4.0) and <a href="https://en.wiktionary.org/" target="_blank" rel="noopener">Wiktionary</a> (CC BY-SA 4.0, via <a href="https://kaikki.org/" target="_blank" rel="noopener">kaikki.org</a>). Data: <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noopener">Make Me a Hanzi</a> (LGPL), HSK syllabus 2025. Sentences: <a href="https://tatoeba.org/" target="_blank" rel="noopener">Tatoeba</a> (CC BY 2.0 FR). Strokes: <a href="https://hanziwriter.org/" target="_blank" rel="noopener">Hanzi Writer</a>.',
     lang: 'IT', langName: 'Italiano', theme: 'Light / dark theme', aView: 'View', aLevels: 'Shown levels', aDim: 'Dimensions', aColor: 'Colour',
     aClose: 'Close', aGrip: 'Fold or unfold the card', title: '汉字 · HSK 1–4 · Giuliano Gambacorta',
   },
@@ -458,6 +458,16 @@ async function main() {
     if (selected >= 0 && !isNode(selected)) renderRelations(selected);
     if (wordSel >= 0) renderWordCard();
   });
+  // Wiktionary's senses (scripts/build-wiktionary.mjs), each reading's by part
+  // of speech: { w: { "词|cí": [[pos, [senses]]] }, c: { 字: { zì: [[pos, [senses]]] } } }
+  let wikt = null;
+  fetch('data/wiktionary.json').then((r) => r.json()).then((d) => {
+    wikt = d;
+    if (selected >= 0 && !isNode(selected)) renderCharMeanings(selected);
+    if (wordSel >= 0) renderWordMeanings();
+  }).catch(() => { /* CC-CEDICT's are enough */ });
+  const sensesHtml = (groups) => groups.map(([p, list]) =>
+    (p ? `<div class="pos-h">${POS_NAMES[p] || p}</div>` : '') + `<ol>${list.map((x) => `<li>${x}</li>`).join('')}</ol>`).join('');
   let selected = -1, hovered = -1, open = -1;   // open: radical node whose column is up
   let related = new Set(), highlight = new Set(), column_ = new Set();
   let lines = null;
@@ -996,9 +1006,7 @@ async function main() {
     card.querySelector('.big').dataset.len = [...w.w].length;
     card.querySelector('.level').textContent = `HSK ${w.level}${w.pos ? ` · ${posTags(w.pos).map((p) => POS_NAMES[p] || p).join(', ')}` : ''}`;
     card.querySelector('.readings').innerHTML = `<button class="say" data-word="${w.w}" data-py="${w.py}" aria-label="${t('listen')} ${w.w}">${pinyin}</button>`;
-    const cl = info?.cl ? `<div class="other">${t('measure')}: ${info.cl.map(([h, py]) => `<span class="hz">${h}</span> ${py}`).join(', ')}</div>` : '';
-    const defs = info?.d || ced.chars[w.w]?.[0]?.[1] || [];
-    card.querySelector('.meanings').innerHTML = `<h2>${t('meanings')}</h2><ol>${defs.map((x) => `<li>${x}</li>`).join('')}</ol>${cl}`;
+    renderWordMeanings();
     card.querySelector('.parts').innerHTML = `<h2>${t('wordChars')}</h2><div class="chips">${list.map((c) => chip(c)).join('')}</div>`;
     const kin = [...wordNear].sort((a, b) => words[a].level - words[b].level);
     card.querySelector('.family').innerHTML = kin.length
@@ -1008,6 +1016,15 @@ async function main() {
     card.querySelector('.words').innerHTML = '';
     showWriter(w.w);
     card.scrollTop = 0;
+  }
+
+  // Wiktionary's senses of this reading by part of speech, else CC-CEDICT's.
+  function renderWordMeanings() {
+    const w = words[wordSel], info = entryOf(w), wk = wikt?.w[`${w.w}|${w.py}`];
+    const cl = info?.cl ? `<div class="other">${t('measure')}: ${info.cl.map(([h, py]) => `<span class="hz">${h}</span> ${py}`).join(', ')}</div>` : '';
+    const defs = info?.d || ced.chars[w.w]?.[0]?.[1] || [];
+    card.querySelector('.meanings').innerHTML = `<h2>${t('meanings')}</h2>` +
+      (wk ? sensesHtml(wk) : `<ol>${defs.map((x) => `<li>${x}</li>`).join('')}</ol>`) + cl;
   }
 
   // Characters or words: the words are 2D, whatever the characters were.
@@ -1253,10 +1270,7 @@ async function main() {
       ? entries.slice(0, 3).map(([py]) => sayPy(py, c)).join('')
       : `<span>${d.py || ''}</span>`;
 
-    const [first, ...others] = entries;
-    card.querySelector('.meanings').innerHTML = `<h2>${t('meanings')}</h2>` +
-      (first ? `<ol>${first[1].map((x) => `<li>${x}</li>`).join('')}</ol>` : `<p class="muted">${d.def || '—'}</p>`) +
-      others.filter(([, defs]) => defs.length).map(([py, defs]) => `<div class="other">${py}: ${defs.slice(0, 2).join('; ')}</div>`).join('');
+    renderCharMeanings(i);
 
     const parts = [...(d.d || '')].filter((x) => !IDS.test(x) && x !== c);
     const e = d.e;
@@ -1280,6 +1294,19 @@ async function main() {
     renderWords(i);
     showWriter(c);
     card.scrollTop = 0;
+  }
+
+  // The first reading in full, the others in a line: Wiktionary's senses by
+  // part of speech where it has them, else CC-CEDICT's.
+  function renderCharMeanings(i) {
+    const { c } = chars[i], wk = wikt?.c[c] || {};
+    const [first, ...others] = ced.chars[c] || [];
+    const flatten = (py, defs) => (wk[py] ? wk[py].flatMap(([, l]) => l) : defs);
+    card.querySelector('.meanings').innerHTML = `<h2>${t('meanings')}</h2>` +
+      (!first ? `<p class="muted">${dec[c]?.def || '—'}</p>`
+        : wk[first[0]] ? sensesHtml(wk[first[0]]) : `<ol>${first[1].map((x) => `<li>${x}</li>`).join('')}</ol>`) +
+      others.map(([py, defs]) => [py, flatten(py, defs)]).filter(([, l]) => l.length)
+        .map(([py, l]) => `<div class="other">${py}: ${l.slice(0, 3).join('; ')}</div>`).join('');
   }
 
   // Synonyms and antonyms of the character and of its words, those in the

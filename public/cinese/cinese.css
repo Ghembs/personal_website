@@ -211,6 +211,8 @@ a { color: inherit; }
 }
 #card ol { margin: 0; padding-left: 20px; }
 #card .other { font-size: 15px; color: var(--dim); margin-top: 4px; }
+#card .pos-h { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 8px 0 2px; }
+#card .pos-h:first-of-type { margin-top: 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
   display: inline-flex;

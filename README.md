@@ -58,7 +58,7 @@ public/          the site, served as is (no build step)
   style.css
   _headers       Cloudflare Pages response headers
   cinese/        the Chinese section: page, data/, fonts/, audio/ (voice.js plays it)
-scripts/         build-hanzi.mjs, build-audio.mjs and build-relations.mjs, the data pipeline for cinese/
+scripts/         build-hanzi.mjs, build-audio.mjs, build-relations.mjs and build-wiktionary.mjs, the data pipeline for cinese/
 wrangler.toml    Cloudflare Pages project config
 ```
 
@@ -94,6 +94,10 @@ else its syllables chained with the tone changes of speech (3+3, 不, 一).
 Sentences use the device's speech synthesis when it has a Chinese voice, the
 chained syllables otherwise.
 
+Meanings come from CC-CEDICT and, in the cards, from the English Wiktionary
+(`scripts/build-wiktionary.mjs`, from the kaikki.org extract): each reading's
+senses by part of speech, standard Mandarin only.
+
 Search takes a character, pinyin (tones optional) or an English word, matched
 in the meanings of characters and words. Cards also list synonyms and antonyms
 (Chinese Open Wordnet and WordNet, filtered with the CC-CEDICT meanings by
@@ -108,7 +112,9 @@ npm run build:hanzi -- path/to/HSK-syllabus.pdf
 
 which needs `pdftotext` (poppler-utils) and `bzip2`, and downloads CC-CEDICT,
 Make Me a Hanzi, the Tatoeba exports and Noto Serif SC into `data/raw/` (git-ignored). The syllabus PDF is read
-locally and not published. Data licences: [public/cinese/data/LICENSES.md](public/cinese/data/LICENSES.md).
+locally and not published. Then `node scripts/build-relations.mjs` (synonyms and
+antonyms) and `node scripts/build-wiktionary.mjs` (Wiktionary's senses; it needs
+the 1.2 GB Chinese extract of kaikki.org in `data/raw/kaikki-chinese.jsonl`). Data licences: [public/cinese/data/LICENSES.md](public/cinese/data/LICENSES.md).
 
 The recordings come from a sparse checkout of audio-cmn:
 
