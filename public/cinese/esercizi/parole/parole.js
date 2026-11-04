@@ -7,7 +7,7 @@
 
 const TEXT = {
   it: {
-    back: '← cesta dei giochi', section: 'le parole nella sezione di cinese', tones: 'toni', theme: 'Tema chiaro / scuro', lang: 'EN',
+    back: '← esercizi di cinese', section: 'le parole nella sezione di cinese', tones: 'toni', theme: 'Tema chiaro / scuro', lang: 'EN',
     title: 'allenamento sulle parole', docTitle: 'Allenamento sulle parole · Giuliano Gambacorta', upTo: 'livelli',
     mMeaning: 'significato', mWrite: 'scrittura', mPinyin: 'pinyin',
     hMeaning: 'che cosa vuol dire questa parola?', hWrite: 'scrivi la parola che ha questo significato', hPinyin: 'come si legge? scrivi il pinyin e scegli i toni',
@@ -20,12 +20,12 @@ const TEXT = {
     reset: 'azzera', score: 'giuste {ok} su {n} · di fila {streak} · record {best}', none: 'ancora nessuna risposta',
     also: 'si legge anche {py}, con un altro significato', syllable: 'sillaba {n}', toneN: '{n}° tono', neutral: 'neutro', measure: 'classificatore',
     langName: 'English',
-    foot: 'Parole e livelli dal sillabo HSK 2025, significati da <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), tratti di <a href="https://hanziwriter.org/">Hanzi Writer</a>: tutto dalla <a href="../../cinese/?vista=parole">sezione di cinese</a>.',
+    foot: 'Parole e livelli dal sillabo HSK 2025, significati da <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), tratti di <a href="https://hanziwriter.org/">Hanzi Writer</a>: tutto dalla <a href="../../?vista=parole">sezione di cinese</a>.',
     pos: { 名: 'nome', 动: 'verbo', 形: 'aggettivo', 副: 'avverbio', 量: 'classificatore', 代: 'pronome', 连: 'congiunzione', 介: 'preposizione',
       数: 'numerale', 助: 'particella', 后缀: 'suffisso', 数量: 'numerale con classificatore', 前缀: 'prefisso', 叹: 'interiezione' },
   },
   en: {
-    back: '← the toy box', section: 'the words in the Chinese section', tones: 'tones', theme: 'Light / dark theme', lang: 'IT',
+    back: '← Chinese exercises', section: 'the words in the Chinese section', tones: 'tones', theme: 'Light / dark theme', lang: 'IT',
     title: 'word trainer', docTitle: 'Word trainer · Giuliano Gambacorta', upTo: 'levels',
     mMeaning: 'meaning', mWrite: 'writing', mPinyin: 'pinyin',
     hMeaning: 'what does this word mean?', hWrite: 'write the word with this meaning', hPinyin: 'how is it read? type the pinyin and pick the tones',
@@ -38,7 +38,7 @@ const TEXT = {
     reset: 'reset', score: '{ok} right out of {n} · streak {streak} · best {best}', none: 'no answers yet',
     also: 'it also reads {py}, with another meaning', syllable: 'syllable {n}', toneN: 'tone {n}', neutral: 'neutral', measure: 'measure word',
     langName: 'Italiano',
-    foot: 'Words and levels from the HSK syllabus 2025, meanings from <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), recordings from <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), strokes by <a href="https://hanziwriter.org/">Hanzi Writer</a>: all from the <a href="../../cinese/?vista=parole">Chinese section</a>.',
+    foot: 'Words and levels from the HSK syllabus 2025, meanings from <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), recordings from <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), strokes by <a href="https://hanziwriter.org/">Hanzi Writer</a>: all from the <a href="../../?vista=parole">Chinese section</a>.',
     pos: { 名: 'noun', 动: 'verb', 形: 'adjective', 副: 'adverb', 量: 'measure word', 代: 'pronoun', 连: 'conjunction', 介: 'preposition',
       数: 'numeral', 助: 'particle', 后缀: 'suffix', 数量: 'numeral with measure word', 前缀: 'prefix', 叹: 'interjection' },
   },
@@ -60,7 +60,7 @@ const posTags = (pos) => (pos || '').replace(/[（）()]/g, '').split('、').fil
 const clean = (d) => d.replace(/\s*\(?CL:.*$/, '').replace(/\s*\([^)]*[一-鿿][^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').trim();
 
 let hsk = null, ced = null;
-const loaded = Promise.all(['hsk', 'cedict'].map((f) => fetch(`../../cinese/data/${f}.json`).then((r) => r.json())))
+const loaded = Promise.all(['hsk', 'cedict'].map((f) => fetch(`../../data/${f}.json`).then((r) => r.json())))
   .then(async ([h, c]) => { hsk = h; ced = c; await Voice.ready; });
 
 // a word's dictionary entry: of its own reading, when it is written like another (地 dì, de)
@@ -100,7 +100,8 @@ const levels = (() => {
   const v = store.get('parole-level', 1);
   return new Set(Array.isArray(v) && v.length ? v : [1, 2, 3, 4].filter((lv) => lv <= v));
 })();
-let mode = store.get('parole-mode', 'meaning');
+// ?modo=meaning|write|pinyin (the exercises page links each mode), else the last one used
+let mode = ['meaning', 'write', 'pinyin'].find((m) => m === new URLSearchParams(location.search).get('modo')) || store.get('parole-mode', 'meaning');
 const freshStats = () => ({ n: 0, ok: 0, streak: 0, best: 0 });
 const stats = store.get('parole-stats', null) || { meaning: freshStats(), write: freshStats(), pinyin: freshStats() };
 let showOutline = store.get('parole-outline', false);
@@ -308,7 +309,7 @@ function finish(ok) {
   $('#write .acts').hidden = true;
   $('#glyph').textContent = w.w;
   $('#reading').innerHTML = `${w.py}<small>${metaOf(w)}</small>`;
-  $('#open').href = `../../cinese/?vista=parole#${encodeURIComponent(w.w)}`;
+  $('#open').href = `../../?vista=parole#${encodeURIComponent(w.w)}`;
   $('#gloss').innerHTML = `<ol>${defsOf(w).slice(0, 5).map((d) => `<li>${d}</li>`).join('')}</ol>` +
     (info?.cl ? `<div class="other">${t('measure')}: ${info.cl.map(([h, py]) => `<span class="hz">${h}</span> ${py}`).join(', ')}</div>` : '');
   $('#answer').hidden = false;

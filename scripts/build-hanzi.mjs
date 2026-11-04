@@ -330,8 +330,8 @@ async function main() {
   // Font subset: every character the page can draw.
   const used = new Set(UI_CHARS);
   // ...and every character written in the pages of the section (the grammar,
-  // its introduction and levels).
-  for (const page of ['index.html', 'grammatica/index.html', 'grammatica/livelli.js']) {
+  // its introduction and levels, the exercises).
+  for (const page of ['index.html', 'grammatica/index.html', 'grammatica/livelli.js', 'esercizi/index.html', 'esercizi/esercizi.js']) {
     const file = join(ROOT, 'public', 'cinese', page);
     if (existsSync(file)) for (const ch of readFileSync(file, 'utf8')) if (HAN.test(ch)) used.add(ch);
   }

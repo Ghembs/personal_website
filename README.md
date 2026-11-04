@@ -38,26 +38,28 @@ public/          the site, served as is (no build step)
   lab/shanshui/  the shan shui painter: a density for each element of the
                  handscroll (Shanshui.catalog), painted on confirm into a scroll
                  of 2-6 panels or a screen-sized frame (Shanshui.paint); save as PNG
-  lab/toni/      the tone trainer: a hidden HSK character is pronounced (its
-                 syllable, from cinese/voice.js) and its tone guessed, tones
-                 drawn evenly; then the character, its card on request. Or
-                 spoken: pitch.js tracks the voice (YIN), draws it against the
-                 recording's and tells the tone by the shape of the curve (a
-                 small logistic regression, fitted to one voice's syllables),
-                 a little by the recording's; all in the browser. The card
-                 opens there too.
-                 The microphone keeps its last seconds, so a take starts a
-                 little before the press and ends after the release; tapped,
-                 it ends when the voice does; hands free, the voice starts it
-  lab/parole/    the word trainer: the HSK words up to a level, three ways:
-                 their meaning out of four (distractors of the same part of
-                 speech), written by hand from their meaning (Hanzi Writer, a
-                 character at a time), their pinyin typed with its tones
   img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders
   style.css
   _headers       Cloudflare Pages response headers
   cinese/        the Chinese section: page, data/, fonts/, audio/ (voice.js plays it)
+  cinese/esercizi/  the Chinese exercises: a card per exercise, a link per mode
+                 (?modo=); the lab's card points here
+  cinese/esercizi/toni/   the tone trainer: a hidden HSK character is pronounced (its
+                           syllable, from cinese/voice.js) and its tone guessed, tones
+                           drawn evenly; then the character, its card on request. Or
+                           spoken: pitch.js tracks the voice (YIN), draws it against the
+                           recording's and tells the tone by the shape of the curve (a
+                           small logistic regression, fitted to one voice's syllables),
+                           a little by the recording's; all in the browser. The card
+                           opens there too.
+                           The microphone keeps its last seconds, so a take starts a
+                           little before the press and ends after the release; tapped,
+                           it ends when the voice does; hands free, the voice starts it
+  cinese/esercizi/parole/ the word trainer: the HSK words up to a level, three ways:
+                           their meaning out of four (distractors of the same part of
+                           speech), written by hand from their meaning (Hanzi Writer, a
+                           character at a time), their pinyin typed with its tones
 scripts/         build-hanzi.mjs, build-audio.mjs, build-relations.mjs and build-wiktionary.mjs, the data pipeline for cinese/
 wrangler.toml    Cloudflare Pages project config
 ```

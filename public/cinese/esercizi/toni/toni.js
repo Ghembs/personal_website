@@ -8,7 +8,7 @@
 
 const TEXT = {
   it: {
-    back: '← cesta dei giochi', words: 'parole', section: 'la sezione di cinese', theme: 'Tema chiaro / scuro', lang: 'EN', title: 'allenamento sui toni', docTitle: 'Allenamento sui toni · Giuliano Gambacorta',
+    back: '← esercizi di cinese', words: 'parole', section: 'la sezione di cinese', theme: 'Tema chiaro / scuro', lang: 'EN', title: 'allenamento sui toni', docTitle: 'Allenamento sui toni · Giuliano Gambacorta',
     hint: 'ascolta un carattere che non vedi e indovinane il tono', upTo: 'livelli', listen: 'ascolta',
     start: 'premi ▶ (o spazio) per ascoltare', loading: 'carico i caratteri…', listening: 'quale tono è? (1–4)',
     right: 'giusto: {n}° tono', wrong: 'no: era il {n}° tono, non il {g}°', compare: 'tocca un tono per sentire la stessa sillaba',
@@ -24,10 +24,10 @@ const TEXT = {
     legend: 'tratteggiata: il modello ({n}° tono) · piena: la tua voce', legendCal: ' · la tua altezza si calibra dopo qualche sillaba',
     privacy: 'L\'audio resta nel tuo browser: viene analizzato qui e non viene inviato a nessuno.',
     langName: 'English', tone: '{n}° tono', d1: 'alto e piatto', d2: 'sale', d3: 'scende e risale', d4: 'scende deciso',
-    foot: 'Registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Caratteri e significati dalla <a href="../../cinese/">sezione di cinese</a> (HSK 2025, CC-CEDICT).',
+    foot: 'Registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Caratteri e significati dalla <a href="../../">sezione di cinese</a> (HSK 2025, CC-CEDICT).',
   },
   en: {
-    back: '← the toy box', words: 'words', section: 'the Chinese section', theme: 'Light / dark theme', lang: 'IT', title: 'tone trainer', docTitle: 'Tone trainer · Giuliano Gambacorta',
+    back: '← Chinese exercises', words: 'words', section: 'the Chinese section', theme: 'Light / dark theme', lang: 'IT', title: 'tone trainer', docTitle: 'Tone trainer · Giuliano Gambacorta',
     hint: 'listen to a character you can\'t see and guess its tone', upTo: 'levels', listen: 'listen',
     start: 'press ▶ (or space) to listen', loading: 'loading the characters…', listening: 'which tone is it? (1–4)',
     right: 'right: tone {n}', wrong: 'no: it was tone {n}, not {g}', compare: 'tap a tone to hear the same syllable in it',
@@ -43,7 +43,7 @@ const TEXT = {
     legend: 'dashed: the model (tone {n}) · solid: your voice', legendCal: ' · your pitch is calibrated after a few syllables',
     privacy: 'The audio stays in your browser: it is analysed here and sent to no one.',
     langName: 'Italiano', tone: 'tone {n}', d1: 'high and level', d2: 'rising', d3: 'dips and rises', d4: 'falling',
-    foot: 'Recordings from <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Characters and meanings from the <a href="../../cinese/">Chinese section</a> (HSK 2025, CC-CEDICT).',
+    foot: 'Recordings from <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (Chen Wang, Yue Tan; CC BY-SA). Characters and meanings from the <a href="../../">Chinese section</a> (HSK 2025, CC-CEDICT).',
   },
 };
 const t = (k, v) => I18N.t(TEXT, k, v);
@@ -80,11 +80,12 @@ const levels = (() => {
 const freshStats = () => ({ n: 0, ok: 0, streak: 0, best: 0, per: { 1: [0, 0], 2: [0, 0], 3: [0, 0], 4: [0, 0] } });
 let stats = store.get('toni-stats', null) || freshStats();
 let speakStats = store.get('toni-speak-stats', null) || freshStats();
-let mode = store.get('toni-mode', 'listen');
+// ?modo=listen|speak (the exercises page links each mode), else the last one used
+let mode = ['listen', 'speak'].find((m) => m === new URLSearchParams(location.search).get('modo')) || store.get('toni-mode', 'listen');
 let hsk = null, ced = null, current = null, answered = false;
 const recent = [];
 
-const loaded = Promise.all(['hsk', 'cedict'].map((f) => fetch(`../../cinese/data/${f}.json`).then((r) => r.json())))
+const loaded = Promise.all(['hsk', 'cedict'].map((f) => fetch(`../../data/${f}.json`).then((r) => r.json())))
   .then(async ([h, c]) => { hsk = h; ced = c; await Voice.ready; });
 
 // characters of the chosen levels, by tone: their first reading, if recorded
@@ -175,7 +176,7 @@ function reveal(it = current, card = $('#card')) {
     others.filter(([, d]) => d.length).map(([py, d]) => `<div class="other">${py}: ${d.slice(0, 2).join('; ')}</div>`).join('') +
     (words.length ? `<div class="words"><b>${t('words')}</b> · ${words.map((w) =>
       `<button data-word="${w.w}" data-py="${w.py}"><span class="hz">${w.w}</span> ${w.py}</button>`).join(' · ')}</div>` : '') +
-    `<a href="../../cinese/#${encodeURIComponent(c)}">${t('open')}</a>`;
+    `<a href="../../#${encodeURIComponent(c)}">${t('open')}</a>`;
   card.hidden = false;
 }
 

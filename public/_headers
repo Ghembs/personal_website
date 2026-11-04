@@ -4,7 +4,7 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
 # the tone trainer listens (a later value of the same feature wins)
-/lab/toni/*
+/cinese/esercizi/toni/*
   Permissions-Policy: microphone=(self)
 
 /*.js

@@ -3,7 +3,7 @@
    four tone contours. */
 @font-face {
   font-family: "HanziSerif";
-  src: url("../../cinese/fonts/hanzi.woff2") format("woff2");
+  src: url("../../fonts/hanzi.woff2") format("woff2");
   font-display: block;
 }
 :root {

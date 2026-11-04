@@ -162,7 +162,7 @@ const Pitch = (() => {
   const refs = new Map();
   function reference(name) {
     if (!refs.has(name)) {
-      refs.set(name, fetch(new URL(`../../cinese/audio/syl/${name}.mp3`, document.baseURI))
+      refs.set(name, fetch(new URL(`../../audio/syl/${name}.mp3`, document.baseURI))
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.status))))
         .then(decode).then(analyse).catch(() => null));
     }

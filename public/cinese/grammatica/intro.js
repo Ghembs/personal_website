@@ -6,7 +6,7 @@
 const TEXT = {
   it: {
     title: 'Introduzione al cinese · Giuliano Gambacorta', back: '← i caratteri HSK 1–4',
-    nTones: 'toni', nPinyin: 'pinyin', nChars: 'caratteri', nGrammar: 'grammatica', theme: 'Tema chiaro / scuro',
+    nTones: 'toni', nPinyin: 'pinyin', nChars: 'caratteri', nGrammar: 'grammatica', exercises: 'esercizi', theme: 'Tema chiaro / scuro',
     tIntro: 'introduzione', aTabs: 'Schede', levelTitle: 'Grammatica HSK {n} · Giuliano Gambacorta', grammarOf: 'Grammatica HSK {n}',
     levelLead: 'Le voci del programma di grammatica del sillabo HSK (2025) per il livello {n}, nel suo ordine e sotto le sue intestazioni, che sono riportate in cinese accanto a ogni titolo. I livelli si sommano: qui c\'è solo ciò che il livello {n} aggiunge. Le spiegazioni e gli esempi sono miei, e gli esempi usano soltanto parole fino a questo livello. Tocca una frase per ascoltarla, una parola per aprirne la scheda.',
     soon: 'La grammatica di questo livello è in preparazione.', toIntro: '← all\'introduzione', next: 'HSK {n} →',
@@ -16,7 +16,7 @@ const TEXT = {
   },
   en: {
     title: 'An introduction to Chinese · Giuliano Gambacorta', back: '← the HSK 1–4 characters',
-    nTones: 'tones', nPinyin: 'pinyin', nChars: 'characters', nGrammar: 'grammar', theme: 'Light / dark theme',
+    nTones: 'tones', nPinyin: 'pinyin', nChars: 'characters', nGrammar: 'grammar', exercises: 'exercises', theme: 'Light / dark theme',
     tIntro: 'introduction', aTabs: 'Tabs', levelTitle: 'HSK {n} grammar · Giuliano Gambacorta', grammarOf: 'HSK {n} grammar',
     levelLead: 'The items of the grammar syllabus of the HSK syllabus (2025) for level {n}, in its order and under its headings, given in Chinese beside each title. Levels add up: here is only what level {n} adds. The explanations and examples are mine, and the examples use only words up to this level. Tap a sentence to hear it, a word to open its card.',
     soon: 'The grammar of this level is in the works.', toIntro: '← to the introduction', next: 'HSK {n} →',

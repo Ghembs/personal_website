@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Esercizi di cinese · Giuliano Gambacorta</title>
+  <meta name="description" content="Esercizi sui caratteri e sulle parole HSK 1–4: riconoscere e pronunciare i toni, ricordare significato, scrittura e pinyin delle parole.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../grammatica/intro.css?v=6">
+  <link rel="stylesheet" href="esercizi.css?v=1">
+  <script>
+    // same theme as the character page
+    try {
+      const t = localStorage.getItem('hanzi-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.dataset.theme = t;
+    } catch (e) { /* private mode */ }
+  </script>
+</head>
+<body>
+  <header id="top">
+    <a class="back" href="../" data-i18n="back">← i caratteri HSK 1–4</a>
+    <nav id="links">
+      <a href="../grammatica/" data-i18n="grammar">grammatica</a>
+      <a href="../../lab/" data-i18n="lab">laboratorio</a>
+    </nav>
+    <button id="theme" aria-label="Tema chiaro o scuro" title="Tema chiaro / scuro" data-i18n-attr="title:theme;aria-label:theme">◐</button>
+    <button id="lang" title="English">EN</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1><span class="hz">练习</span> <span data-i18n="h1">Esercizi di cinese</span></h1>
+      <p class="lead" data-i18n="lead"></p>
+    </section>
+    <!-- a section per group of exercises, drawn by esercizi.js -->
+    <div id="groups"></div>
+  </main>
+
+  <footer class="foot" data-i18n="foot"></footer>
+
+  <script src="../../i18n.js"></script>
+  <script src="esercizi.js?v=1"></script>
+</body>
+</html>

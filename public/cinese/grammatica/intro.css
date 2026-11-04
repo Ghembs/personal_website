@@ -64,7 +64,10 @@ i { font-style: italic; }
 #tabs a { padding: 1px 10px; border: 1px solid transparent; border-radius: 999px; white-space: nowrap; }
 #tabs a.on { color: var(--paper); border-color: var(--line); background: rgba(var(--fg), 0.06); }
 #sections { margin-left: auto; }
-#sections[hidden] + #theme { margin-left: auto; }
+#sections[hidden] + .ex-link { margin-left: auto; }
+/* the exercises, beside the sections */
+#top .ex-link { font-style: italic; color: var(--dim); text-decoration-color: var(--red); white-space: nowrap; }
+#top .ex-link:hover { color: var(--paper); }
 #theme { font-size: 18px; color: var(--dim); }
 #lang { font-size: 14px; letter-spacing: 0.08em; color: var(--dim); padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; }
 #lang:hover { color: var(--paper); }
@@ -190,6 +193,15 @@ article.g h3.sub { font-size: 18px; margin-top: 16px; }
 .go { font-size: 24px; text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 8px 22px; }
 .go:hover { border-color: var(--red); }
 .foot { text-align: center; color: var(--dim); font-size: 14px; padding: 20px; border-top: 1px solid var(--line); }
+
+/* a narrower window: the introduction's sections go on a row of their own */
+@media (max-width: 1100px) {
+  #top { flex-wrap: wrap; row-gap: 6px; }
+  #top .back { white-space: nowrap; }
+  #top .ex-link { margin-left: auto; }
+  #sections { order: 4; width: 100%; margin-left: 0; }
+  html { scroll-padding-top: 96px; }
+}
 
 @media (max-width: 640px) {
   body { font-size: 18px; }

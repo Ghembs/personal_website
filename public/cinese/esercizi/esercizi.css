@@ -1,0 +1,23 @@
+/* The exercises page, on the grammar page's dress (../grammatica/intro.css):
+   a card per exercise, its modes as a list of links. */
+.ex { margin: 14px 0 22px; }
+.ex h3 { font-weight: 600; font-size: 24px; margin: 6px 0 2px; }
+.ex h3 a { text-decoration: none; }
+.ex h3 a:hover { text-decoration: underline; text-decoration-color: var(--red); }
+.ex > p { margin: 0 0 10px; color: var(--dim); }
+.modes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.modes a {
+  display: flex; gap: 14px; align-items: baseline;
+  padding: 10px 16px;
+  border: 1px solid var(--line); border-radius: 10px;
+  text-decoration: none;
+}
+.modes a:hover { background: rgba(var(--fg), 0.06); border-color: rgba(var(--fg), 0.3); }
+.modes b { font-weight: 600; min-width: 7.5em; }
+.modes b::after { content: " →"; color: var(--red); font-weight: 400; }
+.modes span { color: var(--dim); }
+@media (max-width: 560px) {
+  .modes a { flex-direction: column; gap: 0; }
+}
+/* the header's two links stay on its row, at any width */
+#top #links { margin-left: auto; order: 0; width: auto; }

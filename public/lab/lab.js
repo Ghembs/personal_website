@@ -39,22 +39,13 @@ const EXPERIMENTS = [
     },
   },
   {
-    id: 'tones', href: 'toni/', tags: ['cinese', 'audio'],
-    title: { it: 'Allenamento sui toni', en: 'Tone trainer' },
+    id: 'chinese', href: '../cinese/esercizi/', tags: ['cinese', 'audio'],
+    title: { it: 'Esercizi di cinese', en: 'Chinese exercises' },
     text: {
-      it: 'Ascolta un carattere che non vedi e indovinane il tono, dei livelli HSK che vuoi; poi la sua scheda. Oppure pronuncialo, e guarda la tua voce accanto a quella di una madrelingua.',
-      en: 'Hear a character you can\'t see and guess its tone, from the HSK levels you choose; then its card. Or say it, and see your voice beside a native speaker\'s.',
+      it: 'I caratteri e le parole HSK dei livelli che vuoi: indovina il tono di un carattere che ascolti, o pronuncialo e guarda la tua voce accanto a quella di una madrelingua; riconosci il significato di una parola, scrivila a mano, ricordane il pinyin.',
+      en: 'The HSK characters and words of the levels you choose: guess the tone of a character you hear, or say it and see your voice beside a native speaker\'s; pick a word\'s meaning, write it by hand, recall its pinyin.',
     },
-    sketch: ['  ā   á   ǎ   à', ' ___  /  \\_/  \\', '               \\'],
-  },
-  {
-    id: 'words', href: 'parole/', tags: ['cinese'],
-    title: { it: 'Allenamento sulle parole', en: 'Word trainer' },
-    text: {
-      it: 'Le parole dei livelli HSK che vuoi, in tre esercizi: riconoscine il significato tra quattro, scrivile a mano partendo dal significato, ricordane il pinyin con i toni.',
-      en: 'The HSK words of the levels you choose, three ways: pick their meaning out of four, write them by hand from their meaning, recall their pinyin with its tones.',
-    },
-    sketch: ['  飞机  →  airplane', '  ┌──┐┌──┐', '  │飞││  │  fēi jī'],
+    sketch: ['  ā   á   ǎ   à', ' ___  /  \\_/  \\', '  飞机  →  airplane'],
   },
 ];
 

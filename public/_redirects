@@ -2,3 +2,9 @@
 /cinese/introduzione /cinese/grammatica/ 301
 /cinese/introduzione/ /cinese/grammatica/ 301
 /cinese/introduzione/* /cinese/grammatica/:splat 301
+
+# the Chinese trainers moved from the lab to the Chinese section's exercises
+/lab/toni /cinese/esercizi/toni/ 301
+/lab/toni/* /cinese/esercizi/toni/:splat 301
+/lab/parole /cinese/esercizi/parole/ 301
+/lab/parole/* /cinese/esercizi/parole/:splat 301
