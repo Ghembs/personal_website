@@ -69,7 +69,7 @@ function sketch(p) {
   let modeIndex = 0;
   let from = { ...MODES[0] }, to = MODES[0], transStart = -99;
   const cur = { ...MODES[0] };
-  let nextSwitch = rand(14, 20);
+  let nextSwitch = rand(55, 65);
 
   const nodes = [...document.querySelectorAll('#links .node')];
   const links = nodes.filter((el) => !el.classList.contains('title'));
@@ -359,7 +359,7 @@ function sketch(p) {
     to = MODES[i].name === 'scene' ? sceneLook() : MODES[i];
     modeIndex = i;
     transStart = p.millis() / 1000;
-    nextSwitch = transStart + (manual ? 25 : rand(14, 22));
+    nextSwitch = transStart + (manual ? 75 : rand(55, 65));
     markHud();
   }
 

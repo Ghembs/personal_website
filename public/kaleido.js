@@ -37,6 +37,7 @@ const ARC_STEPS = 8;
 const EXIT_MARGIN = 1.15; // flight: a tile is recycled once its inner edge is this far out
 const LINK_FILL = '#eeece6';   // opaque: only the cut-out letters show what lies beneath
 const LINK_FONT = '600 {s}px "Space Grotesk", system-ui, sans-serif';
+const ICON_AR = 1.15;     // the logos are about square
 
 function shade(hex, k, alpha) {
   const n = parseInt(hex.slice(1), 16);
@@ -119,6 +120,7 @@ class Kaleido {
       const hi = r.label ? (Math.min(this.w, this.h) / 2) * 0.9 : this.R * 0.98;
       r.z = this.F / (lo + Math.random() * Math.max(1, hi - lo));
     }
+    if (r.label && !this.flight) this.fitLink(r);
     r.fill = pick();
     r.stroke = pick();
     r.glass = !r.label && Math.random() > 0.5;
@@ -127,6 +129,21 @@ class Kaleido {
   }
 
   radius(z) { return this.F / Math.max(z, Z_NEAR); }
+
+  // Orbit: a link tile grows, if need be, until its label reads at no less
+  // than linkMin px (a logo at twice that), first in depth, then in angle.
+  get linkMin() { return Math.min(24, Math.max(16, Math.min(this.w, this.h) * 0.026)); }
+
+  fitLink(r) {
+    const s = this.linkMin;
+    const icon = typeof r.label !== 'string';
+    const needH = icon ? (2 * s) / 0.78 : 2 * s;
+    const needW = icon ? (2 * s * ICON_AR) / 0.7 : (this.labelWidths[r.link] * s) / (100 * 0.78) * 1.1;
+    const r0 = this.radius(r.z);
+    if (r0 - this.radius(r.z + r.d) < needH) r.d = this.F / Math.max(r0 - needH, 1) - r.z;
+    const rm = (r0 + this.radius(r.z + r.d)) / 2;
+    r.aw = Math.min(1.4, Math.max(r.aw, needW / rm));
+  }
 
   // Recycled only once even the inner (far) edge is well past the screen corners.
   gone(z, d) { return this.radius(z + d) > this.R * EXIT_MARGIN; }
@@ -368,14 +385,12 @@ class Kaleido {
 
     const lines = this.titleLines || [], size = this.titleSize || 17;
     s.globalCompositeOperation = 'destination-out';
-    s.font = `300 ${size}px "Unbounded", system-ui, sans-serif`;
-    s.letterSpacing = `${(size * 0.22).toFixed(2)}px`;
+    // the same lettering as the link tiles
+    s.font = LINK_FONT.replace('{s}', (size * 1.25).toFixed(1));
     s.textAlign = 'center';
     s.textBaseline = 'middle';
     const lh = size * 1.45;
-    // letter-spacing also trails the last letter: shift by half of it to centre.
-    lines.forEach((line, i) => s.fillText(line, size * 0.11, (i - (lines.length - 1) / 2) * lh));
-    s.letterSpacing = '0px';
+    lines.forEach((line, i) => s.fillText(line, 0, (i - (lines.length - 1) / 2) * lh));
     s.globalCompositeOperation = 'source-over';
 
     c.drawImage(scratch, 0, 0, side, side, -half, -half, side / dpr, side / dpr);
