@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../toni/toni.css?v=3">
-  <link rel="stylesheet" href="parole.css?v=2">
+  <link rel="stylesheet" href="parole.css?v=3">
   <script>
     // the same theme as the Chinese section
     try {
@@ -33,14 +33,26 @@
 
     <div class="modes" role="group">
       <button data-mode="meaning" data-i18n="mMeaning">significato</button>
+      <button data-mode="word" data-i18n="mWord">parola</button>
       <button data-mode="write" data-i18n="mWrite">scrittura</button>
       <button data-mode="pinyin" data-i18n="mPinyin">pinyin</button>
+    </div>
+    <!-- pinyin: typed, or picked out of four -->
+    <div id="pyWay" class="ways" role="group" hidden>
+      <button data-way="pinyin" data-i18n="wType">da scrivere</button>
+      <button data-way="pick" data-i18n="wPick">a scelta</button>
     </div>
 
     <div class="levels">
       <span data-i18n="upTo">livelli</span>
       <button data-level="1">HSK 1</button><button data-level="2">HSK 2</button><button data-level="3">HSK 3</button><button data-level="4">HSK 4</button>
     </div>
+
+    <!-- the parts of speech of the syllabus, to practise only some -->
+    <details id="cats" class="cats">
+      <summary><span data-i18n="cats">categorie</span>: <b id="catsNow"></b></summary>
+      <div id="catList" class="levels"></div>
+    </details>
 
     <!-- the question: a word, or a meaning -->
     <section id="ask">
@@ -95,6 +107,6 @@
   <script src="../../../i18n.js"></script>
   <script src="../../voice.js"></script>
   <script src="../progressi.js?v=1"></script>
-  <script src="parole.js?v=4"></script>
+  <script src="parole.js?v=5"></script>
 </body>
 </html>

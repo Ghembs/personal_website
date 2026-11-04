@@ -1,18 +1,22 @@
-// The word trainer: the HSK 1–4 words of the Chinese section, three ways.
-// Meaning: a word, and four meanings to choose from. Writing: a meaning, with
-// its part of speech and length, and the word to write stroke by stroke
-// (Hanzi Writer), a character at a time. Pinyin: a word, and its reading to
-// type, a tone per syllable. Words come up at random within the chosen
-// levels, not the last ones again; the card is a click away.
+// The word trainer: the HSK 1–4 words of the Chinese section, four ways.
+// Meaning: a word, and four meanings to choose from. Word: the other way
+// round, a meaning and four words. Writing: a meaning, with its part of
+// speech and length, and the word to write stroke by stroke (Hanzi Writer), a
+// character at a time. Pinyin: a word, and its reading to type, a tone per
+// syllable, or to pick out of four ('pick'). Words come from the chosen levels
+// and, if any are chosen, parts of speech, those due for review first
+// (progressi.js); the card is a click away.
 
 const TEXT = {
   it: {
     back: '← esercizi di cinese', section: 'le parole nella sezione di cinese', tones: 'toni', theme: 'Tema chiaro / scuro', lang: 'EN',
     title: 'allenamento sulle parole', docTitle: 'Allenamento sulle parole · Giuliano Gambacorta', upTo: 'livelli',
-    mMeaning: 'significato', mWrite: 'scrittura', mPinyin: 'pinyin',
-    hMeaning: 'che cosa vuol dire questa parola?', hWrite: 'scrivi la parola che ha questo significato', hPinyin: 'come si legge? scrivi il pinyin e scegli i toni',
+    mMeaning: 'significato', mWord: 'parola', mWrite: 'scrittura', mPinyin: 'pinyin', wType: 'da scrivere', wPick: 'a scelta',
+    cats: 'categorie', catsAll: 'tutte',
+    hMeaning: 'che cosa vuol dire questa parola?', hWord: 'quale parola ha questo significato?', hPick: 'come si legge? scegli la lettura giusta',
+    chooseWord: 'scegli la parola (1–4)', choosePy: 'scegli la lettura (1–4)', hWrite: 'scrivi la parola che ha questo significato', hPinyin: 'come si legge? scrivi il pinyin e scegli i toni',
     loading: 'carico le parole…', choose: 'scegli il significato (1–4)', writeNow: 'traccia i tratti, un carattere alla volta',
-    typeNow: 'scrivi ogni sillaba e scegline il tono (o aggiungi il numero: ma3)',
+    typeNow: 'scrivi ogni sillaba e scegline il tono (o aggiungi il numero: ma3; ü si scrive v)',
     right: 'giusto', wrong: 'no: la risposta giusta è evidenziata', written: 'scritta', writtenHelp: 'scritta, con {n} suggerimenti',
     gaveUp: 'eccola, tratto per tratto', readRight: 'giusto', readWrong: 'quasi: {ok} sillabe giuste su {n}', readNone: 'no: ecco la lettura',
     chars: '{n} caratteri', char1: '1 carattere', outline: 'mostra il contorno', noOutline: 'nascondi il contorno',
@@ -28,10 +32,12 @@ const TEXT = {
   en: {
     back: '← Chinese exercises', section: 'the words in the Chinese section', tones: 'tones', theme: 'Light / dark theme', lang: 'IT',
     title: 'word trainer', docTitle: 'Word trainer · Giuliano Gambacorta', upTo: 'levels',
-    mMeaning: 'meaning', mWrite: 'writing', mPinyin: 'pinyin',
-    hMeaning: 'what does this word mean?', hWrite: 'write the word with this meaning', hPinyin: 'how is it read? type the pinyin and pick the tones',
+    mMeaning: 'meaning', mWord: 'word', mWrite: 'writing', mPinyin: 'pinyin', wType: 'typed', wPick: 'picked',
+    cats: 'parts of speech', catsAll: 'all',
+    hMeaning: 'what does this word mean?', hWord: 'which word has this meaning?', hPick: 'how is it read? pick the right reading',
+    chooseWord: 'choose the word (1–4)', choosePy: 'choose the reading (1–4)', hWrite: 'write the word with this meaning', hPinyin: 'how is it read? type the pinyin and pick the tones',
     loading: 'loading the words…', choose: 'choose the meaning (1–4)', writeNow: 'trace the strokes, a character at a time',
-    typeNow: 'type each syllable and pick its tone (or add its number: ma3)',
+    typeNow: 'type each syllable and pick its tone (or add its number: ma3; ü is typed v)',
     right: 'right', wrong: 'no: the right answer is marked', written: 'written', writtenHelp: 'written, with {n} hints',
     gaveUp: 'here it is, stroke by stroke', readRight: 'right', readWrong: 'almost: {ok} syllables right out of {n}', readNone: 'no: here is the reading',
     chars: '{n} characters', char1: '1 character', outline: 'show the outline', noOutline: 'hide the outline',
@@ -56,14 +62,30 @@ const store = {
 
 const MARKS = { 1: 'āēīōūǖ', 2: 'áéíóúǘ', 3: 'ǎěǐǒǔǚ', 4: 'àèìòùǜ' };
 const toneOf = (py) => +(Object.keys(MARKS).find((k) => [...py].some((ch) => MARKS[k].includes(ch))) || 5);
-const plain = (py) => py.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ü/g, 'v').toLowerCase();
+// without tones, ü as v (its two dots kept apart from the tone marks: lǜ is lv, not lu)
+const plain = (py) => py.normalize('NFC').replace(/[ǖǘǚǜü]/g, 'v').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+// a syllable without tone (ü as v) and its tone, written: the mark on a or
+// e, on the o of ou, else on the last vowel
+const MARKED = { a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', v: 'ǖǘǚǜ' };
+function marked(base, tone) {
+  let i = base.indexOf('a');
+  if (i < 0) i = base.indexOf('e');
+  if (i < 0 && base.includes('ou')) i = base.indexOf('o');
+  if (i < 0) for (let j = base.length - 1; j >= 0; j--) if (MARKED[base[j]]) { i = j; break; }
+  const s = tone >= 1 && tone <= 4 && i >= 0 ? base.slice(0, i) + MARKED[base[i]][tone - 1] + base.slice(i + 1) : base;
+  return s.replace(/v/g, 'ü');
+}
+// a reading from [base, tone] pairs: an apostrophe before a, e, o inside it (xī'ān)
+const spell = (sylls) => sylls.map(([b, k], i) => (i && /^[aeo]/.test(b) ? "'" : '') + marked(b, k)).join('');
 const letters = (py) => py.normalize('NFC').toLowerCase().replace(/[^\p{L}]/gu, '');
 const posTags = (pos) => (pos || '').replace(/[（）()]/g, '').split('、').filter(Boolean);
+// its parts of speech but those in brackets, which the syllabus gives as secondary (对 形、介、（动、量）)
+const mainTags = (pos) => posTags((pos || '').replace(/[（(][^）)]*[）)]/g, ''));
 const clean = (d) => d.replace(/\s*\(?CL:.*$/, '').replace(/\s*\([^)]*[一-鿿][^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').trim();
 
 let hsk = null, ced = null;
 const loaded = Promise.all(['hsk', 'cedict'].map((f) => fetch(`../../data/${f}.json`).then((r) => r.json())))
-  .then(async ([h, c]) => { hsk = h; ced = c; await Voice.ready; });
+  .then(async ([h, c]) => { hsk = h; ced = c; renderCats(); await Voice.ready; });
 
 // a word's dictionary entry: of its own reading, when it is written like another (地 dì, de)
 const entryOf = (w) => ced.words[`${w.w}|${w.py}`] || ced.words[w.w];
@@ -102,10 +124,17 @@ const levels = (() => {
   const v = store.get('parole-level', 1);
   return new Set(Array.isArray(v) && v.length ? v : [1, 2, 3, 4].filter((lv) => lv <= v));
 })();
-// ?modo=meaning|write|pinyin (the exercises page links each mode), else the last one used
-let mode = ['meaning', 'write', 'pinyin'].find((m) => m === new URLSearchParams(location.search).get('modo')) || store.get('parole-mode', 'meaning');
+// ?modo=meaning|word|write|pinyin|pick (the exercises page links each mode), else the last one used
+const MODES = ['meaning', 'word', 'write', 'pinyin', 'pick'];
+const CHOICE = ['meaning', 'word', 'pick'];      // the modes answered out of four
+let mode = MODES.find((m) => m === new URLSearchParams(location.search).get('modo')) || store.get('parole-mode', 'meaning');
+if (!MODES.includes(mode)) mode = 'meaning';
 const freshStats = () => ({ n: 0, ok: 0, streak: 0, best: 0 });
-const stats = store.get('parole-stats', null) || { meaning: freshStats(), write: freshStats(), pinyin: freshStats() };
+const stats = store.get('parole-stats', null) || {};
+for (const m of MODES) stats[m] ||= freshStats();
+// the syllabus's parts of speech in play (none: all), in its order
+const CATS = ['名', '动', '形', '副', '量', '代', '连', '介', '数', '助', '后缀', '数量', '前缀', '叹'];
+const cats = new Set(store.get('parole-pos', []).filter((c) => CATS.includes(c)));
 let showOutline = store.get('parole-outline', false);
 let current = null, answered = false;
 const recent = [];
@@ -113,7 +142,9 @@ const recent = [];
 // a word of the levels in play: of those due for review the most overdue,
 // else a new one (progressi.js), not one of the last ones
 const idOf = (w) => `${w.w}|${w.py}`;
-const poolOf = () => hsk.words.filter((w) => levels.has(w.level) && defsOf(w).length && (mode !== 'pinyin' || syllablesOf(w)));
+const inLevels = (w) => levels.has(w.level) && defsOf(w).length;
+const inCats = (w) => !cats.size || mainTags(w.pos).some((p) => cats.has(p));
+const poolOf = () => hsk.words.filter((w) => inLevels(w) && inCats(w) && (mode !== 'pinyin' && mode !== 'pick' || syllablesOf(w)));
 function draw() {
   const w = Progress.pick(`words-${mode}`, poolOf(), idOf, recent);
   recent.push(idOf(w));
@@ -164,45 +195,93 @@ async function next() {
   answered = false;
   showStats();
   $('#answer').hidden = true;
-  $('#choices').hidden = mode !== 'meaning';
+  $('#choices').hidden = !CHOICE.includes(mode);
+  $('#choices').classList.toggle('words', mode === 'word');
+  $('#choices').classList.toggle('readings', mode === 'pick');
   $('#write').hidden = mode !== 'write';
   $('#pinyin').hidden = mode !== 'pinyin';
-  if (mode === 'meaning') askMeaning();
+  if (mode === 'meaning' || mode === 'word') askMeaning();
+  else if (mode === 'pick') askPick();
   else if (mode === 'write') askWrite();
   else askPinyin();
 }
 
 function renderPrompt() {
   const w = current;
-  $('#prompt').innerHTML = mode === 'write'
-    ? `<div class="meaning">${meaningOf(w)}</div><div class="meta">${metaOf(w)}</div><div id="pyHint" class="py-hint"></div>`
+  $('#prompt').innerHTML = mode === 'write' || mode === 'word'
+    ? `<div class="meaning">${meaningOf(w)}</div><div class="meta">${metaOf(w)}</div>${mode === 'write' ? '<div id="pyHint" class="py-hint"></div>' : ''}`
     : `<button class="word hz" data-say aria-label="${t('listen')}">${w.w}</button>`;
 }
 
-// meaning: the word's own, and three of words alike in kind but not in sense
+// meaning, and word: the word and three alike in kind but not in sense
+// (for a word to pick, of its length when there are enough)
 function askMeaning() {
-  const w = current, mine = meaningOf(w), pos = posTags(w.pos)[0];
+  // alike in kind: of the part of speech chosen, if any, else of the word's first
+  const w = current, mine = meaningOf(w), pos = mainTags(w.pos).find((p) => cats.has(p)) || posTags(w.pos)[0];
   const words = new Set(defsOf(w).join(' ').toLowerCase().match(/[a-z]{4,}/g) || []);
   const unlike = (x) => x.w !== w.w && meaningOf(x) && meaningOf(x) !== mine &&
     !(meaningOf(x).toLowerCase().match(/[a-z]{4,}/g) || []).some((v) => words.has(v));
-  let others = shuffle(hsk.words.filter((x) => posTags(x.pos)[0] === pos && Math.abs(x.level - w.level) <= 1 && unlike(x)));
+  const kind = (x) => (cats.size ? mainTags(x.pos).includes(pos) : posTags(x.pos)[0] === pos);
+  let others = shuffle(hsk.words.filter((x) => kind(x) && Math.abs(x.level - w.level) <= 1 && unlike(x)));
+  if (mode === 'word') {
+    const n = [...w.w].length, same = others.filter((x) => [...x.w].length === n);
+    if (same.length >= 3) others = same;
+  }
   if (others.length < 3) others = others.concat(shuffle(hsk.words.filter(unlike)));
-  const options = shuffle([w, ...others.slice(0, 3)]);
-  current.options = options;
+  current.options = shuffle([w, ...others.slice(0, 3)]);
+  current.answer = w;
   renderPrompt();
   renderChoices();
-  setStatus('choose');
+  setStatus(mode === 'word' ? 'chooseWord' : 'choose');
+}
+
+// pinyin out of four: the reading, and three others near it, the tone of a
+// syllable or two changed, or a sound often mixed up (zh z, an ang…); never
+// another reading of the word (长 cháng, zhǎng), nor 一 and 不 in their own tone
+const SWAPS = [['zh', 'z'], ['ch', 'c'], ['sh', 's'], ['ang', 'an'], ['eng', 'en'], ['ing', 'in'], ['ong', 'eng'], ['ian', 'ie'], ['l', 'n'], ['q', 'j'], ['x', 'q']];
+let SYLLABLES = null;
+function askPick() {
+  SYLLABLES ||= new Set(Object.values(ced.chars).flatMap((e) => e.map(([r]) => plain(letters(r)))));
+  const w = current, sylls = syllablesOf(w), pairs = sylls.map((x) => [x.base, x.tone]);
+  const right = spell(pairs);
+  const banned = new Set([right, spell(sylls.map((x) => [x.base, '一不'.includes(x.c) ? x.own : x.tone]))]);
+  for (const o of readingsOf(w).slice(1)) banned.add(spell(syllablesOf(o).map((x) => [x.base, x.tone])));
+  const tones = [], sounds = [], neutral = [];
+  const add = (list, ps) => { const r = spell(ps); if (!banned.has(r) && !list.includes(r)) list.push(r); };
+  pairs.forEach(([b, k], i) => {
+    if (b === 'r') return;
+    for (const k2 of [1, 2, 3, 4]) if (k2 !== k) add(tones, pairs.map((p, j) => (j === i ? [b, k2] : p)));
+    if (k !== 5) add(neutral, pairs.map((p, j) => (j === i ? [b, 5] : p)));   // when the others aren't enough (为 wéi, wèi)
+    for (const [x, y] of SWAPS) for (const [from, to] of [[x, y], [y, x]]) {
+      const at = from.length <= 2 && /^[zcsljqxn]/.test(from) ? (b.startsWith(from) ? 0 : -1) : b.endsWith(from) ? b.length - from.length : -1;
+      const b2 = at < 0 ? null : b.slice(0, at) + to + b.slice(at + from.length);
+      if (b2 && b2 !== b && SYLLABLES.has(b2)) add(sounds, pairs.map((p, j) => (j === i ? [b2, k] : p)));
+    }
+  });
+  if (pairs.length > 1) add(tones, pairs.map(([b, k]) => [b, k === 5 ? 5 : (k % 4) + 1]));
+  const others = [...shuffle(sounds).slice(0, 1), ...shuffle(tones), ...neutral];
+  current.options = shuffle([right, ...[...new Set(others)].slice(0, 3)]);
+  current.answer = right;
+  renderPrompt();
+  renderChoices();
+  setStatus('choosePy');
+}
+
+function labelOf(x) {
+  if (mode === 'pick') return `<span class="py">${x}</span>`;
+  if (mode === 'word') return `<span class="hz">${x.w}</span>`;
+  return `<span>${meaningOf(x)}</span>`;
 }
 function renderChoices() {
   $('#choices').innerHTML = current.options.map((x, i) =>
-    `<button class="choice" data-pick="${i}"><kbd>${i + 1}</kbd><span>${meaningOf(x)}</span></button>`).join('');
+    `<button class="choice" data-pick="${i}"><kbd>${i + 1}</kbd>${labelOf(x)}</button>`).join('');
 }
 function pick(i) {
-  if (answered || mode !== 'meaning') return;
-  const ok = current.options[i] === current;
+  if (answered || !CHOICE.includes(mode)) return;
+  const ok = current.options[i] === current.answer;
   document.querySelectorAll('.choice').forEach((b, j) => {
     b.disabled = true;
-    if (current.options[j] === current) b.classList.add('right');
+    if (current.options[j] === current.answer) b.classList.add('right');
     else if (j === i) b.classList.add('wrong');
   });
   setStatus(ok ? 'right' : 'wrong', {}, ok ? 'ok' : 'no');
@@ -332,10 +411,33 @@ function finish(ok, grade) {
 function setMode(m) {
   mode = m;
   store.set('parole-mode', m);
-  document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
-  $('.hint').textContent = t({ meaning: 'hMeaning', write: 'hWrite', pinyin: 'hPinyin' }[m]);
+  if (m === 'pinyin' || m === 'pick') store.set('parole-pinyin-way', m);
+  showModes();
   showStats();
   next();
+}
+
+const HINTS = { meaning: 'hMeaning', word: 'hWord', write: 'hWrite', pinyin: 'hPinyin', pick: 'hPick' };
+function showModes() {
+  // the pinyin button stands for both ways, chosen beside it
+  const shown = mode === 'pick' ? 'pinyin' : mode;
+  document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === shown));
+  $('#pyWay').hidden = shown !== 'pinyin';
+  document.querySelectorAll('[data-way]').forEach((b) => b.classList.toggle('on', b.dataset.way === mode));
+  $('.hint').textContent = t(HINTS[mode]);
+}
+
+// the parts of speech, each with its words in the chosen levels; a part with
+// none there can't be chosen (and is let go when the levels change)
+function renderCats() {
+  if (!hsk) return;
+  const L = I18N.lang, n = {};
+  for (const w of hsk.words) if (inLevels(w)) for (const p of new Set(mainTags(w.pos))) n[p] = (n[p] || 0) + 1;
+  for (const c of [...cats]) if (!n[c]) cats.delete(c);
+  store.set('parole-pos', [...cats]);
+  $('#catList').innerHTML = `<button data-cat="" class="${cats.size ? '' : 'on'}">${t('catsAll')}</button>` +
+    CATS.map((c) => `<button data-cat="${c}" class="${cats.has(c) ? 'on' : ''}" ${n[c] ? '' : 'disabled'}>${TEXT[L].pos[c]} <small>${n[c] || 0}</small></button>`).join('');
+  $('#catsNow').textContent = cats.size ? CATS.filter((c) => cats.has(c)).map((c) => TEXT[L].pos[c]).join(', ') : t('catsAll');
 }
 
 function render() {
@@ -343,19 +445,18 @@ function render() {
   document.title = t('docTitle');
   $('#lang').textContent = t('lang');
   $('#lang').title = t('langName');
-  $('.hint').textContent = t({ meaning: 'hMeaning', write: 'hWrite', pinyin: 'hPinyin' }[mode]);
+  showModes();
+  renderCats();
   document.querySelectorAll('[data-level]').forEach((b) => b.classList.toggle('on', levels.has(+b.dataset.level)));
   const s = $('#status');
   if (s.dataset.key) setStatus(s.dataset.key, JSON.parse(s.dataset.vars || '{}'), s.className.replace('status', '').trim());
   if (current) {
-    if (mode === 'write') {
-      // the prompt is the meaning: redraw it without touching the boxes
-      const hint = $('#pyHint')?.textContent || '';
+    if (mode === 'write' || mode === 'word') {
+      // the prompt is the meaning: redraw its line of kind and length, not the boxes
       $('#prompt .meta').textContent = metaOf(current);
-      $('#pyHint').textContent = hint;
       $('#outline').textContent = t(showOutline ? 'noOutline' : 'outline');
     }
-    if (mode === 'meaning') {
+    if (CHOICE.includes(mode)) {
       const marks = [...document.querySelectorAll('.choice')].map((b) => b.className);
       renderChoices();
       document.querySelectorAll('.choice').forEach((b, i) => { b.className = marks[i]; b.disabled = answered; });
@@ -367,13 +468,28 @@ function render() {
 
 // ---------- controls ----------
 
-document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+// the pinyin button: the way used last
+document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () =>
+  setMode(b.dataset.mode === 'pinyin' ? store.get('parole-pinyin-way', 'pinyin') : b.dataset.mode)));
+document.querySelectorAll('[data-way]').forEach((b) => b.addEventListener('click', () => { if (b.dataset.way !== mode) setMode(b.dataset.way); }));
+$('#catList').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cat]');
+  if (!b) return;
+  const c = b.dataset.cat;
+  if (!c) cats.clear();
+  else if (cats.has(c)) cats.delete(c);
+  else cats.add(c);
+  renderCats();
+  recent.length = 0;
+  next();
+});
 document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('click', () => {
   const lv = +b.dataset.level;
   if (levels.has(lv)) { if (levels.size > 1) levels.delete(lv); } else levels.add(lv);
   store.set('parole-level', [...levels].sort());
   document.querySelectorAll('[data-level]').forEach((x) => x.classList.toggle('on', levels.has(+x.dataset.level)));
   recent.length = 0;
+  renderCats();
   next();
 }));
 $('#choices').addEventListener('click', (e) => { const b = e.target.closest('[data-pick]'); if (b) pick(+b.dataset.pick); });
@@ -407,7 +523,7 @@ addEventListener('keydown', (e) => {
   const typing = e.target.closest('input');
   if (e.key === 'Enter' && answered && !typing) { e.preventDefault(); next(); return; }
   if (typing) return;
-  if (mode === 'meaning' && /^[1-4]$/.test(e.key)) pick(+e.key - 1);
+  if (CHOICE.includes(mode) && /^[1-4]$/.test(e.key)) pick(+e.key - 1);
 });
 $('#lang').addEventListener('click', () => { I18N.set(I18N.other); render(); });
 $('#theme').addEventListener('click', () => {

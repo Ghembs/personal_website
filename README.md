@@ -61,10 +61,12 @@ public/          the site, served as is (no build step)
                            The microphone keeps its last seconds, so a take starts a
                            little before the press and ends after the release; tapped,
                            it ends when the voice does; hands free, the voice starts it
-  cinese/esercizi/parole/ the word trainer: the HSK words up to a level, three ways:
-                           their meaning out of four (distractors of the same part of
-                           speech), written by hand from their meaning (Hanzi Writer, a
-                           character at a time), their pinyin typed with its tones
+  cinese/esercizi/parole/ the word trainer: the HSK words of the chosen levels and,
+                           if chosen, parts of speech of the syllabus: their meaning out
+                           of four (distractors of the same part of speech), the word out
+                           of four from its meaning, written by hand from their meaning
+                           (Hanzi Writer, a character at a time), their pinyin typed with
+                           its tones or picked out of four (tones and sounds changed)
 scripts/         build-hanzi.mjs, build-audio.mjs, build-relations.mjs and build-wiktionary.mjs, the data pipeline for cinese/
 wrangler.toml    Cloudflare Pages project config
 ```

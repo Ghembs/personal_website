@@ -53,13 +53,15 @@ const GROUPS = [
       {
         href: 'parole/', deck: 'words', name: { it: 'Allenamento sulle parole', en: 'Word trainer' },
         text: {
-          it: 'Le parole dei livelli che scegli, in tre esercizi, ciascuno con il suo punteggio.',
-          en: 'The words of the levels you choose, three ways, each with its own score.',
+          it: 'Le parole dei livelli che scegli, tutte o solo di alcune categorie (verbi, classificatori…), in più esercizi, ciascuno con il suo punteggio.',
+          en: 'The words of the levels you choose, all of them or only some parts of speech (verbs, measure words…), several ways, each with its own score.',
         },
         modes: [
           { m: 'meaning', it: 'significato', en: 'meaning', d: { it: 'vedi la parola e riconoscine il significato tra quattro', en: 'see the word and pick its meaning out of four' } },
+          { m: 'word', it: 'parola', en: 'word', d: { it: 'vedi il significato e scegli la parola tra quattro', en: 'see the meaning and pick the word out of four' } },
           { m: 'write', it: 'scrittura', en: 'writing', d: { it: 'dal significato, scrivila a mano tratto per tratto', en: 'from its meaning, write it by hand stroke by stroke' } },
           { m: 'pinyin', it: 'pinyin', en: 'pinyin', d: { it: 'scrivine il pinyin, con i toni', en: 'type its pinyin, with the tones' } },
+          { m: 'pick', it: 'pinyin a scelta', en: 'pinyin, picked', d: { it: 'scegline la lettura tra quattro, quando hai poco tempo', en: 'pick its reading out of four, when time is short' } },
         ],
       },
     ],
