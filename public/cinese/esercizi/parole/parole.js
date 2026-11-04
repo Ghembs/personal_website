@@ -18,6 +18,7 @@ const TEXT = {
     chars: '{n} caratteri', char1: '1 carattere', outline: 'mostra il contorno', noOutline: 'nascondi il contorno',
     hintPy: 'suggerisci il pinyin', giveUp: 'non lo so', check: 'controlla', listen: 'ascolta', open: 'apri la scheda →', next: 'prossima →',
     reset: 'azzera', score: 'giuste {ok} su {n} · di fila {streak} · record {best}', none: 'ancora nessuna risposta',
+    review: 'parole viste {seen} su {n}, da ripassare {due}, imparate {learned}',
     also: 'si legge anche {py}, con un altro significato', syllable: 'sillaba {n}', toneN: '{n}° tono', neutral: 'neutro', measure: 'classificatore',
     langName: 'English',
     foot: 'Parole e livelli dal sillabo HSK 2025, significati da <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), tratti di <a href="https://hanziwriter.org/">Hanzi Writer</a>: tutto dalla <a href="../../?vista=parole">sezione di cinese</a>.',
@@ -36,6 +37,7 @@ const TEXT = {
     chars: '{n} characters', char1: '1 character', outline: 'show the outline', noOutline: 'hide the outline',
     hintPy: 'hint: pinyin', giveUp: 'I don\'t know', check: 'check', listen: 'listen', open: 'open the card →', next: 'next →',
     reset: 'reset', score: '{ok} right out of {n} · streak {streak} · best {best}', none: 'no answers yet',
+    review: 'words seen {seen} of {n}, to review {due}, learned {learned}',
     also: 'it also reads {py}, with another meaning', syllable: 'syllable {n}', toneN: 'tone {n}', neutral: 'neutral', measure: 'measure word',
     langName: 'Italiano',
     foot: 'Words and levels from the HSK syllabus 2025, meanings from <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), recordings from <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), strokes by <a href="https://hanziwriter.org/">Hanzi Writer</a>: all from the <a href="../../?vista=parole">Chinese section</a>.',
@@ -108,17 +110,19 @@ let showOutline = store.get('parole-outline', false);
 let current = null, answered = false;
 const recent = [];
 
+// a word of the levels in play: of those due for review the most overdue,
+// else a new one (progressi.js), not one of the last ones
+const idOf = (w) => `${w.w}|${w.py}`;
+const poolOf = () => hsk.words.filter((w) => levels.has(w.level) && defsOf(w).length && (mode !== 'pinyin' || syllablesOf(w)));
 function draw() {
-  const pool = hsk.words.filter((w) => levels.has(w.level) && defsOf(w).length && (mode !== 'pinyin' || syllablesOf(w)));
-  const fresh = pool.filter((w) => !recent.includes(w.w));
-  const list = fresh.length ? fresh : pool;
-  const w = list[(Math.random() * list.length) | 0];
-  recent.push(w.w);
-  if (recent.length > 30) recent.shift();
+  const w = Progress.pick(`words-${mode}`, poolOf(), idOf, recent);
+  recent.push(idOf(w));
+  if (recent.length > 8) recent.shift();
   return w;
 }
 
-function count(ok) {
+function count(ok, grade = ok ? 2 : 0) {
+  Progress.record(`words-${mode}`, idOf(current), grade);
   const st = stats[mode];
   st.n++;
   if (ok) { st.ok++; st.streak++; } else st.streak = 0;
@@ -127,9 +131,17 @@ function count(ok) {
   showStats();
 }
 
+// of the words in play: how many seen, due again, learned
+function review() {
+  if (!hsk) return '';
+  const ids = poolOf().map(idOf);
+  const r = Progress.summary(`words-${mode}`, ids);
+  return r.seen ? ` · ${t('review', { ...r, n: ids.length })}` : '';
+}
+
 function showStats() {
   const st = stats[mode];
-  $('#score').textContent = st.n ? t('score', st) : t('none');
+  $('#score').textContent = (st.n ? t('score', st) : t('none')) + review();
 }
 
 function setStatus(key, vars = {}, cls = '') {
@@ -150,6 +162,7 @@ async function next() {
   await loaded;
   current = draw();
   answered = false;
+  showStats();
   $('#answer').hidden = true;
   $('#choices').hidden = mode !== 'meaning';
   $('#write').hidden = mode !== 'write';
@@ -298,13 +311,13 @@ function checkPinyin(giveUp = false) {
   setStatus(all ? 'readRight' : ok && !giveUp ? 'readWrong' : 'readNone', { ok, n }, all ? 'ok' : 'no');
   $('#pyGiveUp').disabled = true;
   $('#pinyin [type=submit]').disabled = true;
-  finish(all);
+  finish(all, all ? 2 : ok ? 1 : 0);
 }
 
 // after any answer: the word, its reading and meanings, the card a click away
-function finish(ok) {
+function finish(ok, grade) {
   answered = true;
-  count(ok);
+  count(ok, grade);
   const w = current, info = entryOf(w);
   $('#write .acts').hidden = true;
   $('#glyph').textContent = w.w;

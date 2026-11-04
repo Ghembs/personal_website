@@ -44,7 +44,12 @@ public/          the site, served as is (no build step)
   _headers       Cloudflare Pages response headers
   cinese/        the Chinese section: page, data/, fonts/, audio/ (voice.js plays it)
   cinese/esercizi/  the Chinese exercises: a card per exercise, a link per mode
-                 (?modo=); the lab's card points here
+                 (?modo=); the lab's card points here. Below, the progress kept
+                 in this browser, saved to a JSON file or loaded from one (merged)
+  cinese/esercizi/progressi.js  what every exercise remembers: a log of the
+                 answers (by month in localStorage), and from it a spaced
+                 repetition schedule (Leitner boxes, a minute to six months) per
+                 exercise and mode; each asks first what is due, then what is new
   cinese/esercizi/toni/   the tone trainer: a hidden HSK character is pronounced (its
                            syllable, from cinese/voice.js) and its tone guessed, tones
                            drawn evenly; then the character, its card on request. Or

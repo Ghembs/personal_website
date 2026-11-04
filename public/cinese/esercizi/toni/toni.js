@@ -14,6 +14,7 @@ const TEXT = {
     right: 'giusto: {n}° tono', wrong: 'no: era il {n}° tono, non il {g}°', compare: 'tocca un tono per sentire la stessa sillaba',
     reveal: 'mostra la scheda', next: 'prossimo →', reset: 'azzera',
     score: 'giuste {ok} su {n} · di fila {streak} · record {best}', none: 'ancora nessuna risposta',
+    review: 'caratteri visti {seen} su {n}, da ripassare {due}, imparati {learned}',
     meanings: 'significati', words: 'parole', open: 'apri nella sezione di cinese →',
     hintSpeak: 'pronuncia il carattere e guarda come sale e scende la tua voce', mListen: 'ascolta', mSpeak: 'parla', model: 'ascolta il modello', micLabel: 'registra',
     sayStart: 'tieni premuto e pronuncia la sillaba (o tocca, e parla)', recording: 'ti ascolto…', recordingFree: 'ti sento…', analysing: 'analizzo…',
@@ -33,6 +34,7 @@ const TEXT = {
     right: 'right: tone {n}', wrong: 'no: it was tone {n}, not {g}', compare: 'tap a tone to hear the same syllable in it',
     reveal: 'show the card', next: 'next →', reset: 'reset',
     score: '{ok} right out of {n} · streak {streak} · best {best}', none: 'no answers yet',
+    review: 'characters seen {seen} of {n}, to review {due}, learned {learned}',
     meanings: 'meanings', words: 'words', open: 'open in the Chinese section →',
     hintSpeak: 'say the character and see how your voice rises and falls', mListen: 'listen', mSpeak: 'speak', model: 'hear the model', micLabel: 'record',
     sayStart: 'hold down and say the syllable (or tap, and speak)', recording: 'listening…', recordingFree: 'I hear you…', analysing: 'analysing…',
@@ -102,15 +104,15 @@ function pools() {
 
 // ---------- the game ----------
 
-// a tone, then a character with it, not one of the last ones
+// a tone, then a character with it: of those due for review the most
+// overdue, else a new one (progressi.js), not one of the last ones
+const deckOf = (m) => (m === 'speak' ? 'tones-speak' : 'tones-listen');
 function draw() {
   const by = pools(), tones = [1, 2, 3, 4].filter((k) => by[k].length);
   const k = tones[(Math.random() * tones.length) | 0];
-  const fresh = by[k].filter((x) => !recent.includes(x.c));
-  const list = fresh.length ? fresh : by[k];
-  const x = list[(Math.random() * list.length) | 0];
+  const x = Progress.pick(deckOf(mode), by[k], (y) => y.c, recent);
   recent.push(x.c);
-  if (recent.length > 24) recent.shift();
+  if (recent.length > 8) recent.shift();
   return x;
 }
 
@@ -152,6 +154,7 @@ function guess(g) {
   document.body.classList.add('answered');
   const ok = g === current.k;
   count(stats, 'toni-stats', current.k, ok);
+  Progress.record('tones-listen', current.c, ok ? 2 : 0);
   document.querySelector(`.tone[data-tone="${current.k}"]`).classList.add('right');
   if (!ok) document.querySelector(`.tone[data-tone="${g}"]`).classList.add('wrong');
   setStatus(ok ? 'right' : 'wrong', { n: current.k, g }, ok ? 'ok' : 'no');
@@ -187,9 +190,17 @@ function setStatus(key, vars = {}, cls = '') {
   s.textContent = t(key, vars);
 }
 
+// of the characters in play: how many seen, due again, learned
+function review() {
+  if (!hsk) return '';
+  const ids = Object.values(pools()).flat().map((x) => x.c);
+  const r = Progress.summary(deckOf(mode), ids);
+  return r.seen ? ` · ${t('review', { ...r, n: ids.length })}` : '';
+}
+
 function showStats() {
   const st = mode === 'speak' ? speakStats : stats;
-  $('#score').textContent = st.n ? t('score', st) : t('none');
+  $('#score').textContent = (st.n ? t('score', st) : t('none')) + review();
   $('#bars').innerHTML = [1, 2, 3, 4].map((k) => {
     const [ok, n] = st.per[k], pc = n ? Math.round((100 * ok) / n) : 0;
     return `<div class="bar">${t('tone', { n: k })} · ${n ? `${pc}%` : '–'}<i><b style="width:${pc}%;background:var(--t${k})"></b></i></div>`;
@@ -403,6 +414,7 @@ async function analyseTake(samples) {
   // the right tone a close second: not quite wrong
   const near = !ok && ranked[1]?.tone === k && ranked[1].dist - ranked[0].dist < 0.7;
   count(speakStats, 'toni-speak-stats', k, ok);
+  Progress.record('tones-speak', tg.c, ok ? 2 : near ? 1 : 0);
   setSay(ok ? 'sayRight' : near ? 'sayNear' : 'sayWrong', { n: k, g, d: t(`d${k}`) }, ok ? 'ok' : near ? '' : 'no');
   heard(ranked);
   plot(user);
@@ -454,6 +466,7 @@ document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('cli
   store.set('toni-level', [...levels].sort());
   document.querySelectorAll('[data-level]').forEach((x) => x.classList.toggle('on', levels.has(+x.dataset.level)));
   recent.length = 0;
+  showStats();
 }));
 $('#reset').addEventListener('click', () => {
   if (mode === 'speak') { speakStats = freshStats(); store.set('toni-speak-stats', speakStats); } else { stats = freshStats(); store.set('toni-stats', stats); }
@@ -497,5 +510,5 @@ $('#theme').addEventListener('click', () => {
 
 render();
 setStatus('loading');
-loaded.then(() => setStatus('start'));
+loaded.then(() => { setStatus('start'); showStats(); });
 setMode(mode);

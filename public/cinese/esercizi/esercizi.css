@@ -21,3 +21,16 @@
 }
 /* the header's two links stay on its row, at any width */
 #top #links { margin-left: auto; order: 0; width: auto; }
+
+/* what is due, beside a mode */
+.modes .due { margin-left: auto; font-style: italic; font-size: 16px; color: var(--red); white-space: nowrap; }
+@media (max-width: 560px) { .modes .due { margin-left: 0; } }
+
+/* the progress kept here: a table, and its file */
+.prog { border-collapse: collapse; width: 100%; font-size: 17px; margin: 6px 0 14px; }
+.prog th, .prog td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
+.prog th:first-child { text-align: left; font-weight: 400; }
+.prog thead th { color: var(--dim); font-weight: 400; font-style: italic; }
+.file { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.file .go { font-size: 18px; padding: 6px 18px; cursor: pointer; }
+@media (max-width: 560px) { .prog { font-size: 15px; } .prog th, .prog td { padding: 4px 4px; } }
