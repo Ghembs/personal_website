@@ -501,7 +501,9 @@ function sketch(p) {
   }
 
   p.windowResized = () => {
-    p.resizeCanvas(window.innerWidth, window.innerHeight);
+    if (!kaleido) return;   // before setup
+    // No redraw here: draw() would read the tunnel canvas before it is resized.
+    p.resizeCanvas(window.innerWidth, window.innerHeight, true);
     kaleido.resize(p.width, p.height, Math.min(p.pixelDensity(), KALEIDO_DPR));
     computeCells();
     shan.resize(p.width, p.height, p.pixelDensity());

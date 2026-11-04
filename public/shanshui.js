@@ -1765,6 +1765,7 @@ const Shanshui = (() => {
 
     // Visible panels are painted right away; the next one when the browser idles.
     ensure() {
+      if (!this.w || !this.s) return;   // a window of no size yet (a tab opened in the background)
       const [k0, k1] = this.range();
       for (let k = k0; k <= k1; k++) if (!this.panels.has(k)) this.addPanel(k);
       const next = k1 + 1;
@@ -1785,19 +1786,30 @@ const Shanshui = (() => {
       }
     }
 
-    // Screen rectangle of each link's element, if one is on screen.
+    // Screen rectangle of each link's element, if one is on screen. With two
+    // of a kind in view the link keeps to the one it had, until the other is
+    // clearly more in view: two whole boats would otherwise tie, and rounding
+    // would hand the link back and forth between them every frame.
     linkRects() {
       const [k0, k1] = this.range();
-      const best = {};
+      const best = {}, held = {};
+      this.held = this.held || {};
       for (let k = k0; k <= k1; k++) {
-        for (const it of this.plan(k)) {
-          if (!ROLES.includes(it.type)) continue;
+        this.plan(k).forEach((it, j) => {
+          if (!ROLES.includes(it.type)) return;
           const x = (it.x + it.box[0] - this.X) * this.s, w = (it.box[2] - it.box[0]) * this.s;
           const y = (it.y + it.box[1]) * this.s, h = (it.box[3] - it.box[1]) * this.s;
           const seen = Math.min(x + w, this.w) - Math.max(x, 0);
-          if (seen <= 0) continue;
-          if (!best[it.type] || seen > best[it.type].seen) best[it.type] = { x, y, w, h, seen };
-        }
+          if (seen <= 0) return;
+          const r = { x, y, w, h, seen, id: `${k}:${j}` };
+          if (r.id === this.held[it.type]) held[it.type] = r;
+          if (!best[it.type] || seen > best[it.type].seen) best[it.type] = r;
+        });
+      }
+      for (const role in best) {
+        const h = held[role];
+        if (h && h.seen > best[role].seen - 2) best[role] = h;
+        this.held[role] = best[role].id;
       }
       return this.roles.map((role) => (role && best[role]) || null);
     }
