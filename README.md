@@ -66,7 +66,10 @@ public/          the site, served as is (no build step)
                            of four (distractors of the same part of speech), the word out
                            of four from its meaning, written by hand from their meaning
                            (Hanzi Writer, a character at a time), their pinyin typed with
-                           its tones or picked out of four (tones and sounds changed)
+                           its tones or picked out of four (tones and sounds changed);
+                           a noun's measure word out of four (CC-CEDICT's, 个 aside); a
+                           Tatoeba sentence with a word taken out (sentences cut by the
+                           longest syllabus word), the word put back out of four
 scripts/         build-hanzi.mjs, build-audio.mjs, build-relations.mjs and build-wiktionary.mjs, the data pipeline for cinese/
 wrangler.toml    Cloudflare Pages project config
 ```

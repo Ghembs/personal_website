@@ -62,6 +62,8 @@ const GROUPS = [
           { m: 'write', it: 'scrittura', en: 'writing', d: { it: 'dal significato, scrivila a mano tratto per tratto', en: 'from its meaning, write it by hand stroke by stroke' } },
           { m: 'pinyin', it: 'pinyin', en: 'pinyin', d: { it: 'scrivine il pinyin, con i toni', en: 'type its pinyin, with the tones' } },
           { m: 'pick', it: 'pinyin a scelta', en: 'pinyin, picked', d: { it: 'scegline la lettura tra quattro, quando hai poco tempo', en: 'pick its reading out of four, when time is short' } },
+          { m: 'measure', it: 'classificatore', en: 'measure word', d: { it: 'vedi un nome e scegli il suo classificatore tra quattro (一本书, 一辆车)', en: 'see a noun and pick its measure word out of four (一本书, 一辆车)' } },
+          { m: 'cloze', it: 'frase', en: 'sentence', d: { it: 'una frase con una parola tolta: scegli quella che manca tra quattro', en: 'a sentence with a word taken out: pick the missing one out of four' } },
         ],
       },
     ],

@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Allenamento sulle parole · Giuliano Gambacorta</title>
-  <meta name="description" content="Le parole HSK 1–4: riconoscine il significato, scrivile a mano a partire dal significato, ricordane il pinyin e i toni.">
+  <meta name="description" content="Le parole HSK 1–4: riconoscine il significato, scrivile a mano, ricordane il pinyin e i toni, abbina i classificatori, completa le frasi.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../toni/toni.css?v=3">
-  <link rel="stylesheet" href="parole.css?v=3">
+  <link rel="stylesheet" href="parole.css?v=4">
   <script>
     // the same theme as the Chinese section
     try {
@@ -36,6 +36,8 @@
       <button data-mode="word" data-i18n="mWord">parola</button>
       <button data-mode="write" data-i18n="mWrite">scrittura</button>
       <button data-mode="pinyin" data-i18n="mPinyin">pinyin</button>
+      <button data-mode="measure" data-i18n="mMeasure">classificatore</button>
+      <button data-mode="cloze" data-i18n="mCloze">frase</button>
     </div>
     <!-- pinyin: typed, or picked out of four -->
     <div id="pyWay" class="ways" role="group" hidden>
@@ -107,6 +109,6 @@
   <script src="../../../i18n.js"></script>
   <script src="../../voice.js"></script>
   <script src="../progressi.js?v=1"></script>
-  <script src="parole.js?v=5"></script>
+  <script src="parole.js?v=6"></script>
 </body>
 </html>

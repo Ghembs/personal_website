@@ -79,3 +79,23 @@
 .choices.words .choice kbd, .choices.readings .choice kbd { position: absolute; left: 12px; }
 .choices.words .hz { font-size: 34px; line-height: 1.2; }
 .choices.readings .py { font-size: 24px; }
+
+/* the modes wrap on a narrow screen */
+.modes { flex-wrap: wrap; }
+
+/* measure word: 一 ? 书 */
+.frame { display: flex; gap: 10px; align-items: baseline; justify-content: center; font-size: 60px; line-height: 1.1; }
+.frame .word { font-size: inherit; }
+.blank { color: var(--dim); }
+.blank.filled { color: var(--t3); }
+.choices.words .choice small { color: var(--dim); font-size: 15px; margin-left: 8px; }
+
+/* sentence: the blank, its translation on request */
+.sentence { font-size: 30px; line-height: 1.5; max-width: 22em; text-align: center; }
+.sentence .blank { letter-spacing: -0.1em; }
+.sentence .blank.filled { letter-spacing: 0; text-decoration: underline; text-decoration-color: var(--t3); text-underline-offset: 6px; }
+[data-sentence] { cursor: default; }
+.link { color: var(--dim); font-style: italic; font-size: 15px; text-decoration: underline; text-decoration-color: var(--red); text-underline-offset: 3px; margin-top: 6px; }
+.trans { color: var(--dim); font-size: 17px; margin-top: 6px; max-width: 30em; text-align: center; }
+.trans a { color: var(--dim); font-size: 14px; }
+@media (max-width: 480px) { .frame { font-size: 48px; } .sentence { font-size: 24px; } }

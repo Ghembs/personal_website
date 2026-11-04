@@ -3,7 +3,9 @@
 // round, a meaning and four words. Writing: a meaning, with its part of
 // speech and length, and the word to write stroke by stroke (Hanzi Writer), a
 // character at a time. Pinyin: a word, and its reading to type, a tone per
-// syllable, or to pick out of four ('pick'). Words come from the chosen levels
+// syllable, or to pick out of four ('pick'). Measure: a noun, and its
+// classifier out of four. Sentence: a Tatoeba sentence with a word taken out,
+// to put back out of four. Words come from the chosen levels
 // and, if any are chosen, parts of speech, those due for review first
 // (progressi.js); the card is a click away.
 
@@ -12,6 +14,10 @@ const TEXT = {
     back: '← esercizi di cinese', section: 'le parole nella sezione di cinese', tones: 'toni', theme: 'Tema chiaro / scuro', lang: 'EN',
     title: 'allenamento sulle parole', docTitle: 'Allenamento sulle parole · Giuliano Gambacorta', upTo: 'livelli',
     mMeaning: 'significato', mWord: 'parola', mWrite: 'scrittura', mPinyin: 'pinyin', wType: 'da scrivere', wPick: 'a scelta',
+    mMeasure: 'classificatore', mCloze: 'frase',
+    hMeasure: 'quale classificatore va con questo nome?', hCloze: 'quale parola completa la frase?',
+    chooseCl: 'scegli il classificatore (1–4)', chooseCloze: 'scegli la parola che manca (1–4)',
+    trans: 'mostra la traduzione', noTrans: 'nascondi la traduzione', loadingSent: 'carico le frasi…',
     cats: 'categorie', catsAll: 'tutte',
     hMeaning: 'che cosa vuol dire questa parola?', hWord: 'quale parola ha questo significato?', hPick: 'come si legge? scegli la lettura giusta',
     chooseWord: 'scegli la parola (1–4)', choosePy: 'scegli la lettura (1–4)', hWrite: 'scrivi la parola che ha questo significato', hPinyin: 'come si legge? scrivi il pinyin e scegli i toni',
@@ -33,6 +39,10 @@ const TEXT = {
     back: '← Chinese exercises', section: 'the words in the Chinese section', tones: 'tones', theme: 'Light / dark theme', lang: 'IT',
     title: 'word trainer', docTitle: 'Word trainer · Giuliano Gambacorta', upTo: 'levels',
     mMeaning: 'meaning', mWord: 'word', mWrite: 'writing', mPinyin: 'pinyin', wType: 'typed', wPick: 'picked',
+    mMeasure: 'measure word', mCloze: 'sentence',
+    hMeasure: 'which measure word goes with this noun?', hCloze: 'which word completes the sentence?',
+    chooseCl: 'choose the measure word (1–4)', chooseCloze: 'choose the missing word (1–4)',
+    trans: 'show the translation', noTrans: 'hide the translation', loadingSent: 'loading the sentences…',
     cats: 'parts of speech', catsAll: 'all',
     hMeaning: 'what does this word mean?', hWord: 'which word has this meaning?', hPick: 'how is it read? pick the right reading',
     chooseWord: 'choose the word (1–4)', choosePy: 'choose the reading (1–4)', hWrite: 'write the word with this meaning', hPinyin: 'how is it read? type the pinyin and pick the tones',
@@ -117,6 +127,43 @@ function syllablesOf(w) {
   return cut(0, 0);
 }
 
+// A noun's classifiers that are HSK measure words, 个 aside (it would fit too
+// many): those the dictionary gives it.
+let MEASURES = null, NOUN_CL = null;
+function measuresOf(w) {
+  if (!MEASURES) {
+    MEASURES = new Map(hsk.words.filter((x) => posTags(x.pos).includes('量')).map((x) => [x.w, x]));
+    // the measure words that go with some noun: the choices
+    NOUN_CL = new Set(hsk.words.filter((x) => mainTags(x.pos).includes('名')).flatMap((x) => (entryOf(x)?.cl || []).map(([h]) => h)).filter((h) => MEASURES.has(h)));
+    NOUN_CL.delete('个');
+  }
+  return (entryOf(w)?.cl || []).map(([h]) => h).filter((h) => h !== '个' && NOUN_CL.has(h));
+}
+
+// Tatoeba's sentences (those of the cards), cut into the syllabus's words by
+// the longest match, so that 学 is not found in 学生; loaded on the first one.
+// A sentence is [id, zh, pinyin, level, it, en], its level that of its hardest word.
+let sentences = null, segments = null, sentencesOf = null;
+const loadSentences = () => (loadSentences.p ||= fetch('../../data/sentences.json').then((r) => r.json()).then((d) => {
+  const words = new Set(hsk.words.map((w) => w.w)), longest = Math.max(...[...words].map((w) => [...w].length));
+  sentences = d.s;
+  sentencesOf = new Map();
+  segments = sentences.map(([, zh], i) => {
+    const cs = [...zh], out = [];
+    for (let at = 0; at < cs.length;) {
+      let n = Math.min(longest, cs.length - at);
+      while (n > 1 && !words.has(cs.slice(at, at + n).join(''))) n--;
+      const g = cs.slice(at, at + n).join('');
+      out.push(g);
+      if (words.has(g)) { if (!sentencesOf.has(g)) sentencesOf.set(g, []); if (!sentencesOf.get(g).includes(i)) sentencesOf.get(g).push(i); }
+      at += n;
+    }
+    return out;
+  });
+}));
+// the sentences with the word of no level above those chosen
+const sentencesFor = (w) => (sentencesOf?.get(w.w) || []).filter((i) => sentences[i][3] <= Math.max(...levels));
+
 // ---------- state ----------
 
 // the HSK levels in play, each on its own (at least one); "up to 3" is 1, 2 and 3
@@ -125,8 +172,9 @@ const levels = (() => {
   return new Set(Array.isArray(v) && v.length ? v : [1, 2, 3, 4].filter((lv) => lv <= v));
 })();
 // ?modo=meaning|word|write|pinyin|pick (the exercises page links each mode), else the last one used
-const MODES = ['meaning', 'word', 'write', 'pinyin', 'pick'];
-const CHOICE = ['meaning', 'word', 'pick'];      // the modes answered out of four
+const MODES = ['meaning', 'word', 'write', 'pinyin', 'pick', 'measure', 'cloze'];
+const CHOICE = ['meaning', 'word', 'pick', 'measure', 'cloze'];      // the modes answered out of four
+const HANZI = ['word', 'measure', 'cloze'];                          // ...whose choices are words
 let mode = MODES.find((m) => m === new URLSearchParams(location.search).get('modo')) || store.get('parole-mode', 'meaning');
 if (!MODES.includes(mode)) mode = 'meaning';
 const freshStats = () => ({ n: 0, ok: 0, streak: 0, best: 0 });
@@ -144,7 +192,16 @@ const recent = [];
 const idOf = (w) => `${w.w}|${w.py}`;
 const inLevels = (w) => levels.has(w.level) && defsOf(w).length;
 const inCats = (w) => !cats.size || mainTags(w.pos).some((p) => cats.has(p));
-const poolOf = () => hsk.words.filter((w) => inLevels(w) && inCats(w) && (mode !== 'pinyin' && mode !== 'pick' || syllablesOf(w)));
+// the words in play: for measure words the nouns with one (of any part of
+// speech chosen), for sentences those with one, a reading per word (地 once)
+function poolOf() {
+  const fits = {
+    pinyin: syllablesOf, pick: syllablesOf,
+    measure: (w) => mainTags(w.pos).includes('名') && measuresOf(w).length,
+    cloze: (w) => sentencesFor(w).length && hsk.words.find((x) => x.w === w.w) === w,
+  }[mode];
+  return hsk.words.filter((w) => inLevels(w) && (mode === 'measure' || inCats(w)) && (!fits || fits(w)));
+}
 function draw() {
   const w = Progress.pick(`words-${mode}`, poolOf(), idOf, recent);
   recent.push(idOf(w));
@@ -191,44 +248,71 @@ const metaOf = (w) => [posTags(w.pos).map((p) => TEXT[I18N.lang].pos[p] || p).jo
 
 async function next() {
   await loaded;
+  if (mode === 'cloze' && !sentences) {
+    setStatus('loadingSent');
+    const m = mode;
+    await loadSentences();
+    if (mode !== m) return;
+  }
   current = draw();
   answered = false;
   showStats();
   $('#answer').hidden = true;
   $('#choices').hidden = !CHOICE.includes(mode);
-  $('#choices').classList.toggle('words', mode === 'word');
+  $('#choices').classList.toggle('words', HANZI.includes(mode));
   $('#choices').classList.toggle('readings', mode === 'pick');
   $('#write').hidden = mode !== 'write';
   $('#pinyin').hidden = mode !== 'pinyin';
   if (mode === 'meaning' || mode === 'word') askMeaning();
   else if (mode === 'pick') askPick();
+  else if (mode === 'measure') askMeasure();
+  else if (mode === 'cloze') askCloze();
   else if (mode === 'write') askWrite();
   else askPinyin();
 }
 
 function renderPrompt() {
   const w = current;
+  if (mode === 'measure') {
+    $('#prompt').innerHTML = `<div class="frame"><span class="hz">一</span><span class="blank hz">？</span>` +
+      `<button class="word hz" data-say aria-label="${t('listen')}">${w.w}</button></div><div class="meta">${w.py} · ${meaningOf(w)}</div>`;
+    return;
+  }
+  if (mode === 'cloze') {
+    const segs = segments[current.sent], at = segs.indexOf(w.w);
+    $('#prompt').innerHTML = `<div class="sentence hz" data-sentence>${segs.slice(0, at).join('')}<span class="blank">${'＿'.repeat([...w.w].length + 1)}</span>${segs.slice(at + 1).join('')}</div>` +
+      `<div id="transText" class="trans" hidden></div><button id="trans" class="link"></button>`;
+    showTrans();
+    return;
+  }
   $('#prompt').innerHTML = mode === 'write' || mode === 'word'
     ? `<div class="meaning">${meaningOf(w)}</div><div class="meta">${metaOf(w)}</div>${mode === 'write' ? '<div id="pyHint" class="py-hint"></div>' : ''}`
     : `<button class="word hz" data-say aria-label="${t('listen')}">${w.w}</button>`;
 }
 
-// meaning, and word: the word and three alike in kind but not in sense
-// (for a word to pick, of its length when there are enough)
-function askMeaning() {
+// three words alike in kind but not in sense (of the word's length, when
+// `sameLength` and there are enough; and as `also` wants)
+function alike(w, sameLength, also = () => true) {
   // alike in kind: of the part of speech chosen, if any, else of the word's first
-  const w = current, mine = meaningOf(w), pos = mainTags(w.pos).find((p) => cats.has(p)) || posTags(w.pos)[0];
+  const mine = meaningOf(w), pos = mainTags(w.pos).find((p) => cats.has(p)) || posTags(w.pos)[0];
   const words = new Set(defsOf(w).join(' ').toLowerCase().match(/[a-z]{4,}/g) || []);
-  const unlike = (x) => x.w !== w.w && meaningOf(x) && meaningOf(x) !== mine &&
+  const unlike = (x) => x.w !== w.w && meaningOf(x) && meaningOf(x) !== mine && also(x) &&
     !(meaningOf(x).toLowerCase().match(/[a-z]{4,}/g) || []).some((v) => words.has(v));
   const kind = (x) => (cats.size ? mainTags(x.pos).includes(pos) : posTags(x.pos)[0] === pos);
   let others = shuffle(hsk.words.filter((x) => kind(x) && Math.abs(x.level - w.level) <= 1 && unlike(x)));
-  if (mode === 'word') {
+  if (sameLength) {
     const n = [...w.w].length, same = others.filter((x) => [...x.w].length === n);
     if (same.length >= 3) others = same;
   }
   if (others.length < 3) others = others.concat(shuffle(hsk.words.filter(unlike)));
-  current.options = shuffle([w, ...others.slice(0, 3)]);
+  // a word written once among the four
+  return others.filter((x, i) => others.findIndex((y) => y.w === x.w) === i).slice(0, 3);
+}
+
+// meaning, and word: the word and three alike
+function askMeaning() {
+  const w = current;
+  current.options = shuffle([w, ...alike(w, mode === 'word')]);
   current.answer = w;
   renderPrompt();
   renderChoices();
@@ -267,7 +351,53 @@ function askPick() {
   setStatus('choosePy');
 }
 
+// measure word: the noun's first (the dictionary's most usual: 件 for 事,
+// not 回), and three that go with other nouns,
+// of the levels in play when there are enough
+function askMeasure() {
+  const w = current, mine = measuresOf(w), all = new Set((entryOf(w)?.cl || []).map(([h]) => h));
+  const right = mine[0];
+  const top = Math.max(...levels);
+  let others = shuffle([...NOUN_CL].filter((h) => !all.has(h) && MEASURES.get(h).level <= top));
+  if (others.length < 3) others = others.concat(shuffle([...NOUN_CL].filter((h) => !all.has(h) && !others.includes(h))));
+  current.options = shuffle([right, ...others.slice(0, 3)]);
+  current.answer = right;
+  renderPrompt();
+  renderChoices();
+  setStatus('chooseCl');
+}
+
+// sentence: one of the word's, and three words of its kind that aren't in it
+// nor inside it or around it (学, 学生)
+function askCloze() {
+  const w = current, list = sentencesFor(w);
+  current.sent = pickOne(list);
+  const zh = sentences[current.sent][1];
+  current.options = shuffle([w, ...alike(w, true, (x) => !zh.includes(x.w) && !x.w.includes(w.w) && !w.w.includes(x.w))]);
+  current.answer = w;
+  renderPrompt();
+  renderChoices();
+  setStatus('chooseCloze');
+}
+const pickOne = (xs) => xs[(Math.random() * xs.length) | 0];
+const transOf = (x) => (I18N.lang === 'it' ? x[4] || x[5] : x[5] || x[4]) || '';
+// the sentence's translation, shown unless hidden (without it a sentence may
+// take two of the words: 我们 or 大家 休息一下吧); after the answer, always,
+// with its reading and source
+let showTranslation = store.get('parole-translation', true);
+function showTrans() {
+  const x = sentences[current.sent], on = showTranslation || answered;
+  $('#trans').hidden = answered;
+  $('#trans').textContent = t(showTranslation ? 'noTrans' : 'trans');
+  $('#transText').hidden = !on;
+  if (on) $('#transText').innerHTML = answered
+    ? `<i>${x[2]}</i><br>${transOf(x)} <a href="https://tatoeba.org/${I18N.lang}/sentences/show/${x[0]}" target="_blank" rel="noopener">Tatoeba #${x[0]}</a>`
+    : transOf(x);
+}
+
 function labelOf(x) {
+  if (mode === 'measure') return `<span class="hz">${x}</span><small>${MEASURES.get(x).py}</small>`;
+  if (mode === 'cloze') return `<span class="hz">${x.w}</span>`;
   if (mode === 'pick') return `<span class="py">${x}</span>`;
   if (mode === 'word') return `<span class="hz">${x.w}</span>`;
   return `<span>${meaningOf(x)}</span>`;
@@ -404,8 +534,20 @@ function finish(ok, grade) {
   $('#open').href = `../../?vista=parole#${encodeURIComponent(w.w)}`;
   $('#gloss').innerHTML = `<ol>${defsOf(w).slice(0, 5).map((d) => `<li>${d}</li>`).join('')}</ol>` +
     (info?.cl ? `<div class="other">${t('measure')}: ${info.cl.map(([h, py]) => `<span class="hz">${h}</span> ${py}`).join(', ')}</div>` : '');
+  if (mode === 'measure') {
+    const b = $('#prompt .blank');
+    b.textContent = current.answer;
+    b.classList.add('filled');
+  }
+  if (mode === 'cloze') {
+    const b = $('#prompt .blank');
+    b.textContent = w.w;
+    b.classList.add('filled');
+    showTrans();
+  }
   $('#answer').hidden = false;
-  Voice.word(w.w, w.py);
+  if (mode === 'cloze') Voice.sentence(sentences[current.sent][1], sentences[current.sent][2]);
+  else Voice.word(w.w, w.py);
 }
 
 function setMode(m) {
@@ -417,7 +559,7 @@ function setMode(m) {
   next();
 }
 
-const HINTS = { meaning: 'hMeaning', word: 'hWord', write: 'hWrite', pinyin: 'hPinyin', pick: 'hPick' };
+const HINTS = { meaning: 'hMeaning', word: 'hWord', write: 'hWrite', pinyin: 'hPinyin', pick: 'hPick', measure: 'hMeasure', cloze: 'hCloze' };
 function showModes() {
   // the pinyin button stands for both ways, chosen beside it
   const shown = mode === 'pick' ? 'pinyin' : mode;
@@ -425,6 +567,8 @@ function showModes() {
   $('#pyWay').hidden = shown !== 'pinyin';
   document.querySelectorAll('[data-way]').forEach((b) => b.classList.toggle('on', b.dataset.way === mode));
   $('.hint').textContent = t(HINTS[mode]);
+  // measure words are of nouns, whatever is chosen
+  $('#cats').hidden = mode === 'measure';
 }
 
 // the parts of speech, each with its words in the chosen levels; a part with
@@ -455,6 +599,9 @@ function render() {
       // the prompt is the meaning: redraw its line of kind and length, not the boxes
       $('#prompt .meta').textContent = metaOf(current);
       $('#outline').textContent = t(showOutline ? 'noOutline' : 'outline');
+    }
+    if (mode === 'cloze') {
+      showTrans();
     }
     if (CHOICE.includes(mode)) {
       const marks = [...document.querySelectorAll('.choice')].map((b) => b.className);
@@ -493,7 +640,16 @@ document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('cli
   next();
 }));
 $('#choices').addEventListener('click', (e) => { const b = e.target.closest('[data-pick]'); if (b) pick(+b.dataset.pick); });
-$('#prompt').addEventListener('click', (e) => { if (e.target.closest('[data-say]') && current) Voice.word(current.w, current.py); });
+$('#prompt').addEventListener('click', (e) => {
+  if (!current) return;
+  if (e.target.closest('[data-say]')) Voice.word(current.w, current.py);
+  else if (e.target.closest('#trans')) {
+    showTranslation = !showTranslation;
+    store.set('parole-translation', showTranslation);
+    showTrans();
+  }
+  else if (e.target.closest('[data-sentence]') && answered) Voice.sentence(sentences[current.sent][1], sentences[current.sent][2]);
+});
 $('#outline').addEventListener('click', () => {
   showOutline = !showOutline;
   store.set('parole-outline', showOutline);
