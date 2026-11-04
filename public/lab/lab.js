@@ -40,10 +40,10 @@ const EXPERIMENTS = [
   },
   {
     id: 'chinese', href: '../cinese/esercizi/', tags: ['cinese', 'audio'],
-    title: { it: 'Esercizi di cinese', en: 'Chinese exercises' },
+    title: { it: '中文练习', en: '中文练习' },
     text: {
-      it: 'I caratteri e le parole HSK dei livelli che vuoi: indovina il tono di un carattere che ascolti, o pronuncialo e guarda la tua voce accanto a quella di una madrelingua; riconosci il significato di una parola, scrivila a mano, ricordane il pinyin.',
-      en: 'The HSK characters and words of the levels you choose: guess the tone of a character you hear, or say it and see your voice beside a native speaker\'s; pick a word\'s meaning, write it by hand, recall its pinyin.',
+      it: 'Esercizi di cinese sui caratteri e sulle parole HSK, dei livelli che vuoi: ascolto, pronuncia, lettura e scrittura, e altri in arrivo.',
+      en: 'Chinese exercises on the HSK characters and words, from the levels you choose: listening, speaking, reading and writing, with more to come.',
     },
     sketch: ['  ā   á   ǎ   à', ' ___  /  \\_/  \\', '  飞机  →  airplane'],
   },
