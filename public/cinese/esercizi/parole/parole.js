@@ -30,6 +30,7 @@ const TEXT = {
     reset: 'azzera', score: 'giuste {ok} su {n} · di fila {streak} · record {best}', none: 'ancora nessuna risposta',
     review: 'parole viste {seen} su {n}, da ripassare {due}, imparate {learned}',
     also: 'si legge anche {py}, con un altro significato', syllable: 'sillaba {n}', toneN: '{n}° tono', neutral: 'neutro', measure: 'classificatore',
+    clChar: '{c}: carattere di HSK {n}, che il sillabo non elenca come parola a sé',
     langName: 'English',
     foot: 'Parole e livelli dal sillabo HSK 2025, significati da <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), registrazioni di <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), tratti di <a href="https://hanziwriter.org/">Hanzi Writer</a>: tutto dalla <a href="../../?vista=parole">sezione di cinese</a>.',
     pos: { 名: 'nome', 动: 'verbo', 形: 'aggettivo', 副: 'avverbio', 量: 'classificatore', 代: 'pronome', 连: 'congiunzione', 介: 'preposizione',
@@ -55,6 +56,7 @@ const TEXT = {
     reset: 'reset', score: '{ok} right out of {n} · streak {streak} · best {best}', none: 'no answers yet',
     review: 'words seen {seen} of {n}, to review {due}, learned {learned}',
     also: 'it also reads {py}, with another meaning', syllable: 'syllable {n}', toneN: 'tone {n}', neutral: 'neutral', measure: 'measure word',
+    clChar: '{c}: an HSK {n} character, which the syllabus doesn\'t list as a word of its own',
     langName: 'Italiano',
     foot: 'Words and levels from the HSK syllabus 2025, meanings from <a href="https://cc-cedict.org/">CC-CEDICT</a> (CC BY-SA 4.0), recordings from <a href="https://github.com/hugolpz/audio-cmn">audio-cmn</a> (CC BY-SA), strokes by <a href="https://hanziwriter.org/">Hanzi Writer</a>: all from the <a href="../../?vista=parole">Chinese section</a>.',
     pos: { 名: 'noun', 动: 'verb', 形: 'adjective', 副: 'adverb', 量: 'measure word', 代: 'pronoun', 连: 'conjunction', 介: 'preposition',
@@ -128,11 +130,18 @@ function syllablesOf(w) {
 }
 
 // A noun's classifiers that are HSK measure words, 个 aside (it would fit too
-// many): those the dictionary gives it.
+// many): those the dictionary gives it. Some of the commonest are no word of
+// the syllabus, only a character of it (瓶 is there as 瓶子, 杯 as 杯子): a
+// character the dictionary reads as a classifier counts too, its reading
+// that one (处 chù, not chǔ), marked `char`.
 let MEASURES = null, NOUN_CL = null;
 function measuresOf(w) {
   if (!MEASURES) {
     MEASURES = new Map(hsk.words.filter((x) => posTags(x.pos).includes('量')).map((x) => [x.w, x]));
+    for (const { c, level } of hsk.chars) {
+      const reading = MEASURES.has(c) ? null : (ced.chars[c] || []).find(([, d]) => d.some((x) => /classifier/i.test(x)));
+      if (reading) MEASURES.set(c, { w: c, py: reading[0], level, char: true });
+    }
     // the measure words that go with some noun: the choices
     NOUN_CL = new Set(hsk.words.filter((x) => mainTags(x.pos).includes('名')).flatMap((x) => (entryOf(x)?.cl || []).map(([h]) => h)).filter((h) => MEASURES.has(h)));
     NOUN_CL.delete('个');
@@ -535,9 +544,10 @@ function finish(ok, grade) {
   $('#gloss').innerHTML = `<ol>${defsOf(w).slice(0, 5).map((d) => `<li>${d}</li>`).join('')}</ol>` +
     (info?.cl ? `<div class="other">${t('measure')}: ${info.cl.map(([h, py]) => `<span class="hz">${h}</span> ${py}`).join(', ')}</div>` : '');
   if (mode === 'measure') {
-    const b = $('#prompt .blank');
+    const b = $('#prompt .blank'), m = MEASURES.get(current.answer);
     b.textContent = current.answer;
     b.classList.add('filled');
+    if (m.char) $('#prompt').insertAdjacentHTML('beforeend', `<div class="meta">${t('clChar', { c: m.w, n: m.level })}</div>`);
   }
   if (mode === 'cloze') {
     const b = $('#prompt .blank');
