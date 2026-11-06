@@ -1,6 +1,7 @@
-/* dark — a piano-black hardware player (Dark Aero, Y2K): lacquer and carbon
-   fibre, a green dot-matrix LCD sunk in chrome, a click wheel, pixel icons,
-   a hole for the cord. Over an aurora seen from the ISS (NASA, public domain). */
+/* dark — a handheld console in piano black (Dark Aero, Y2K): lacquer and
+   carbon fibre, a green dot-matrix screen sunk in chrome with its power light,
+   a rubber cross, A and B, start and select, a slotted speaker, pixel icons
+   (layout: pad). Over an aurora seen from the ISS (NASA, public domain). */
 body[data-skin="dark"] {
   --ui: "Silkscreen", "Courier New", monospace;
   --text: "VT323", "Courier New", monospace;
@@ -100,28 +101,45 @@ body[data-skin="dark"] {
 [data-skin="dark"] .tot { font-family: "Doto", monospace; font-weight: 900; background: #050806; box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 0 2px #050505, 0 0 0 3px #6d737a; }
 [data-skin="dark"] #picker .title { font-size: 8px; }
 
-/* a hole for the cord, and rubber grips on the sides */
+/* the console: a body with one corner rounder, as in the hand */
+[data-skin="dark"] #player { border-radius: 26px 26px 84px 26px; }
+[data-skin="dark"] #player .body { padding-bottom: 22px; }
+/* the cross: black rubber; A and B: lacquered, A lit green */
+[data-skin="dark"] .transport {
+  --pad: linear-gradient(170deg, #2a2d33, #0a0b0d 70%);
+  --pad-shade: #000;
+  --pad-press: radial-gradient(circle, rgba(141, 255, 110, 0.3), rgba(141, 255, 110, 0) 70%);
+}
+[data-skin="dark"] #pause { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), inset 0 -3px 5px rgba(0, 0, 0, 0.4), 0 0 0 3px #0b0c0e, 0 0 0 4px #3a3e45, 0 4px 8px var(--drop); }
+[data-skin="dark"] #stop, [data-skin="dark"] #eject { background: linear-gradient(170deg, #3a3e45, #121417); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8), 0 2px 3px rgba(0, 0, 0, 0.6); }
+/* the power light, beside the screen */
+[data-skin="dark"] #player > .body::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 128px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ffd6d6, #ff3b3b 50%, #8a0e0e);
+  box-shadow: 0 0 8px #ff3b3b, 0 0 2px #ff3b3b;
+}
+body.live[data-skin="dark"] #player > .body::before { background: radial-gradient(circle at 40% 35%, #e6ffd6, #6dff6a 50%, #137a10); box-shadow: 0 0 8px #6dff6a; }
+/* the speaker: slanted slots in the corner */
 [data-skin="dark"] #player::after {
   content: "";
   position: absolute;
-  right: 20px;
-  bottom: 20px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #000 0 42%, #8a9097 46%, #2b2e33 62%, #0b0c0e 72%);
-  box-shadow: inset 0 1px 2px #000, 0 1px 0 rgba(255, 255, 255, 0.18);
+  right: 26px;
+  bottom: 30px;
+  width: 58px;
+  height: 52px;
+  border-radius: 10px;
+  background: repeating-linear-gradient(120deg, transparent 0 7px, #000 7px 11px);
+  -webkit-mask: linear-gradient(#000 0 0);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06);
+  opacity: 0.9;
 }
-[data-skin="dark"] #player > .body::before,
-[data-skin="dark"] #player > .body::after {
-  content: "";
-  position: absolute;
-  top: 40%;
-  height: 34%;
-  width: 6px;
-  border-radius: 3px;
-  background: repeating-linear-gradient(180deg, #24272c 0 3px, #050506 3px 6px);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06);
+@media (max-width: 420px) {
+  [data-skin="dark"] #player::after { right: 16px; bottom: 20px; width: 44px; height: 40px; }
+  [data-skin="dark"] #player > .body::before { top: 116px; left: 4px; }
 }
-[data-skin="dark"] #player > .body::before { left: -3px; }
-[data-skin="dark"] #player > .body::after { right: -3px; }

@@ -1,6 +1,8 @@
-/* eco — a sidebar gadget (Frutiger Eco): thick rounded glass in leaves, a
-   lens of a screen with a leaf in dew blurred inside, dew-drop keys on an arc,
-   lime gel. Over that leaf (Jan, northlandscapes; CC0). */
+/* eco — retrofuturism and nature (Frutiger Eco, the space age): the player a
+   biosphere, a glass dome with a leaf in dew inside on a cream plastic base,
+   a collar of three 70s stripes, dew-drop keys on an arc, the nameplate on the
+   base; the other panes thick glass in leaves (layout: arc, dome, leaf, base).
+   Over that leaf (Jan, northlandscapes; CC0). */
 body[data-skin="eco"] {
   --ui: "Varela Round", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
   --text: "Varela Round", "Arial Rounded MT Bold", sans-serif;
@@ -100,3 +102,66 @@ body[data-skin="eco"] {
 [data-skin="eco"] .transport .btn:not(#play).press,
 [data-skin="eco"] .transport .btn:not(#play).down { background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.6) 78%), rgba(120, 200, 60, 0.35); }
 @media (max-width: 420px) { [data-skin="eco"] .body { padding: 10px; } }
+
+/* ---------------------------------------------------------------------
+   the player: a biosphere — a glass dome, the leaf inside, on a cream
+   plastic base of the space age, a collar of three 70s stripes, the
+   nameplate on the base (layout: dome, base)
+   --------------------------------------------------------------------- */
+[data-skin="eco"] #player {
+  padding: 0;
+  border-radius: 50% 50% 44px 44px / 190px 190px 44px 44px;
+  background: var(--grain), linear-gradient(170deg, #fffdf5 0%, #f4eddb 45%, #e3d7b9 100%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow:
+    inset 0 -3px 0 rgba(120, 90, 40, 0.35), inset 3px 0 0 rgba(255, 255, 255, 0.7), inset -2px 0 0 rgba(150, 120, 60, 0.25),
+    0 0 0 1px rgba(110, 85, 40, 0.35), 0 30px 54px -12px var(--drop), 0 10px 20px -6px var(--drop);
+}
+[data-skin="eco"] #player::before { display: none; }
+[data-skin="eco"] #player .body { padding: 0 16px 6px; background: none; box-shadow: none; border-radius: 0; }
+/* the dome, its curve the base's */
+[data-skin="eco"] #player .lcd {
+  --lcd-spec: 0.5;
+  margin: 0 -16px;
+  border-radius: 50% 50% 0 0 / 190px 190px 0 0;
+  background: #24561a;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.75), inset 0 0 0 4px rgba(255, 255, 255, 0.18), inset 0 10px 30px rgba(255, 255, 255, 0.25), inset 0 -18px 30px rgba(0, 30, 0, 0.45),
+    0 4px 0 #e9832a, 0 8px 0 #f3c14b, 0 12px 0 #8aa63b, 0 13px 0 rgba(0, 0, 0, 0.2);
+}
+/* a window's reflection, tall on the glass at the left */
+[data-skin="eco"] #player .lcd::after {
+  left: 9%;
+  right: auto;
+  top: 12%;
+  width: 16%;
+  height: 58%;
+  border-radius: 50%;
+  transform: rotate(-12deg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 80%);
+}
+[data-skin="eco"] #player .strip { margin-top: 26px; background: rgba(90, 65, 20, 0.2); }
+/* the dew on cream: greener, with a darker rim */
+[data-skin="eco"] #player .transport .btn:not(#play) {
+  background:
+    radial-gradient(circle at 50% 58%, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, 0.55) 72%, rgba(255, 255, 255, 0.95) 82%, rgba(255, 255, 255, 0.2) 100%),
+    radial-gradient(circle at 60% 88%, rgba(200, 245, 130, 0.85), rgba(255, 255, 255, 0) 55%),
+    rgba(150, 200, 100, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(90, 140, 40, 0.55), inset 0 -4px 6px rgba(60, 120, 20, 0.3), 0 5px 8px -3px rgba(80, 60, 10, 0.45);
+}
+/* the nameplate on the base */
+[data-skin="eco"] #player > .title {
+  align-self: center;
+  width: min(300px, 76%);
+  height: 30px;
+  margin: 8px 0 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: #6b5532;
+  background: linear-gradient(180deg, #e2d6b8, #f6efdd);
+  box-shadow: inset 0 2px 3px rgba(90, 65, 20, 0.35), 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+[data-skin="eco"] #player > .title .tt { text-align: center; padding-right: 0; }
+[data-skin="eco"] #player .skins button { color: #7a6440; }
+[data-skin="eco"] #player .skins button[aria-checked="true"] { color: #3f3015; }

@@ -1,7 +1,7 @@
-/* chrome — Y2K liquid chrome: a mirror band across every pane with a film of
-   oil-slick colour over it, a pearly holographic display, lavender and
-   bubblegum gel, a bubbly rounded type. Written with the contract alone
-   (layout: row, lozenge, leaf, capsule). Over a frozen soap bubble
+/* chrome — a Y2K twin-bell alarm clock in liquid chrome: a mirror band with a
+   film of oil-slick colour, a round pearly face with its ticks in a chrome
+   ring, two bells and a handle, two feet, lavender and bubblegum gel, a bubbly
+   rounded type (layout: row, dial, leaf, capsule). Over a frozen soap bubble
    (Aaron Burden; CC0). */
 body[data-skin="chrome"] {
   --ui: "Fredoka", "Varela Round", sans-serif;
@@ -86,3 +86,76 @@ body.live[data-skin="chrome"] #play.down { box-shadow: inset 0 3px 8px rgba(80, 
 [data-skin="chrome"] .btn.sm, [data-skin="chrome"] .mini, [data-skin="chrome"] .led { letter-spacing: 0.08em; }
 [data-skin="chrome"] .tot { background: linear-gradient(125deg, #fbefff, #dff3ff 40%, #ffe9f6 70%, #e7e1ff); box-shadow: inset 0 2px 4px rgba(60, 40, 120, 0.4), 0 0 0 2px rgba(255, 255, 255, 0.7); }
 [data-skin="chrome"] .row.now { color: #24184f; }
+
+/* ---------------------------------------------------------------------
+   the player: a twin-bell alarm clock — a body rounder above, a face with
+   its ticks in a chrome ring, two bells and a handle on top, two feet
+   (layout: dial)
+   --------------------------------------------------------------------- */
+[data-skin="chrome"] #player {
+  margin: 46px 0 14px;
+  border-radius: 40% 40% 30% 30% / 26% 26% 20% 20%;
+}
+[data-skin="chrome"] #player > .title { justify-content: center; padding: 0 22%; }
+[data-skin="chrome"] #player::before { display: none; }
+[data-skin="chrome"] #player .lcd {
+  --face: linear-gradient(125deg, #fdf6ff 0%, #e9f6ff 35%, #fff2fa 60%, #efeaff 100%);
+  border: 12px solid transparent;
+  background:
+    radial-gradient(70% 70% at 50% 115%, color-mix(in srgb, var(--seg) 35%, transparent), transparent 70%) padding-box,
+    radial-gradient(circle closest-side, #fbf7ff 0 84%, transparent 84.5%) padding-box,
+    repeating-conic-gradient(rgba(42, 29, 92, 0.75) 0deg 1.6deg, transparent 1.6deg 30deg) padding-box,
+    repeating-conic-gradient(rgba(42, 29, 92, 0.25) 0deg 0.8deg, transparent 0.8deg 6deg) padding-box,
+    var(--face) padding-box,
+    conic-gradient(from 20deg, #ffffff, #9aa0b8, #f4f5fb, #5f6480, #ffffff, #b9bdd0, #ffffff, #7d829c, #ffffff) border-box;
+  box-shadow: inset 0 4px 10px rgba(60, 40, 120, 0.35), 0 0 0 1px rgba(60, 50, 110, 0.5), 0 6px 14px -4px var(--drop);
+}
+[data-skin="chrome"] #player .lcd::before { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--seg) 60%, transparent); }
+/* the bells, the handle between them */
+[data-skin="chrome"] #player > .title::before,
+[data-skin="chrome"] #player > .title::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -34px;
+  width: 92px;
+  height: 56px;
+  border-radius: 50% 50% 10px 10px / 100% 100% 10px 10px;
+  background: var(--film), var(--chrome);
+  box-shadow: inset 0 2px 0 #fff, inset 0 -3px 0 rgba(60, 50, 110, 0.45), 0 0 0 1px rgba(60, 50, 110, 0.5), 0 6px 10px -4px var(--drop);
+}
+[data-skin="chrome"] #player > .title::before { left: 9%; transform: rotate(-24deg); }
+[data-skin="chrome"] #player > .title::after { right: 9%; transform: rotate(24deg); }
+[data-skin="chrome"] #player::after {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  top: -48px;
+  left: 50%;
+  width: 120px;
+  height: 64px;
+  margin-left: -60px;
+  border: 7px solid #c3c7d8;
+  border-bottom: 0;
+  border-radius: 60px 60px 0 0;
+  box-shadow: inset 0 2px 0 #fff, 0 -1px 0 rgba(60, 50, 110, 0.5);
+}
+/* the feet */
+[data-skin="chrome"] #player > .body::before,
+[data-skin="chrome"] #player > .body::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  bottom: -14px;
+  width: 46px;
+  height: 26px;
+  border-radius: 50% 50% 40% 40% / 30% 30% 70% 70%;
+  background: var(--chrome);
+  box-shadow: inset 0 -2px 0 rgba(60, 50, 110, 0.45), 0 0 0 1px rgba(60, 50, 110, 0.5), 0 6px 8px -4px var(--drop);
+}
+[data-skin="chrome"] #player > .body::before { left: 18%; transform: rotate(14deg); }
+[data-skin="chrome"] #player > .body::after { right: 18%; transform: rotate(-14deg); }
+@media (max-width: 420px) {
+  [data-skin="chrome"] #player > .title::before, [data-skin="chrome"] #player > .title::after { width: 72px; height: 44px; top: -28px; }
+  [data-skin="chrome"] #player > .title { padding: 0 18%; }
+}

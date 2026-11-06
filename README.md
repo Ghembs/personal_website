@@ -46,14 +46,17 @@ public/          the site, served as is (no build step)
                               events, beeps on the audio clock, voice, wake lock
                    timer.js   the view: editor, library, drawing the run
                    timer.css  the skeleton, and layout variants (deck row |
-                              wheel | arc | cluster, lcd rect | lens | lozenge,
-                              panes rect | leaf, switch marbles | capsule)
+                              wheel | arc | cluster | pad, lcd rect | lens |
+                              lozenge | dial | dome, panes rect | leaf, switch
+                              marbles | capsule, plate top | base)
                    skins/     skins.js, the registry and the contract (parts,
-                              states, tokens); a stylesheet per skin: dark
-                              (hardware player, dot-matrix LCD, pixel icons),
-                              eco (glass gadget), aqua (brushed metal, iTunes),
-                              chrome (Y2K liquid chrome, made with the contract
-                              alone); icons.js holds the pixel and glossy sets
+                              states, tokens); a stylesheet per skin, each an
+                              object: dark a handheld console (dot-matrix
+                              screen, cross, A/B, pixel icons), eco a biosphere
+                              (a glass dome on a space-age base), aqua the
+                              media-player window (brushed metal, iTunes),
+                              chrome a twin-bell alarm clock in Y2K chrome;
+                              icons.js holds the pixel and glossy sets
                  A new skin is an entry in skins.js, a stylesheet and a photo
                  (public domain or CC0, in img/). Plans live in localStorage or
                  travel as a link (the plan in the hash); no server

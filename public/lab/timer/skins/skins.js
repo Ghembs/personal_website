@@ -41,22 +41,27 @@
 // Shared textures to use or not: --grain --brushed --carbon (timer.css).
 //
 // LAYOUT (body[data-*], geometry in timer.css; a skin only paints it)
-//   deck    row | wheel | arc | cluster
+//   deck    row | wheel | arc | cluster | pad
 //           wheel is painted with --wheel (background), --wheel-rim (box-shadow),
-//           --wheel-press (a pressed key's glow)
-//   lcd     rect | lens | lozenge
+//           --wheel-press (a pressed key's glow); pad with --pad (the cross),
+//           --pad-shade (its shadow), --pad-press
+//   lcd     rect | lens | lozenge | dial (a round face) | dome (a half dome)
+//   plate   top | base (the player's title as a nameplate under it)
 //   panes   rect | leaf  (leaf: --leaf, the long radius; --leaf-in inside)
 //   switch  marbles | capsule  (capsule: --cap, --cap-on, --cap-fg, --cap-on-fg)
 // ICONS    pixel | glossy (icons.js); the windows get pixel art or 3D objects.
 
+// what a skin gets for any variant it leaves out
+const DEFAULT_LAYOUT = { deck: 'row', lcd: 'rect', panes: 'rect', switch: 'marbles', plate: 'top' };
+
 const SKINS = [
   {
     id: 'dark', theme: '#05070b', marble: ['#0b0f14', '#7dff6a'], icons: 'pixel',
-    layout: { deck: 'wheel', lcd: 'rect', panes: 'rect', switch: 'marbles' },
+    layout: { deck: 'pad', lcd: 'rect', panes: 'rect', switch: 'marbles', plate: 'top' },
   },
   {
     id: 'eco', theme: '#2e6b1c', marble: ['#2f8f0a', '#d6ff7a'], icons: 'glossy',
-    layout: { deck: 'arc', lcd: 'lens', panes: 'leaf', switch: 'marbles' },
+    layout: { deck: 'arc', lcd: 'dome', panes: 'leaf', switch: 'marbles', plate: 'base' },
   },
   {
     id: 'aqua', theme: '#0a5fb5', marble: ['#0a5fd0', '#9fe2ff'], icons: 'glossy',
@@ -64,7 +69,7 @@ const SKINS = [
   },
   {
     id: 'chrome', theme: '#c9b8ff', marble: ['#8a7dd8', '#ffd1f2'], icons: 'glossy',
-    layout: { deck: 'row', lcd: 'lozenge', panes: 'leaf', switch: 'capsule' },
+    layout: { deck: 'row', lcd: 'dial', panes: 'leaf', switch: 'capsule', plate: 'top' },
   },
 ];
 
@@ -75,7 +80,7 @@ const Skins = {
   apply(id) {
     const s = Skins.get(id), b = document.body;
     b.dataset.skin = s.id;
-    for (const [k, v] of Object.entries(s.layout)) b.dataset[k] = v;
+    for (const [k, v] of Object.entries({ ...DEFAULT_LAYOUT, ...s.layout })) b.dataset[k] = v;
     document.querySelector('meta[name="theme-color"]').content = s.theme;
     Icons.apply(s.icons);
     return s;
