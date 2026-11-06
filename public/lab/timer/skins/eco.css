@@ -17,6 +17,7 @@ body[data-skin="eco"] {
   --r: 32px;
   --drop: rgba(5, 40, 5, 0.5);
   --leaf: 64px;
+  --photo-blur: url(/lab/timer/img/eco-blur.webp);
   --leaf-in: 55px;
   --lcd-fg: #ffffff;
   --lcd-dim: rgba(255, 255, 255, 0.2);
@@ -35,14 +36,19 @@ body[data-skin="eco"] {
   --field: rgba(255, 255, 255, 0.85);
 }
 @media (max-width: 900px) {
-  body[data-skin="eco"] { --photo: url(/lab/timer/img/eco-s.webp); }
+  body[data-skin="eco"] { --photo: url(/lab/timer/img/eco-s.webp); --photo-blur: url(/lab/timer/img/eco-blur-s.webp); }
 }
 
 [data-skin="eco"] .win {
   padding: 0 9px 9px;
-  background: var(--grain), linear-gradient(165deg, rgba(255, 255, 255, 0.55), rgba(220, 250, 200, 0.22) 45%, rgba(255, 255, 255, 0.35));
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  /* frosted glass without a live blur (which flickers on the GPU while the
+     player redraws): the same photo, blurred beforehand, fixed to the window
+     as the page's own, so it lines up with what lies behind */
+  background:
+    var(--grain),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.55), rgba(220, 250, 200, 0.22) 45%, rgba(255, 255, 255, 0.35)),
+    linear-gradient(180deg, rgba(220, 255, 200, 0.18), rgba(0, 40, 10, 0.3)),
+    var(--photo-blur) var(--photo-at) / cover no-repeat fixed;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.85), inset 0 2px 0 rgba(255, 255, 255, 0.9), inset 2px 0 0 rgba(255, 255, 255, 0.4),
     inset 0 -10px 24px rgba(90, 170, 40, 0.25), 0 0 0 1px rgba(30, 80, 10, 0.35), 0 26px 50px -12px var(--drop), 0 8px 18px -6px var(--drop);
@@ -56,10 +62,13 @@ body[data-skin="eco"] {
   right: 3px;
   top: 3px;
   height: 44px;
-  border-radius: inherit;
-  background: linear-gradient(170deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.1));
+  border-radius: calc(var(--r) - 3px) calc(var(--r) - 3px) 0 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
   pointer-events: none;
 }
+/* on leaves, the sheen follows the top corners only: a long one, a short one */
+[data-skin="eco"][data-panes="leaf"] #library::before { border-radius: calc(var(--leaf) - 3px) calc(var(--r) - 3px) 0 0 / 44px calc(var(--r) - 3px) 0 0; }
+[data-skin="eco"][data-panes="leaf"] #playlist::before { border-radius: calc(var(--r) - 3px) calc(var(--leaf) - 3px) 0 0 / calc(var(--r) - 3px) 44px 0 0; }
 [data-skin="eco"] .title { height: 36px; color: #1f5a10; padding: 0 6px; }
 /* inside the frame, the gadget's face */
 [data-skin="eco"] .body {
@@ -94,8 +103,6 @@ body[data-skin="eco"] {
     radial-gradient(circle at 60% 88%, rgba(220, 255, 160, 0.75), rgba(255, 255, 255, 0) 50%),
     rgba(225, 255, 205, 0.22);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), inset 0 -4px 6px rgba(60, 140, 20, 0.25), 0 5px 8px -3px rgba(10, 60, 0, 0.5);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
 }
 [data-skin="eco"] .transport .btn:not(#play)::before { left: 20%; right: 46%; top: 12%; height: 26%; border-radius: 50%; }
 [data-skin="eco"] .transport .btn:not(#play):active:not(:disabled),
@@ -112,11 +119,9 @@ body[data-skin="eco"] {
   padding: 0;
   border-radius: 50% 50% 44px 44px / 190px 190px 44px 44px;
   background: var(--grain), linear-gradient(170deg, #fffdf5 0%, #f4eddb 45%, #e3d7b9 100%);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
   box-shadow:
     inset 0 -3px 0 rgba(120, 90, 40, 0.35), inset 3px 0 0 rgba(255, 255, 255, 0.7), inset -2px 0 0 rgba(150, 120, 60, 0.25),
-    0 0 0 1px rgba(110, 85, 40, 0.35), 0 30px 54px -12px var(--drop), 0 10px 20px -6px var(--drop);
+    0 0 0 1px rgba(110, 85, 40, 0.35), 0 14px 16px -8px var(--drop), 0 4px 8px -4px var(--drop);
 }
 [data-skin="eco"] #player::before { display: none; }
 [data-skin="eco"] #player .body { padding: 0 16px 6px; background: none; box-shadow: none; border-radius: 0; }
