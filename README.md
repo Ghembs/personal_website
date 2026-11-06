@@ -38,6 +38,18 @@ public/          the site, served as is (no build step)
   lab/shanshui/  the shan shui painter: a density for each element of the
                  handscroll (Shanshui.catalog), painted on confirm into a scroll
                  of 2-6 panels or a screen-sized frame (Shanshui.paint); save as PNG
+  lab/timer/     the interval timer: a get-ready, then blocks of sections of any
+                 length repeated for rounds, with a rest between rounds and a pause
+                 between blocks. One view laid out as an early-2000s media player
+                 (player with LCD, visualizer and position bar; the plan as its
+                 playlist; a library), in three skins: dark (Dark Aero), eco
+                 (Frutiger Eco), aqua (Helvetica Aqua): glass panes with a chrome
+                 rim and gel buttons over a public-domain or CC0 photo (img/,
+                 credited in THIRD_PARTY_NOTICES.md). The section's colour
+                 runs through display, bar and playing row. Beeps
+                 scheduled on the audio clock (on time in the background), voice
+                 and screen wake lock optional. Plans saved in localStorage or
+                 shared as a link (the plan in the hash, base64 JSON); no server
   img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders
   style.css

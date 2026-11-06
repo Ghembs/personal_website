@@ -78,7 +78,8 @@ taken from the HSK syllabus; see
 - [Hanzi Writer](https://hanziwriter.org) 3.7.2 (MIT) and its stroke data
   `hanzi-writer-data` (Arphic Public License), loaded from jsDelivr.
 - Fonts from Google Fonts (SIL Open Font License): JetBrains Mono, Space Grotesk,
-  Unbounded, Cormorant Garamond, Ma Shan Zheng.
+  Unbounded, Cormorant Garamond, Ma Shan Zheng, Orbitron, Exo 2, Comfortaa,
+  Varela Round.
 
 ## audio-cmn
 
@@ -95,3 +96,15 @@ Chinese Open Wordnet (Copyright 2013, 2014 Francis Bond and Shan Wang) and from
 Princeton WordNet 3.0 (Copyright 2006 by Princeton University), under their
 licences, reproduced in full in `public/cinese/data/licenses/COW.txt` and
 `public/cinese/data/licenses/WordNet-3.0.txt`.
+
+## Interval timer backgrounds
+
+`public/lab/timer/img/` holds three photos from Wikimedia Commons, resized and
+compressed to WebP:
+
+- `dark`: [ISS-43 Earth sunrise, aurora and sparkling cities in northern Europe](https://commons.wikimedia.org/wiki/File:ISS-43_Earth_sunrise,_aurora_and_sparling_cities_in_northern_Europe.jpg),
+  NASA, public domain.
+- `eco`: [Green Leaf With Water Drop, Frankfurt, Germany](https://commons.wikimedia.org/wiki/File:Green_Leaf_With_Water_Drop,_Frankfurt,_Germany_(Unsplash).jpg),
+  Jan (northlandscapes), CC0.
+- `aqua`: [Group Of Fish](https://commons.wikimedia.org/wiki/File:Group_Of_Fish_(Unsplash).jpg),
+  Jakob Owens, CC0.

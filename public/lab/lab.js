@@ -47,9 +47,18 @@ const EXPERIMENTS = [
     },
     sketch: ['  ā   á   ǎ   à', ' ___  /  \\_/  \\', '  飞机  →  airplane'],
   },
+  {
+    id: 'timer', href: 'timer/', tags: ['allenamento', 'strumento'],
+    title: { it: 'Timer a turni', en: 'Interval timer' },
+    text: {
+      it: 'Un timer per tabata, circuiti e intervalli: turni ripetibili con le sezioni che vuoi, preparazione, recuperi e pause. Senza account, abbonamenti o consensi; i piani restano nel browser o si passano con un link.',
+      en: 'A timer for tabata, circuits and intervals: repeatable blocks with the sections you like, a get-ready, rests and pauses. No account, subscription or consent; plans stay in the browser or travel as a link.',
+    },
+    sketch: ['   ▶ 0:40', '  ████████████░░░░░░', '  lavoro   riposo   ×4', '  ⟳ recupero 1:00'],
+  },
 ];
 
-const TAGS = { en: { generativo: 'generative', domotica: 'home-automation', cinese: 'chinese' } };
+const TAGS = { en: { generativo: 'generative', domotica: 'home-automation', cinese: 'chinese', allenamento: 'workout', strumento: 'tool' } };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
