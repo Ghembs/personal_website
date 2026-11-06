@@ -78,8 +78,8 @@ taken from the HSK syllabus; see
 - [Hanzi Writer](https://hanziwriter.org) 3.7.2 (MIT) and its stroke data
   `hanzi-writer-data` (Arphic Public License), loaded from jsDelivr.
 - Fonts from Google Fonts (SIL Open Font License): JetBrains Mono, Space Grotesk,
-  Unbounded, Cormorant Garamond, Ma Shan Zheng, Orbitron, Exo 2, Comfortaa,
-  Varela Round.
+  Unbounded, Cormorant Garamond, Ma Shan Zheng, Comfortaa, Varela Round,
+  Doto, Silkscreen, VT323.
 
 ## audio-cmn
 

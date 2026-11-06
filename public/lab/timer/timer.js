@@ -422,6 +422,7 @@ function renderOpts() {
   $('#library').hidden = !opts.library;
   $('#eject').classList.toggle('on', opts.library);
   visColors = null;
+  Icons.apply(opts.skin);
 }
 function toggle(k) {
   opts[k] = !opts[k];
@@ -630,16 +631,42 @@ function tick() {
 
 // ---- the display --------------------------------------------------------------
 
-// the position bar: the whole workout, a coloured piece per segment
+// The position bar: the whole workout in blocks, as the progress bars of the
+// time; each block takes the colour of the segment it falls in, and lights up
+// once played. Under the time, the same for the segment playing.
+const CHUNKS = 36, SEC_CHUNKS = 20;
+let litStrip = -1, litSec = -1;
 function buildStrip(segs) {
   const total = segs.reduce((a, s) => a + s.dur, 0) || 1;
-  $('#segs').innerHTML = segs.map((s) => `<i style="flex-grow:${s.dur / total};--c:${s.color.bg}"></i>`).join('');
+  let html = '', i = 0, end = segs[0]?.dur || 0;
+  for (let k = 0; k < CHUNKS; k++) {
+    const at = ((k + 0.5) / CHUNKS) * total;
+    while (i < segs.length - 1 && at >= end) end += segs[++i].dur;
+    html += `<i style="--c:${segs[i] ? segs[i].color.bg : 'transparent'}"></i>`;
+  }
+  $('#segs').innerHTML = html;
+  if (!$('#secbar').children.length) $('#secbar').innerHTML = '<i></i>'.repeat(SEC_CHUNKS);
+  litStrip = litSec = -1;
+}
+// light the first n blocks of a bar (only what changed)
+function light(bar, n, prev) {
+  if (n === prev) return n;
+  [...bar.children].forEach((c, k) => c.classList.toggle('lit', k < n));
+  return n;
 }
 $('#strip').addEventListener('click', (e) => {
   if (!run) return;
   const r = $('#strip').getBoundingClientRect();
   seek(clamp((e.clientX - r.left) / r.width, 0, 1) * run.total);
 });
+
+// the time, its colon apart (the dot-matrix font draws it as two crosses)
+let timeText = '';
+function setTime(text) {
+  if (text === timeText) return;
+  timeText = text;
+  $('#time').innerHTML = text.replace(/:/g, '<span class="colon">:</span>');
+}
 
 let marqText = '';
 function setMarquee(text) {
@@ -657,12 +684,14 @@ function draw() {
     const name = plan.name.trim() || t('untitled');
     P.style.setProperty('--seg', run ? PALETTE[1].bg : 'var(--accent)');
     $('#state').textContent = '■';
-    $('#time').textContent = fmt(total);
+    setTime(fmt(total));
     $('#label').textContent = run ? t('done') : name;
     $('#i-round').textContent = '--';
     $('#i-block').textContent = '--';
     $('#i-left').textContent = run ? '0:00' : fmt(total);
-    $('#head').style.left = run ? '100%' : '0%';
+    litStrip = light($('#segs'), run ? CHUNKS : 0, litStrip);
+    litSec = light($('#secbar'), run ? SEC_CHUNKS : 0, litSec);
+    latch();
     setMarquee(`${name} (${fmt(total)}) · ${run ? t('done') : t('ready')}`);
     P.classList.remove('paused', 'last');
     P.classList.toggle('done', !!run);
@@ -678,14 +707,16 @@ function draw() {
   P.classList.toggle('last', run.on && shown <= 3);
   P.classList.remove('done');
   $('#state').textContent = run.on ? '▶' : '❚❚';
-  $('#time').textContent = fmt(shown);
+  setTime(fmt(shown));
   $('#label').textContent = s.label;
   $('#i-round').textContent = s.kind === 'prep' ? '--' : `${s.round + 1}/${s.nr}`;
   $('#i-block').textContent = s.kind === 'prep' ? '--' : `${s.block + 1}/${s.nb}`;
   $('#i-left').textContent = fmt(Math.ceil(run.total - e));
-  $('#head').style.left = `${(e / run.total) * 100}%`;
+  litStrip = light($('#segs'), Math.floor((e / run.total) * CHUNKS + 1e-6), litStrip);
+  litSec = light($('#secbar'), Math.floor(((e - run.bounds[i]) / s.dur) * SEC_CHUNKS + 1e-6), litSec);
+  latch();
   const nx = run.segs[i + 1];
-  setMarquee(`${s.label} (${fmt(s.dur)}) ·${nx ? t('next', { l: nx.label, d: fmt(nx.dur) }) : t('last')}${run.on ? '' : ` · ${t('paused')}`}`);
+  setMarquee(`${s.label} (${fmt(s.dur)}) · ${nx ? t('next', { l: nx.label, d: fmt(nx.dur) }) : t('last')}${run.on ? '' : ` · ${t('paused')}`}`);
   document.title = `${fmt(shown)} · ${s.label}`;
 }
 
@@ -731,6 +762,18 @@ function drawVis(dt) {
 }
 
 // ---- transport ---------------------------------------------------------------
+// The buttons are mechanical: play stays down while the workout runs, pause
+// while it is paused; a key presses its button for a moment.
+
+function latch() {
+  $('#play').classList.toggle('down', !!(run && run.on));
+  $('#pause').classList.toggle('down', !!(run && !run.on && !run.done));
+}
+function press(id) {
+  const b = $(id);
+  b.classList.add('press');
+  setTimeout(() => b.classList.remove('press'), 140);
+}
 
 const play = () => { if (!run || run.done) start(); else if (!run.on) resume(); };
 const playPause = () => { if (run && run.on) pause(); else play(); };
@@ -745,12 +788,12 @@ document.addEventListener('keydown', (e) => {
   if (e.target.matches('input') || e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key.toLowerCase();
   // the old player's keys too: z x c v b
-  if (k === ' ') { e.preventDefault(); playPause(); }
-  else if (k === 'x') play();
-  else if (k === 'c') $('#pause').click();
-  else if (k === 'v') stop();
-  else if ((k === 'arrowright' || k === 'b') && run && !run.done) skip();
-  else if ((k === 'arrowleft' || k === 'z') && run && !run.done) back();
+  if (k === ' ') { e.preventDefault(); press(run && run.on ? '#pause' : '#play'); playPause(); }
+  else if (k === 'x') { press('#play'); play(); }
+  else if (k === 'c') { press('#pause'); $('#pause').click(); }
+  else if (k === 'v') { press('#stop'); stop(); }
+  else if ((k === 'arrowright' || k === 'b') && run && !run.done) { press('#next'); skip(); }
+  else if ((k === 'arrowleft' || k === 'z') && run && !run.done) { press('#prev'); back(); }
 });
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && run && run.on) { keepAwake(true); tick(); }

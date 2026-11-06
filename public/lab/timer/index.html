@@ -8,25 +8,27 @@
   <meta name="description" content="Un timer a intervalli senza account, abbonamenti né consensi: turni ripetibili con sezioni a piacere, preparazione e recuperi.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Exo+2:wght@400;600;700&family=Orbitron:wght@500;700;900&family=Varela+Round&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="timer.css?v=3">
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Doto:wght@700;900&family=Silkscreen&family=VT323&family=Varela+Round&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="timer.css?v=6">
 </head>
 <body data-skin="dark">
   <div id="deco" aria-hidden="true"></div>
 
   <div id="desk">
-    <!-- the player: display, position bar, transport, skins -->
+    <!-- the player: an object of its skin (a hardware player, a gadget, a brushed-metal window) -->
     <section class="win" id="player">
       <header class="title">
         <a class="wb back" href="../" data-i18n-attr="title:back;aria-label:back">‹</a>
-        <span class="grip"></span><span class="tt" data-i18n="mainTitle">timer a turni</span><span class="grip"></span>
+        <i class="ico" data-icon="clock"></i><span class="tt" data-i18n="mainTitle">timer a turni</span>
         <button class="wb" id="lang">EN</button>
       </header>
       <div class="body">
         <div class="lcd">
+          <i class="px" aria-hidden="true"></i>
           <div class="readout"><span id="state">■</span><span id="time">0:00</span></div>
           <div class="now"><i class="gem" id="now-gem"></i><span id="label"></span></div>
           <canvas id="vis" width="120" height="36"></canvas>
+          <div class="secbar" id="secbar" aria-hidden="true"></div>
           <div class="marquee"><span id="marq"></span></div>
           <div class="chips">
             <span class="chip"><b id="i-round">--</b><small data-i18n="roundL">giro</small></span>
@@ -34,15 +36,15 @@
             <span class="chip wide"><b id="i-left">0:00</b><small data-i18n="leftL">resta</small></span>
           </div>
         </div>
-        <div id="strip" class="strip"><div id="segs"></div><i id="head"></i></div>
+        <div id="strip" class="strip"><div id="segs"></div></div>
         <div class="deck">
           <div class="transport">
-            <button class="btn" id="prev" data-i18n-attr="title:prevT;aria-label:prevT">⏮</button>
-            <button class="btn" id="play" data-i18n-attr="title:playT;aria-label:playT">▶</button>
-            <button class="btn" id="pause" data-i18n-attr="title:pauseT;aria-label:pauseT">❚❚</button>
-            <button class="btn" id="stop" data-i18n-attr="title:stopT;aria-label:stopT">■</button>
-            <button class="btn" id="next" data-i18n-attr="title:nextT;aria-label:nextT">⏭</button>
-            <button class="btn" id="eject" data-i18n-attr="title:ejectT;aria-label:ejectT">⏏</button>
+            <button class="btn" id="prev" data-icon="prev" data-i18n-attr="title:prevT;aria-label:prevT"></button>
+            <button class="btn" id="play" data-icon="play" data-i18n-attr="title:playT;aria-label:playT"></button>
+            <button class="btn" id="pause" data-icon="pause" data-i18n-attr="title:pauseT;aria-label:pauseT"></button>
+            <button class="btn" id="stop" data-icon="stop" data-i18n-attr="title:stopT;aria-label:stopT"></button>
+            <button class="btn" id="next" data-icon="next" data-i18n-attr="title:nextT;aria-label:nextT"></button>
+            <button class="btn" id="eject" data-icon="eject" data-i18n-attr="title:ejectT;aria-label:ejectT"></button>
           </div>
           <div class="lights">
             <button class="led" id="sound" data-i18n-attr="title:soundT">snd</button>
@@ -59,7 +61,7 @@
 
     <!-- the plan, as a playlist -->
     <section class="win" id="playlist">
-      <header class="title"><span class="grip"></span><span class="tt" data-i18n="plTitle">piano</span><span class="grip"></span></header>
+      <header class="title"><i class="ico" data-icon="list"></i><span class="tt" data-i18n="plTitle">piano</span></header>
       <div class="body">
         <input id="name" class="pname" type="text" maxlength="60" autocomplete="off">
         <ol id="list"></ol>
@@ -76,7 +78,7 @@
 
     <!-- saved plans and examples -->
     <section class="win" id="library">
-      <header class="title"><span class="grip"></span><span class="tt" data-i18n="libTitle">libreria</span><span class="grip"></span></header>
+      <header class="title"><i class="ico" data-icon="pad"></i><span class="tt" data-i18n="libTitle">libreria</span></header>
       <div class="body">
         <h3 data-i18n="mine">i tuoi allenamenti</h3>
         <ul id="mine"></ul>
@@ -92,6 +94,7 @@
   </div>
 
   <script src="../../i18n.js"></script>
-  <script src="timer.js?v=3"></script>
+  <script src="icons.js?v=1"></script>
+  <script src="timer.js?v=5"></script>
 </body>
 </html>

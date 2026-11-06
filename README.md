@@ -43,9 +43,14 @@ public/          the site, served as is (no build step)
                  between blocks. One view laid out as an early-2000s media player
                  (player with LCD, visualizer and position bar; the plan as its
                  playlist; a library), in three skins: dark (Dark Aero), eco
-                 (Frutiger Eco), aqua (Helvetica Aqua): glass panes with a chrome
-                 rim and gel buttons over a public-domain or CC0 photo (img/,
-                 credited in THIRD_PARTY_NOTICES.md). The section's colour
+                 (Frutiger Eco), aqua (Helvetica Aqua), each an object of its time:
+                 a piano-black hardware player with carbon fibre, a green dot-matrix
+                 LCD and pixel-art icons; a sidebar gadget of thick glass with a
+                 leaf blurred in its screen; Panther's brushed metal with an iTunes
+                 display (icons.js: pixel and glossy sets). Light from the top left,
+                 keys that press in (play and pause latch), bars in blocks; over a
+                 public-domain or CC0 photo (img/, credited in
+                 THIRD_PARTY_NOTICES.md). The section's colour
                  runs through display, bar and playing row. Beeps
                  scheduled on the audio clock (on time in the background), voice
                  and screen wake lock optional. Plans saved in localStorage or
