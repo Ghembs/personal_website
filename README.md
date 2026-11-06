@@ -47,7 +47,9 @@ public/          the site, served as is (no build step)
                  a piano-black hardware player with carbon fibre, a green dot-matrix
                  LCD and pixel-art icons; a sidebar gadget of thick glass with a
                  leaf blurred in its screen; Panther's brushed metal with an iTunes
-                 display (icons.js: pixel and glossy sets). Light from the top left,
+                 display (icons.js: pixel and glossy sets). Shapes in CSS only:
+                 a click wheel for dark, a drop of a screen, dew-drop keys and leaf
+                 panes for eco, the iTunes lozenge and capsule for aqua. Light from the top left,
                  keys that press in (play and pause latch), bars in blocks; over a
                  public-domain or CC0 photo (img/, credited in
                  THIRD_PARTY_NOTICES.md). The section's colour

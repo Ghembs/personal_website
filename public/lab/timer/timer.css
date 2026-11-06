@@ -43,7 +43,7 @@ body[data-skin="dark"] {
   --dim: #7b8f84;
   --accent: #7dff6a;
   --engrave: none;
-  --r: 30px;
+  --r: 36px;
   --drop: rgba(0, 0, 0, 0.75);
   --lcd-fg: #8dff6e;
   --lcd-dim: rgba(141, 255, 110, 0.1);
@@ -529,7 +529,7 @@ button.gem:disabled { opacity: 1; }
   right: 3px;
   top: 3px;
   height: 44px;
-  border-radius: calc(var(--r) - 3px) calc(var(--r) - 3px) 40% 40% / calc(var(--r) - 3px) calc(var(--r) - 3px) 18px 18px;
+  border-radius: inherit;
   background: linear-gradient(170deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.1));
   pointer-events: none;
 }
@@ -595,6 +595,147 @@ button.gem:disabled { opacity: 1; }
 [data-skin="aqua"] .row.head .bt { display: inline-block; }
 [data-skin="aqua"] .tot { background: linear-gradient(180deg, #f6f8ea, #dfe5c6); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 0 #fff; }
 [data-skin="aqua"] .row.now { color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35); background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%), color-mix(in srgb, var(--seg) 85%, #0a3c8a) !important; }
+
+/* =====================================================================
+   shapes: the shell is free, what is read and typed stays square
+   ===================================================================== */
+
+/* dark: a click wheel — play in the hub, the other keys on the ring */
+[data-skin="dark"] .deck { justify-content: center; gap: 30px; }
+[data-skin="dark"] .transport {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px 64px 48px;
+  grid-template-rows: 48px 64px 48px;
+  grid-template-areas: ". pause ." "prev play next" ". stop eject";
+  place-items: center;
+  gap: 0;
+  padding: 6px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, transparent 0 35px, #050506 35px 37px, rgba(255, 255, 255, 0.12) 37px 38px, transparent 38px),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(170deg, #2c3036, #08090b 60%, #15171b);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -3px 6px rgba(0, 0, 0, 0.85),
+    0 0 0 2px #050505, 0 0 0 3px #6d737a, 0 0 0 4px #1d1f23, 0 8px 16px -2px var(--drop);
+}
+[data-skin="dark"] #pause { grid-area: pause; }
+[data-skin="dark"] #prev { grid-area: prev; }
+[data-skin="dark"] #play { grid-area: play; }
+[data-skin="dark"] #next { grid-area: next; }
+[data-skin="dark"] #stop { grid-area: stop; }
+[data-skin="dark"] #eject { grid-area: eject; width: 30px; height: 30px; margin: -10px 0 0 -10px; }
+/* the keys on the ring are only marks on it; pressed, the ring glows there */
+[data-skin="dark"] .transport .btn:not(#play) { width: 42px; height: 42px; background: none; box-shadow: none; transform: none; }
+[data-skin="dark"] .transport .btn:not(#play)::before { display: none; }
+[data-skin="dark"] .transport .btn:not(#play):active:not(:disabled),
+[data-skin="dark"] .transport .btn:not(#play).press,
+[data-skin="dark"] .transport .btn:not(#play).down { background: radial-gradient(circle, rgba(141, 255, 110, 0.28), rgba(141, 255, 110, 0) 70%); box-shadow: none; }
+[data-skin="dark"] #eject svg { width: 50%; height: 50%; }
+/* a hole for the cord, and rubber grips on the sides */
+[data-skin="dark"] #player::after {
+  content: "";
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #000 0 42%, #8a9097 46%, #2b2e33 62%, #0b0c0e 72%);
+  box-shadow: inset 0 1px 2px #000, 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+[data-skin="dark"] #player > .body::before,
+[data-skin="dark"] #player > .body::after {
+  content: "";
+  position: absolute;
+  top: 40%;
+  height: 34%;
+  width: 6px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(180deg, #24272c 0 3px, #050506 3px 6px);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+[data-skin="dark"] #player > .body::before { left: -3px; }
+[data-skin="dark"] #player > .body::after { right: -3px; }
+
+/* eco: panes as leaves, the screen a drop of dew, the keys dew on a stem */
+[data-skin="eco"] #player, [data-skin="eco"] #library { border-radius: 64px 14px 64px 14px; }
+[data-skin="eco"] #playlist { border-radius: 14px 64px 14px 64px; }
+[data-skin="eco"] #player .body, [data-skin="eco"] #library .body { border-radius: 55px 6px 55px 6px; }
+[data-skin="eco"] #playlist .body { border-radius: 6px 55px 6px 55px; }
+[data-skin="eco"] #picker { border-radius: 30px 12px 30px 12px; }
+[data-skin="eco"] .lcd {
+  border-radius: 50% 50% 46% 46% / 58% 58% 42% 42%;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "read" "now" "bar" "marq" "chips";
+  justify-items: center;
+  padding: 30px 46px 26px;
+}
+[data-skin="eco"] #state { display: none; }
+[data-skin="eco"] #time { padding-right: 0; }
+[data-skin="eco"] .now { justify-content: center; max-width: 100%; }
+/* the visualizer, a reflection under the water */
+[data-skin="eco"] #vis { position: absolute; z-index: 0; left: 18%; width: 64%; bottom: 30%; height: 38%; opacity: 0.3; }
+[data-skin="eco"] .secbar { width: 78%; }
+[data-skin="eco"] .marquee { width: 84%; }
+[data-skin="eco"] .chips { justify-content: center; }
+[data-skin="eco"] .chip.wide { margin-left: 0; }
+[data-skin="eco"] .transport { gap: 5px; }
+[data-skin="eco"] .transport .btn:not(#play) {
+  background:
+    radial-gradient(circle at 50% 58%, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, 0.5) 70%, rgba(255, 255, 255, 0.95) 80%, rgba(255, 255, 255, 0.25) 100%),
+    radial-gradient(circle at 60% 88%, rgba(220, 255, 160, 0.75), rgba(255, 255, 255, 0) 50%),
+    rgba(225, 255, 205, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), inset 0 -4px 6px rgba(60, 140, 20, 0.25), 0 5px 8px -3px rgba(10, 60, 0, 0.5);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+[data-skin="eco"] .transport .btn:not(#play)::before { left: 20%; right: 46%; top: 12%; height: 26%; border-radius: 50%; }
+[data-skin="eco"] .transport .btn:not(#play):active:not(:disabled),
+[data-skin="eco"] .transport .btn:not(#play).press,
+[data-skin="eco"] .transport .btn:not(#play).down { background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.6) 78%), rgba(120, 200, 60, 0.35); }
+[data-skin="eco"] #prev { width: 42px; height: 42px; margin-top: 16px; }
+[data-skin="eco"] #play { width: 66px; height: 66px; }
+[data-skin="eco"] #pause { width: 36px; height: 36px; margin-top: -12px; }
+[data-skin="eco"] #stop { width: 30px; height: 30px; margin-top: -18px; }
+[data-skin="eco"] #next { width: 40px; height: 40px; margin-top: -4px; }
+[data-skin="eco"] #eject { width: 26px; height: 26px; margin-top: 14px; }
+[data-skin="eco"] #player .title, [data-skin="eco"] #library .title { padding-left: 20px; }
+
+/* aqua: the lozenge of iTunes, play between back and forward, a capsule for the skins */
+[data-skin="aqua"] .lcd { border-radius: 52px / 50%; padding: 12px 40px; }
+[data-skin="aqua"] .tot, [data-skin="aqua"] .strip { border-radius: 999px; }
+[data-skin="aqua"] #segs i:first-child { border-radius: 999px 2px 2px 999px; }
+[data-skin="aqua"] #segs i:last-child { border-radius: 2px 999px 999px 2px; }
+[data-skin="aqua"] #prev { order: 1; width: 44px; height: 44px; margin-right: -14px; padding-right: 8px; }
+[data-skin="aqua"] #play { order: 2; z-index: 1; width: 62px; height: 62px; box-shadow: inset 0 0 0 1px rgba(10, 60, 140, 0.6), inset 0 -3px 5px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(255, 255, 255, 0.55), 0 3px 8px var(--drop); }
+[data-skin="aqua"] #next { order: 3; width: 44px; height: 44px; margin-left: -14px; padding-left: 8px; }
+[data-skin="aqua"] #pause { order: 4; margin-left: 14px; width: 34px; height: 34px; }
+[data-skin="aqua"] #stop { order: 5; width: 34px; height: 34px; }
+[data-skin="aqua"] #eject { order: 6; width: 34px; height: 34px; }
+[data-skin="aqua"] .skins { gap: 0; }
+[data-skin="aqua"] .skins button::before { display: none; }
+[data-skin="aqua"] .skins button {
+  flex-direction: row;
+  padding: 6px 18px;
+  font: 700 11px/1 var(--ui);
+  letter-spacing: 0.03em;
+  text-transform: capitalize;
+  color: #222;
+  background: linear-gradient(180deg, #ffffff, #e2e2e2 50%, #cbcbcb 51%, #ececec);
+  box-shadow: inset 0 0 0 1px rgba(70, 76, 86, 0.6), inset 0 1px 0 #fff;
+}
+[data-skin="aqua"] .skins button + button { margin-left: -1px; }
+[data-skin="aqua"] .skins button:first-child { border-radius: 999px 0 0 999px; }
+[data-skin="aqua"] .skins button:last-child { border-radius: 0 999px 999px 0; }
+[data-skin="aqua"] .skins button[aria-checked="true"] {
+  color: #fff;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
+  background: linear-gradient(180deg, #b3e0ff, #4aa3f5 50%, #1f7ee8 51%, #6cc0ff);
+  box-shadow: inset 0 0 0 1px rgba(10, 60, 140, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+[data-skin="aqua"] .skins button:active { background: linear-gradient(180deg, #cbcbcb, #e2e2e2); }
 
 /* ---------- narrow screens: the panes stacked, the player kept in view while it runs ---------- */
 @media (max-width: 900px) {
