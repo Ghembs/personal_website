@@ -1,10 +1,8 @@
-// The interval timer ("timer a turni"), dressed as a media player of the
-// early 2000s: one view where the plan is a playlist and the workout plays in
-// the player's display. A plan is a preparation, then one or more blocks
-// (turni), each a list of sections repeated a number of rounds (giri) with a
-// rest between rounds, and a pause between blocks. Nothing leaves the
-// browser: plans live in localStorage, and a plan is shared as a link carrying
-// it in the hash (never sent to the server). Three skins: dark, eco, aqua.
+// The interval timer's view ("timer a turni"): one page where the plan is a
+// playlist and the workout plays in a player's display. What is not drawn
+// lives in engine.js (plans, the run's clock, beeps, voice); how it looks is
+// a skin's (skins/skins.js and its stylesheet). Here: the words, the editor,
+// the library, and drawing the run as it goes.
 
 const TEXT = {
   it: {
@@ -49,47 +47,9 @@ const ex = (k) => (TEXT[I18N.lang] || TEXT.it).ex[k];
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const { clamp, fmt, parseDur, PALETTE, PREP, REST, store } = Engine;
 
-// Section colours: candy, gel and neon at once.
-const PALETTE = [
-  { bg: '#ff4f6d' }, // cherry
-  { bg: '#2fd38a' }, // mint
-  { bg: '#2f8cff' }, // aqua blue
-  { bg: '#ff9a2f' }, // tangerine
-  { bg: '#a463ff' }, // grape
-  { bg: '#ffd23f' }, // lemon
-  { bg: '#ff6fd0' }, // bubblegum
-  { bg: '#36e2ff' }, // cyan
-];
-const PREP = { bg: '#ffd23f' };
-const REST = { bg: '#9fb4c8' };
-const MAX_DUR = 99 * 60 + 59;
-const SKINS = { dark: '#05070b', eco: '#5fc3f5', aqua: '#0a5fb5' };
-
-// ---- durations ---------------------------------------------------------
-
-const fmt = (s) => {
-  s = Math.max(0, Math.round(s));
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
-  return h ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${m}:${String(x).padStart(2, '0')}`;
-};
-
-// "40" forty seconds, "90" ninety, "130" or "1:30" or "1m30" a minute and a
-// half (as on a microwave: past two digits, the last two are seconds).
-// null when it can't be read.
-function parseDur(str) {
-  const s = String(str).trim().toLowerCase().replace(/[.,'′]/g, ':').replace(/\s+/g, '');
-  if (!s) return 0;
-  let m = s.match(/^(\d{1,3}):(\d{0,2})$/);
-  if (m) return clamp(+m[1] * 60 + +(m[2] || 0), 0, MAX_DUR);
-  m = s.match(/^(?:(\d{1,3})m(?:in)?)?(?:(\d{1,4})s?)?$/);
-  if (m && (m[1] || m[2]) && /[ms]/.test(s)) return clamp(+(m[1] || 0) * 60 + +(m[2] || 0), 0, MAX_DUR);
-  if (/^\d{1,4}$/.test(s)) return clamp(s.length <= 2 ? +s : +s.slice(0, -2) * 60 + +s.slice(-2), 0, MAX_DUR);
-  return null;
-}
-
-// ---- plans -------------------------------------------------------------
+// ---- plans ------------------------------------------------------------------
 
 const sec = (label, dur, c) => ({ label, dur, c });
 const EXAMPLES = {
@@ -104,71 +64,14 @@ const EXAMPLES = {
   }),
 };
 
-// a plan read from storage or from a link is checked field by field
-function sanitize(p) {
-  if (!p || typeof p !== 'object' || !Array.isArray(p.blocks)) return null;
-  const num = (v, a, b, d) => (Number.isFinite(+v) ? clamp(Math.round(+v), a, b) : d);
-  const str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
-  const blocks = p.blocks.slice(0, 20).map((b) => ({
-    sections: (Array.isArray(b?.sections) ? b.sections : []).slice(0, 30)
-      .map((s) => ({ label: str(s?.label, 40), dur: num(s?.dur, 0, MAX_DUR, 0), c: num(s?.c, 0, PALETTE.length - 1, 0) })),
-    rounds: num(b?.rounds, 1, 99, 1),
-    rest: num(b?.rest, 0, MAX_DUR, 0),
-  })).filter((b) => b.sections.length);
-  if (!blocks.length) return null;
-  return { name: str(p.name, 60), prep: num(p.prep, 0, MAX_DUR, 0), pause: num(p.pause, 0, MAX_DUR, 0), blocks };
-}
-
-// links: the plan, compact, as base64url of its JSON
-function encode(p) {
-  const c = { n: p.name, p: p.prep, z: p.pause, b: p.blocks.map((b) => ({ g: b.rounds, r: b.rest, s: b.sections.map((s) => [s.label, s.dur, s.c]) })) };
-  let bin = '';
-  new TextEncoder().encode(JSON.stringify(c)).forEach((x) => { bin += String.fromCharCode(x); });
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-function decode(h) {
-  try {
-    const bin = atob(h.replace(/-/g, '+').replace(/_/g, '/'));
-    const c = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0))));
-    return sanitize({ name: c.n, prep: c.p, pause: c.z, blocks: (c.b || []).map((b) => ({ rounds: b.g, rest: b.r, sections: (b.s || []).map(([label, dur, cc]) => ({ label, dur, c: cc })) })) });
-  } catch (e) { return null; }
-}
-
-const store = {
-  get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode, full */ } },
-};
 const K = { plans: 'timer-plans', draft: 'timer-draft', opts: 'timer-opts' };
-
 let plan, planId = null, dirty = false;
 const opts = Object.assign({ sound: true, voice: false, skin: 'dark', library: true }, store.get(K.opts, {}));
-if (!SKINS[opts.skin]) opts.skin = 'dark';
 
-function blockLen(b) {
-  const per = b.sections.reduce((a, s) => a + s.dur, 0);
-  return { per, all: per ? b.rounds * per + (b.rounds - 1) * b.rest : 0 };
-}
-
-// The workout as a list of segments, each with its colour, its place, and
-// the playlist row it plays (`row`).
-function timeline(p) {
-  const segs = [];
-  const B = p.blocks.map((b, bi) => ({ b, bi })).filter(({ b }) => blockLen(b).per > 0);
-  if (!B.length) return segs;
-  if (p.prep > 0) segs.push({ kind: 'prep', label: t('prepLabel'), dur: p.prep, color: PREP, row: 'prep' });
-  B.forEach(({ b, bi }, k) => {
-    const where = { block: k, nb: B.length, nr: b.rounds };
-    for (let g = 0; g < b.rounds; g++) {
-      b.sections.forEach((s, si) => {
-        if (s.dur > 0) segs.push({ kind: 'work', label: s.label.trim() || t('section', { n: si + 1 }), dur: s.dur, color: PALETTE[s.c], round: g, row: `s-${bi}-${si}`, ...where });
-      });
-      if (g < b.rounds - 1 && b.rest > 0) segs.push({ kind: 'rest', label: t('restLabel'), dur: b.rest, color: REST, round: g, row: `r-${bi}`, ...where });
-    }
-    if (k < B.length - 1 && p.pause > 0) segs.push({ kind: 'rest', label: t('pauseLabel'), dur: p.pause, color: REST, round: b.rounds - 1, row: `p-${B[k + 1].bi}`, ...where });
-  });
-  return segs;
-}
-const planTotal = (p) => timeline(p).reduce((a, s) => a + s.dur, 0);
+// what the engine needs named in the page's language
+const names = () => ({ prep: t('prepLabel'), rest: t('restLabel'), pause: t('pauseLabel'), section: (n) => t('section', { n }) });
+const segsOf = (p) => Engine.timeline(p, names());
+const planTotal = (p) => Engine.total(segsOf(p));
 
 // ---- the playlist (the editor) ------------------------------------------------
 
@@ -179,9 +82,9 @@ function renderList() {
   const rows = [];
   let n = 0;
   const many = plan.blocks.length > 1;
-  rows.push(`<li class="row fixed" data-row="prep"><span class="n">00</span><i class="gem" style="--c:${PREP.bg}"></i><span class="nm">${t('prepLabel')}</span>${durInput(plan.prep, 'prep')}<span></span></li>`);
+  rows.push(`<li class="row fixed" data-row="prep"><span class="n">00</span><i class="gem" style="--c:${PREP}"></i><span class="nm">${t('prepLabel')}</span>${durInput(plan.prep, 'prep')}<span></span></li>`);
   plan.blocks.forEach((b, bi) => {
-    if (bi > 0) rows.push(`<li class="row fixed" data-row="p-${bi}"><span class="n">··</span><i class="gem" style="--c:${REST.bg}"></i><span class="nm">${t('pause')}</span>${durInput(plan.pause, 'pause')}<span></span></li>`);
+    if (bi > 0) rows.push(`<li class="row fixed" data-row="p-${bi}"><span class="n">··</span><i class="gem" style="--c:${REST}"></i><span class="nm">${t('pause')}</span>${durInput(plan.pause, 'pause')}<span></span></li>`);
     rows.push(`<li class="row head">
       <span class="bt">${t('block', { n: bi + 1 })}</span><span class="sum" id="bsum-${bi}"></span>
       <span class="tools"><button class="mini" data-act="dupBlock" data-b="${bi}" title="${t('dupBlock')}" aria-label="${t('dupBlock')}">⧉</button>${many ? `<button class="mini" data-act="delBlock" data-b="${bi}" title="${t('delBlock')}" aria-label="${t('delBlock')}">×</button>` : ''}</span>
@@ -194,7 +97,7 @@ function renderList() {
       n++;
       rows.push(`<li class="row sec" data-row="s-${bi}-${si}">
         <span class="n">${String(n).padStart(2, '0')}.</span>
-        <button class="gem" data-act="color" data-b="${bi}" data-s="${si}" style="--c:${PALETTE[s.c].bg}" title="${t('pickColor')}" aria-label="${t('pickColor')}"></button>
+        <button class="gem" data-act="color" data-b="${bi}" data-s="${si}" style="--c:${PALETTE[s.c]}" title="${t('pickColor')}" aria-label="${t('pickColor')}"></button>
         <input class="nm" type="text" data-f="label" data-b="${bi}" data-s="${si}" value="${esc(s.label)}" placeholder="${esc(t('section', { n: si + 1 }))}" maxlength="40">
         ${durInput(s.dur, 'dur', bi, si)}
         ${b.sections.length > 1 ? `<button class="mini x" data-act="delSection" data-b="${bi}" data-s="${si}" title="${t('delSection')}" aria-label="${t('delSection')}">×</button>` : '<span></span>'}
@@ -211,12 +114,12 @@ function renderList() {
 
 function totals() {
   plan.blocks.forEach((b, bi) => {
-    const { per, all } = blockLen(b);
+    const { per, all } = Engine.blockLen(b);
     const el = $(`#bsum-${bi}`);
     if (el) el.textContent = `${b.rounds}×${fmt(per)} → ${fmt(all)}`;
   });
   $('#total').textContent = fmt(planTotal(plan));
-  if (!run) { buildStrip(timeline(plan)); draw(); }
+  if (!run) { buildStrip(segsOf(plan)); draw(); }
 }
 
 function changed(rerender) {
@@ -296,7 +199,7 @@ function openPicker(btn, bi, si) {
   const P = $('#picker'), s = plan.blocks[bi].sections[si];
   picking = { bi, si, btn };
   P.querySelector('.swatches').innerHTML = PALETTE.map((c, i) =>
-    `<button class="gem${i === s.c ? ' on' : ''}" data-c="${i}" style="--c:${c.bg}" aria-label="${c.bg}"></button>`).join('');
+    `<button class="gem${i === s.c ? ' on' : ''}" data-c="${i}" style="--c:${c}" aria-label="${c}"></button>`).join('');
   P.hidden = false;
   const r = btn.getBoundingClientRect(), w = P.offsetWidth;
   P.style.left = `${clamp(r.left + window.scrollX - 14, 8 + window.scrollX, window.scrollX + document.documentElement.clientWidth - w - 8)}px`;
@@ -309,7 +212,7 @@ $('#picker').addEventListener('click', (e) => {
   if (!g || !picking) return;
   const s = plan.blocks[picking.bi].sections[picking.si];
   s.c = +g.dataset.c;
-  picking.btn.style.setProperty('--c', PALETTE[s.c].bg);
+  picking.btn.style.setProperty('--c', PALETTE[s.c]);
   closePicker();
   changed();
 });
@@ -360,7 +263,7 @@ function save() {
 }
 
 async function share() {
-  const url = `${location.origin}${location.pathname}#${encode(plan)}`;
+  const url = `${location.origin}${location.pathname}#${Engine.encode(plan)}`;
   try {
     await navigator.clipboard.writeText(url);
     flash(t('copied'));
@@ -370,7 +273,7 @@ async function share() {
 }
 
 function renderLibrary() {
-  const plans = store.get(K.plans, []).map((x) => ({ ...x, plan: sanitize(x.plan) })).filter((x) => x.plan);
+  const plans = store.get(K.plans, []).map((x) => ({ ...x, plan: Engine.sanitize(x.plan) })).filter((x) => x.plan);
   $('#mine').innerHTML = plans.length
     ? plans.map((x, i) => `<li${x.id === planId ? ' class="on"' : ''}>
         <button class="item" data-load="${esc(x.id)}"><span class="n">${i + 1}.</span><span class="nm">${esc(x.plan.name || t('untitled'))}</span><small>${fmt(planTotal(x.plan))}</small></button>
@@ -388,7 +291,7 @@ $('#library').addEventListener('click', (e) => {
   if (b.dataset.ex) load(EXAMPLES[b.dataset.ex]());
   else if (b.dataset.load) {
     const x = plans.find((y) => y.id === b.dataset.load);
-    const p = x && sanitize(x.plan);
+    const p = x && Engine.sanitize(x.plan);
     if (p) load(p, x.id);
   } else if (b.dataset.del) {
     const x = plans.find((y) => y.id === b.dataset.del);
@@ -411,24 +314,23 @@ $('#eject').addEventListener('click', () => {
 
 // ---- options and skins ------------------------------------------------------------
 
+$('.skins').innerHTML = Skins.switchHTML();
 function renderOpts() {
   for (const k of ['sound', 'voice']) {
     $(`#${k}`).classList.toggle('on', opts[k]);
     $(`#${k}`).setAttribute('aria-pressed', opts[k]);
   }
-  document.body.dataset.skin = opts.skin;
+  opts.skin = Skins.apply(opts.skin).id;
   $$('.skins button').forEach((b) => b.setAttribute('aria-checked', b.dataset.skin === opts.skin));
-  document.querySelector('meta[name="theme-color"]').content = SKINS[opts.skin];
   $('#library').hidden = !opts.library;
   $('#eject').classList.toggle('on', opts.library);
   visColors = null;
-  Icons.apply(opts.skin);
 }
 function toggle(k) {
   opts[k] = !opts[k];
   store.set(K.opts, opts);
   renderOpts();
-  if (k === 'sound' && run) scheduleBeeps();
+  if (k === 'sound' && run) run.resound();
 }
 $('#sound').addEventListener('click', () => toggle('sound'));
 $('#voice').addEventListener('click', () => toggle('voice'));
@@ -441,192 +343,77 @@ $('.skins').addEventListener('click', (e) => {
   drawVis(0);
 });
 
-// ---- sound -------------------------------------------------------------------
-// Beeps are scheduled on the audio clock for the whole run at once, so they
-// stay on time when the tab is in the background and timers are throttled.
-
-let ctx = null;
-let beeps = [];
-function audio() {
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (!ctx && AC) ctx = new AC();
-  if (ctx && ctx.state === 'suspended') ctx.resume();
-  return ctx;
-}
-function beep(at, freq, len, vol = 0.22) {
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = 'triangle';
-  o.frequency.value = freq;
-  g.gain.setValueAtTime(0, at);
-  g.gain.linearRampToValueAtTime(vol, at + 0.012);
-  g.gain.setValueAtTime(vol, Math.max(at + 0.012, at + len - 0.05));
-  g.gain.linearRampToValueAtTime(0, at + len);
-  o.connect(g).connect(ctx.destination);
-  o.start(at);
-  o.stop(at + len + 0.02);
-  beeps.push(o);
-}
-function cancelBeeps() {
-  beeps.forEach((o) => { try { o.stop(); } catch (e) { /* not started */ } o.disconnect(); });
-  beeps = [];
-}
-function scheduleBeeps() {
-  cancelBeeps();
-  if (!opts.sound || !run || !run.on || !ctx) return;
-  const e = elapsed(), now = ctx.currentTime + 0.03;
-  const at = (x) => now + (x - e);
-  run.segs.forEach((s, i) => {
-    const start = run.bounds[i], end = run.bounds[i + 1];
-    for (let k = 3; k >= 1; k--) if (end - k > start + 0.5 && end - k >= e) beep(at(end - k), 660, 0.11);
-    if (end < e - 0.05) return;
-    const nx = run.segs[i + 1];
-    if (!nx) [0, 0.18, 0.36].forEach((d, j) => beep(at(end + d), [784, 988, 1319][j], j === 2 ? 0.7 : 0.16));
-    else if (nx.kind === 'work') beep(at(end), 1046, 0.5, 0.26);
-    else beep(at(end), 523, 0.6);
-  });
-}
-
-function speak(text) {
-  if (!opts.voice || !('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = I18N.lang === 'it' ? 'it-IT' : 'en-GB';
-  speechSynthesis.speak(u);
-}
-
-// the screen stays on while a workout runs
-let lock = null;
-async function keepAwake(on) {
-  try {
-    if (on && !lock && 'wakeLock' in navigator && document.visibilityState === 'visible') {
-      lock = await navigator.wakeLock.request('screen');
-      lock.addEventListener('release', () => { lock = null; });
-    } else if (!on && lock) { await lock.release(); lock = null; }
-  } catch (e) { /* not allowed, not supported */ }
-}
+const speak = (text) => { if (opts.voice) Engine.speak(text, I18N.lang === 'it' ? 'it-IT' : 'en-GB'); };
 
 // ---- the run -------------------------------------------------------------------
 
 let run = null;
-const now = () => performance.now();
-const elapsed = () => (run.on ? run.base + (now() - run.t0) / 1000 : run.base);
-const indexAt = (e) => {
-  let i = 0;
-  while (i < run.segs.length - 1 && run.bounds[i + 1] <= e) i++;
-  return i;
-};
 
 function start() {
   closePicker();
   document.activeElement?.blur?.();
-  const segs = timeline(plan);
+  const segs = segsOf(plan);
   if (!segs.length) return;
-  const bounds = [0];
-  segs.forEach((s) => bounds.push(bounds[bounds.length - 1] + s.dur));
-  run = { segs, bounds, total: bounds[bounds.length - 1], base: 0, t0: now(), on: false, idx: -1, done: false };
+  run = Engine.createRun(segs, { sound: () => opts.sound });
+  run.listen('enter', (i) => {
+    const s = run.segs[i];
+    if (i > 0 || run.elapsed() > 0.5) speak(s.label);
+    if (navigator.vibrate && i > 0) navigator.vibrate(s.kind === 'work' ? 250 : [120, 80, 120]);
+    markRow();
+  });
+  run.listen('finish', () => {
+    speak(t('done'));
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+    markRow();
+  });
+  run.listen('state', () => {
+    if (run?.on) loop();
+    markRow();
+    draw();
+  });
   buildStrip(segs);
   lockEditing(true);
-  resume();
+  run.play();
 }
-
-function resume() {
-  if (!run || run.done) return;
-  run.t0 = now();
-  run.on = true;
-  audio();
-  if (run.base === 0 && opts.sound && ctx) beep(ctx.currentTime + 0.03, run.segs[0].kind === 'work' ? 1046 : 523, 0.35);
-  scheduleBeeps();
-  keepAwake(true);
-  loop();
-}
-function pause() {
-  if (!run || !run.on) return;
-  run.base = elapsed();
-  run.on = false;
-  cancelBeeps();
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
-  draw();
-}
-function seek(e) {
-  if (!run) return;
-  run.done = false;
-  run.base = clamp(e, 0, run.total);
-  run.t0 = now();
-  if (run.base >= run.total) { finish(); return; }
-  scheduleBeeps();
-  tick();
-}
-const skip = () => { const i = indexAt(elapsed()); if (i >= run.segs.length - 1) finish(); else seek(run.bounds[i + 1]); };
-const back = () => { const e = elapsed(), i = indexAt(e); seek(e - run.bounds[i] > 2 || i === 0 ? run.bounds[i] : run.bounds[i - 1]); };
 
 function stop() {
   if (!run) return;
-  cancelBeeps();
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
-  keepAwake(false);
+  run.stop();
   run = null;
   lockEditing(false);
   document.title = t('docTitle');
-  buildStrip(timeline(plan));
+  buildStrip(segsOf(plan));
   markRow();
   draw();
-}
-
-function finish() {
-  run.base = run.total;
-  run.on = false;
-  run.done = true;
-  cancelBeeps();
-  keepAwake(false);
-  speak(t('done'));
-  if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
-  markRow();
-  draw();
-}
-
-// what to do on entering a segment
-function enter(i) {
-  const s = run.segs[i];
-  if (i > 0 || run.base > 0) speak(s.label);
-  if (navigator.vibrate && i > 0) navigator.vibrate(s.kind === 'work' ? 250 : [120, 80, 120]);
-  markRow();
 }
 
 // the playlist row that plays now, kept in view
 function markRow() {
   $$('#list .row.now').forEach((r) => r.classList.remove('now'));
   if (!run || run.done) return;
-  const s = run.segs[indexAt(elapsed())];
-  const row = $(`#list [data-row="${s.row}"]`);
+  const { seg } = run.now();
+  const row = $(`#list [data-row="${seg.row}"]`);
   if (!row) return;
   row.classList.add('now');
-  row.style.setProperty('--seg', s.color.bg);
+  row.style.setProperty('--seg', seg.color);
   const L = $('#list'), top = row.offsetTop - L.offsetTop;
   if (top < L.scrollTop || top + row.offsetHeight > L.scrollTop + L.clientHeight) L.scrollTo({ top: top - L.clientHeight / 3, behavior: 'smooth' });
 }
 
+// while it runs, each frame: the run moves on, the display follows
 let raf = 0;
 function loop() {
   cancelAnimationFrame(raf);
-  let last = now();
+  let last = performance.now();
   const go = (ts) => {
-    tick();
+    if (!run || !run.on) return;
+    run.update();
+    draw();
     drawVis((ts - last) / 1000);
     last = ts;
-    if (run && run.on) raf = requestAnimationFrame(go);
+    raf = requestAnimationFrame(go);
   };
   raf = requestAnimationFrame(go);
-}
-// rAF stops in the background: the run still moves on, a few times a second
-setInterval(() => { if (run && run.on && document.hidden) tick(); }, 250);
-
-function tick() {
-  if (!run || run.done) return;
-  const e = elapsed();
-  if (e >= run.total) { finish(); return; }
-  const i = indexAt(e);
-  if (i !== run.idx) { run.idx = i; if (run.on) enter(i); else markRow(); }
-  draw();
 }
 
 // ---- the display --------------------------------------------------------------
@@ -637,12 +424,12 @@ function tick() {
 const CHUNKS = 36, SEC_CHUNKS = 20;
 let litStrip = -1, litSec = -1;
 function buildStrip(segs) {
-  const total = segs.reduce((a, s) => a + s.dur, 0) || 1;
+  const total = Engine.total(segs) || 1;
   let html = '', i = 0, end = segs[0]?.dur || 0;
   for (let k = 0; k < CHUNKS; k++) {
     const at = ((k + 0.5) / CHUNKS) * total;
     while (i < segs.length - 1 && at >= end) end += segs[++i].dur;
-    html += `<i style="--c:${segs[i] ? segs[i].color.bg : 'transparent'}"></i>`;
+    html += `<i style="--c:${segs[i] ? segs[i].color : 'transparent'}"></i>`;
   }
   $('#segs').innerHTML = html;
   if (!$('#secbar').children.length) $('#secbar').innerHTML = '<i></i>'.repeat(SEC_CHUNKS);
@@ -657,10 +444,10 @@ function light(bar, n, prev) {
 $('#strip').addEventListener('click', (e) => {
   if (!run) return;
   const r = $('#strip').getBoundingClientRect();
-  seek(clamp((e.clientX - r.left) / r.width, 0, 1) * run.total);
+  run.seek(clamp((e.clientX - r.left) / r.width, 0, 1) * run.total);
 });
 
-// the time, its colon apart (the dot-matrix font draws it as two crosses)
+// the time, its colon apart (a dot-matrix font draws it as two crosses)
 let timeText = '';
 function setTime(text) {
   if (text === timeText) return;
@@ -679,10 +466,11 @@ function setMarquee(text) {
 
 function draw() {
   const P = $('#player');
+  latch();
   if (!run || run.done) {
     const total = run ? run.total : planTotal(plan);
     const name = plan.name.trim() || t('untitled');
-    P.style.setProperty('--seg', run ? PALETTE[1].bg : 'var(--accent)');
+    P.style.setProperty('--seg', run ? PALETTE[1] : 'var(--accent)');
     $('#state').textContent = '■';
     setTime(fmt(total));
     $('#label').textContent = run ? t('done') : name;
@@ -691,18 +479,16 @@ function draw() {
     $('#i-left').textContent = run ? '0:00' : fmt(total);
     litStrip = light($('#segs'), run ? CHUNKS : 0, litStrip);
     litSec = light($('#secbar'), run ? SEC_CHUNKS : 0, litSec);
-    latch();
     setMarquee(`${name} (${fmt(total)}) · ${run ? t('done') : t('ready')}`);
     P.classList.remove('paused', 'last');
     P.classList.toggle('done', !!run);
     document.title = run ? `${t('done')} · ${t('docTitle')}` : t('docTitle');
-    if (!run || !run.on) drawVis(0);
+    drawVis(0);
     return;
   }
-  const e = elapsed(), i = indexAt(e), s = run.segs[i];
-  const left = run.bounds[i + 1] - e;
+  const { e, i, seg: s, into, left } = run.now();
   const shown = Math.ceil(left - 1e-6);
-  P.style.setProperty('--seg', s.color.bg);
+  P.style.setProperty('--seg', s.color);
   P.classList.toggle('paused', !run.on);
   P.classList.toggle('last', run.on && shown <= 3);
   P.classList.remove('done');
@@ -713,11 +499,11 @@ function draw() {
   $('#i-block').textContent = s.kind === 'prep' ? '--' : `${s.block + 1}/${s.nb}`;
   $('#i-left').textContent = fmt(Math.ceil(run.total - e));
   litStrip = light($('#segs'), Math.floor((e / run.total) * CHUNKS + 1e-6), litStrip);
-  litSec = light($('#secbar'), Math.floor(((e - run.bounds[i]) / s.dur) * SEC_CHUNKS + 1e-6), litSec);
-  latch();
+  litSec = light($('#secbar'), Math.floor((into / s.dur) * SEC_CHUNKS + 1e-6), litSec);
   const nx = run.segs[i + 1];
   setMarquee(`${s.label} (${fmt(s.dur)}) · ${nx ? t('next', { l: nx.label, d: fmt(nx.dur) }) : t('last')}${run.on ? '' : ` · ${t('paused')}`}`);
   document.title = `${fmt(shown)} · ${s.label}`;
+  if (!run.on) drawVis(0);
 }
 
 // the visualizer: bars in the colour of the section, dancing while it runs
@@ -736,7 +522,7 @@ function drawVis(dt) {
   const seg = getComputedStyle($('#player')).getPropertyValue('--seg').trim() || visColors.peak;
   const live = run && run.on;
   vis.t += dt;
-  const e = run ? elapsed() : 0, beat = live ? 1 - (e % 1) : 0;
+  const e = run ? run.elapsed() : 0, beat = live ? 1 - (e % 1) : 0;
   for (let i = 0; i < BARS; i++) {
     const target = live
       ? clamp(0.25 + 0.45 * beat * (1 - i / BARS) + 0.3 * Math.abs(Math.sin(vis.t * (2 + i * 0.37) + i)) * Math.random(), 0.05, 1)
@@ -775,13 +561,14 @@ function press(id) {
   setTimeout(() => b.classList.remove('press'), 140);
 }
 
-const play = () => { if (!run || run.done) start(); else if (!run.on) resume(); };
-const playPause = () => { if (run && run.on) pause(); else play(); };
+const play = () => { if (!run || run.done) { if (run) stop(); start(); } else run.play(); };
+const pauseKey = () => { if (run && !run.done) { if (run.on) run.pause(); else run.play(); } };
+const playPause = () => { if (run && run.on) run.pause(); else play(); };
 $('#play').addEventListener('click', play);
-$('#pause').addEventListener('click', () => { if (run && !run.done) { if (run.on) pause(); else resume(); } });
+$('#pause').addEventListener('click', pauseKey);
 $('#stop').addEventListener('click', stop);
-$('#next').addEventListener('click', () => run && !run.done && skip());
-$('#prev').addEventListener('click', () => run && !run.done && back());
+$('#next').addEventListener('click', () => run && !run.done && run.skip());
+$('#prev').addEventListener('click', () => run && !run.done && run.back());
 $('.lcd').addEventListener('click', playPause);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && picking) { closePicker(); return; }
@@ -790,13 +577,13 @@ document.addEventListener('keydown', (e) => {
   // the old player's keys too: z x c v b
   if (k === ' ') { e.preventDefault(); press(run && run.on ? '#pause' : '#play'); playPause(); }
   else if (k === 'x') { press('#play'); play(); }
-  else if (k === 'c') { press('#pause'); $('#pause').click(); }
+  else if (k === 'c') { press('#pause'); pauseKey(); }
   else if (k === 'v') { press('#stop'); stop(); }
-  else if ((k === 'arrowright' || k === 'b') && run && !run.done) { press('#next'); skip(); }
-  else if ((k === 'arrowleft' || k === 'z') && run && !run.done) { press('#prev'); back(); }
+  else if ((k === 'arrowright' || k === 'b') && run && !run.done) { press('#next'); run.skip(); }
+  else if ((k === 'arrowleft' || k === 'z') && run && !run.done) { press('#prev'); run.back(); }
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && run && run.on) { keepAwake(true); tick(); }
+  if (document.visibilityState === 'visible' && run) run.wake();
 });
 window.addEventListener('resize', () => drawVis(0));
 
@@ -819,15 +606,15 @@ function render() {
 $('#lang').addEventListener('click', () => { if (!run) { I18N.set(I18N.other); render(); } });
 
 (function init() {
-  const shared = location.hash.length > 1 && decode(location.hash.slice(1));
+  const shared = location.hash.length > 1 && Engine.decode(location.hash.slice(1));
   const draft = store.get(K.draft, null);
   if (shared) {
     plan = shared;
     dirty = true;
     history.replaceState(null, '', location.pathname);
     store.set(K.draft, { plan, planId, dirty });
-  } else if (draft && sanitize(draft.plan)) {
-    plan = sanitize(draft.plan);
+  } else if (draft && Engine.sanitize(draft.plan)) {
+    plan = Engine.sanitize(draft.plan);
     planId = draft.planId || null;
     dirty = !!draft.dirty;
   } else plan = EXAMPLES.interval();

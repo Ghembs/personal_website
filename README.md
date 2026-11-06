@@ -40,23 +40,23 @@ public/          the site, served as is (no build step)
                  of 2-6 panels or a screen-sized frame (Shanshui.paint); save as PNG
   lab/timer/     the interval timer: a get-ready, then blocks of sections of any
                  length repeated for rounds, with a rest between rounds and a pause
-                 between blocks. One view laid out as an early-2000s media player
-                 (player with LCD, visualizer and position bar; the plan as its
-                 playlist; a library), in three skins: dark (Dark Aero), eco
-                 (Frutiger Eco), aqua (Helvetica Aqua), each an object of its time:
-                 a piano-black hardware player with carbon fibre, a green dot-matrix
-                 LCD and pixel-art icons; a sidebar gadget of thick glass with a
-                 leaf blurred in its screen; Panther's brushed metal with an iTunes
-                 display (icons.js: pixel and glossy sets). Shapes in CSS only:
-                 a click wheel for dark, a drop of a screen, dew-drop keys and leaf
-                 panes for eco, the iTunes lozenge and capsule for aqua. Light from the top left,
-                 keys that press in (play and pause latch), bars in blocks; over a
-                 public-domain or CC0 photo (img/, credited in
-                 THIRD_PARTY_NOTICES.md). The section's colour
-                 runs through display, bar and playing row. Beeps
-                 scheduled on the audio clock (on time in the background), voice
-                 and screen wake lock optional. Plans saved in localStorage or
-                 shared as a link (the plan in the hash, base64 JSON); no server
+                 between blocks; one view laid out as an early-2000s media player
+                 (player, the plan as its playlist, a library). In layers:
+                   engine.js  no DOM: plans, links, storage, the run's clock and
+                              events, beeps on the audio clock, voice, wake lock
+                   timer.js   the view: editor, library, drawing the run
+                   timer.css  the skeleton, and layout variants (deck row |
+                              wheel | arc | cluster, lcd rect | lens | lozenge,
+                              panes rect | leaf, switch marbles | capsule)
+                   skins/     skins.js, the registry and the contract (parts,
+                              states, tokens); a stylesheet per skin: dark
+                              (hardware player, dot-matrix LCD, pixel icons),
+                              eco (glass gadget), aqua (brushed metal, iTunes),
+                              chrome (Y2K liquid chrome, made with the contract
+                              alone); icons.js holds the pixel and glossy sets
+                 A new skin is an entry in skins.js, a stylesheet and a photo
+                 (public domain or CC0, in img/). Plans live in localStorage or
+                 travel as a link (the plan in the hash); no server
   img/           logos (Vesta Laris, STF)
   shaders.js     source and ascii shaders
   style.css

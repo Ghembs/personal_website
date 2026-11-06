@@ -1,0 +1,75 @@
+/* aqua — Panther's brushed metal (Helvetica Aqua): an iTunes lozenge of a
+   display, blue gel, play between back and forward, a capsule for the skins,
+   the traffic light. Over a shoal under the sea (Jakob Owens; CC0). */
+body[data-skin="aqua"] {
+  --ui: "Lucida Grande", "Lucida Sans Unicode", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --text: "Lucida Grande", "Lucida Sans Unicode", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --lcd-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --photo: url(/lab/timer/img/aqua.webp);
+  --photo-at: 50% 60%;
+  --veil: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 60, 120, 0.25));
+  --fg: #1d2630;
+  --dim: #5f6b78;
+  --accent: #1d86f0;
+  --engrave: 0 1px 0 rgba(255, 255, 255, 0.75);
+  --r: 14px;
+  --drop: rgba(0, 30, 70, 0.5);
+  --lcd-fg: #1a2a1a;
+  --lcd-dim: rgba(26, 42, 26, 0.08);
+  --lcd-glow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  --key-top: #ffffff;
+  --key-bot: #b9bec5;
+  --key-edge: rgba(70, 76, 86, 0.6);
+  --key-fg: #2a3038;
+  --hot-top: #b3e0ff;
+  --hot-bot: #0a60d8;
+  --hot-fg: #ffffff;
+  --list: #ffffff;
+  --list-fg: #111;
+  --row-alt: #edf3fe;
+  --row-head: linear-gradient(180deg, #e8edf3, #cdd5df);
+  --field: #ffffff;
+  --cap: linear-gradient(180deg, #ffffff, #e2e2e2 50%, #cbcbcb 51%, #ececec);
+  --cap-on: linear-gradient(180deg, #b3e0ff, #4aa3f5 50%, #1f7ee8 51%, #6cc0ff);
+  --cap-fg: #222;
+  --cap-on-fg: #fff;
+}
+@media (max-width: 900px) {
+  body[data-skin="aqua"] { --photo: url(/lab/timer/img/aqua-s.webp); }
+}
+
+[data-skin="aqua"] .win {
+  background: var(--brushed), linear-gradient(180deg, #f4f4f4 0%, #d9d9d9 35%, #c4c4c4 70%, #b5b5b5 100%);
+  box-shadow:
+    inset 0 1px 0 #fff, inset 1px 0 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(60, 64, 70, 0.55), 0 22px 46px -10px var(--drop), 0 6px 14px -4px var(--drop);
+}
+[data-skin="aqua"] .title { color: #2b3138; height: 34px; font-weight: 700; letter-spacing: 0.08em; text-transform: none; font-size: 12px; }
+[data-skin="aqua"] .title .tt::first-letter { text-transform: uppercase; }
+[data-skin="aqua"] .title .tt { display: inline-block; }
+/* the traffic light */
+[data-skin="aqua"] .title .back {
+  width: 15px; min-width: 15px; height: 15px; padding: 0; font-size: 0;
+  background: radial-gradient(circle at 50% 28%, #ffe0d8 0 18%, #ff6a5a 46%, #c8281c 100%);
+  box-shadow: inset 0 0 0 1px rgba(140, 20, 10, 0.6), 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+[data-skin="aqua"] .title .back::before { left: 20%; right: 20%; height: 40%; }
+[data-skin="aqua"] .lcd {
+  --lcd-spec: 0.6;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #f6f8ea 0%, #e3e8cb 50%, #d6dcbc 51%, #e4e9cf 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(80, 90, 60, 0.45), 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+[data-skin="aqua"] .lcd::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--seg) 70%, transparent); }
+[data-skin="aqua"] #time { font-weight: 700; letter-spacing: -0.04em; }
+[data-skin="aqua"] .strip { background: rgba(0, 0, 0, 0.18); border-radius: 5px; }
+[data-skin="aqua"] .btn:not(#play) { background: var(--brushed), radial-gradient(120% 70% at 50% 112%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 60%), linear-gradient(170deg, var(--key-top), var(--key-bot)); }
+[data-skin="aqua"] .btn.sm, [data-skin="aqua"] .mini, [data-skin="aqua"] .led { letter-spacing: 0.04em; text-transform: none; font-size: 11px; }
+[data-skin="aqua"] .row.head { text-transform: none; letter-spacing: 0.02em; font-size: 12px; }
+[data-skin="aqua"] .row.head .bt::first-letter { text-transform: uppercase; }
+[data-skin="aqua"] .row.head .bt { display: inline-block; }
+[data-skin="aqua"] .tot { background: linear-gradient(180deg, #f6f8ea, #dfe5c6); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 0 #fff; }
+[data-skin="aqua"] .row.now { color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35); background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%), color-mix(in srgb, var(--seg) 85%, #0a3c8a) !important; }
+
+/* play, ringed, between back and forward */
+[data-skin="aqua"] #play { box-shadow: inset 0 0 0 1px rgba(10, 60, 140, 0.6), inset 0 -3px 5px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(255, 255, 255, 0.55), 0 3px 8px var(--drop); }

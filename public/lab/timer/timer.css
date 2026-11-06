@@ -1,13 +1,9 @@
-/* The interval timer as an object of its time. A player, its playlist and a
-   library; each skin turns them into a thing:
-   dark — a piano-black hardware player, carbon fibre, a recessed green
-          dot-matrix LCD, pixel-art icons (Dark Aero, Y2K);
-   eco  — a Vista sidebar gadget: thick rounded glass, the macro of a leaf
-          blurred inside the display, lime gel (Frutiger Eco);
-   aqua — Panther's brushed metal, an iTunes display, blue gel (Helvetica Aqua).
-   Light comes from the top left: every raised thing has a white sheen above
-   and a shadow below, and a pressed one swaps them. Bars move in blocks.
-   Photos: public domain (NASA) and CC0, see THIRD_PARTY_NOTICES.md. */
+/* The interval timer's skeleton: the page every skin dresses. It holds the
+   parts, the generic look of keys, display, bars and lists (drawn with the
+   skin's tokens), and the layout variants a skin picks from a closed menu
+   (body[data-deck|lcd|panes|switch], see skins/skins.js for the contract).
+   Each skin lives in skins/<id>.css. Light comes from the top left: a raised
+   thing has a sheen above and a shadow below, a pressed one swaps them. */
 
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
@@ -29,100 +25,6 @@ input { font: inherit; color: inherit; }
     linear-gradient(207deg, #1c1e22 5px, transparent 5px) 10px 5px,
     linear-gradient(90deg, #15171a 10px, transparent 10px),
     linear-gradient(#17191c 25%, #131417 25%, #131417 50%, transparent 50%, transparent 75%, #1f2125 75%, #1f2125) #0c0d0f;
-}
-
-/* ---------- skins: variables ---------- */
-body[data-skin="dark"] {
-  --ui: "Silkscreen", "Courier New", monospace;
-  --text: "VT323", "Courier New", monospace;
-  --lcd-font: "Doto", "VT323", monospace;
-  --photo: url(img/dark.webp);
-  --photo-at: 50% 30%;
-  --veil: radial-gradient(120% 90% at 50% 40%, rgba(0, 0, 0, 0.1) 30%, rgba(0, 0, 0, 0.7) 100%);
-  --fg: #d7e4dc;
-  --dim: #7b8f84;
-  --accent: #7dff6a;
-  --engrave: none;
-  --r: 36px;
-  --drop: rgba(0, 0, 0, 0.75);
-  --lcd-fg: #8dff6e;
-  --lcd-dim: rgba(141, 255, 110, 0.1);
-  --lcd-glow: 0 0 4px rgba(141, 255, 110, 0.85), 0 0 14px rgba(141, 255, 110, 0.35);
-  --key-top: #3a3e45;
-  --key-bot: #070809;
-  --key-edge: rgba(255, 255, 255, 0.14);
-  --key-fg: #8dff6e;
-  --hot-top: #3a3e45;
-  --hot-bot: #070809;
-  --hot-fg: #8dff6e;
-  --list: #050806;
-  --list-fg: #8dff6e;
-  --row-alt: rgba(141, 255, 110, 0.035);
-  --row-head: rgba(141, 255, 110, 0.12);
-  --field: rgba(141, 255, 110, 0.08);
-}
-body[data-skin="eco"] {
-  --ui: "Varela Round", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
-  --text: "Varela Round", "Arial Rounded MT Bold", sans-serif;
-  --lcd-font: "Comfortaa", "Varela Round", sans-serif;
-  --photo: url(img/eco.webp);
-  --photo-at: 40% 50%;
-  --veil: linear-gradient(180deg, rgba(220, 255, 200, 0.18), rgba(0, 40, 10, 0.3));
-  --fg: #123a0e;
-  --dim: #4b7a3c;
-  --accent: #4cc21a;
-  --engrave: 0 1px 0 rgba(255, 255, 255, 0.6);
-  --r: 32px;
-  --drop: rgba(5, 40, 5, 0.5);
-  --lcd-fg: #ffffff;
-  --lcd-dim: rgba(255, 255, 255, 0.2);
-  --lcd-glow: 0 1px 2px rgba(0, 40, 0, 0.55), 0 0 12px rgba(0, 40, 0, 0.25);
-  --key-top: rgba(255, 255, 255, 0.95);
-  --key-bot: rgba(200, 238, 165, 0.75);
-  --key-edge: rgba(60, 130, 25, 0.45);
-  --key-fg: #2e7a12;
-  --hot-top: #d4ff7c;
-  --hot-bot: #2f9a0c;
-  --hot-fg: #ffffff;
-  --list: rgba(255, 255, 255, 0.6);
-  --list-fg: #123a0e;
-  --row-alt: rgba(150, 225, 100, 0.14);
-  --row-head: rgba(110, 200, 50, 0.24);
-  --field: rgba(255, 255, 255, 0.85);
-}
-body[data-skin="aqua"] {
-  --ui: "Lucida Grande", "Lucida Sans Unicode", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --text: "Lucida Grande", "Lucida Sans Unicode", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --lcd-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --photo: url(img/aqua.webp);
-  --photo-at: 50% 60%;
-  --veil: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 60, 120, 0.25));
-  --fg: #1d2630;
-  --dim: #5f6b78;
-  --accent: #1d86f0;
-  --engrave: 0 1px 0 rgba(255, 255, 255, 0.75);
-  --r: 14px;
-  --drop: rgba(0, 30, 70, 0.5);
-  --lcd-fg: #1a2a1a;
-  --lcd-dim: rgba(26, 42, 26, 0.08);
-  --lcd-glow: 0 1px 0 rgba(255, 255, 255, 0.7);
-  --key-top: #ffffff;
-  --key-bot: #b9bec5;
-  --key-edge: rgba(70, 76, 86, 0.6);
-  --key-fg: #2a3038;
-  --hot-top: #b3e0ff;
-  --hot-bot: #0a60d8;
-  --hot-fg: #ffffff;
-  --list: #ffffff;
-  --list-fg: #111;
-  --row-alt: #edf3fe;
-  --row-head: linear-gradient(180deg, #e8edf3, #cdd5df);
-  --field: #ffffff;
-}
-@media (max-width: 900px) {
-  body[data-skin="dark"] { --photo: url(img/dark-s.webp); }
-  body[data-skin="eco"] { --photo: url(img/eco-s.webp); }
-  body[data-skin="aqua"] { --photo: url(img/aqua-s.webp); }
 }
 
 /* ---------- the photo ---------- */
@@ -330,9 +232,6 @@ body.live .strip { cursor: pointer; }
     radial-gradient(circle at 50% 100%, var(--m2) 0 30%, var(--m1) 75%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), 0 3px 5px rgba(0, 0, 0, 0.4);
 }
-.skins [data-skin="dark"] { --m1: #0b0f14; --m2: #7dff6a; }
-.skins [data-skin="eco"] { --m1: #2f8f0a; --m2: #d6ff7a; }
-.skins [data-skin="aqua"] { --m1: #0a5fd0; --m2: #9fe2ff; }
 .skins button:active::before { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5); }
 .skins button[aria-checked="true"] { color: var(--fg); }
 .skins button[aria-checked="true"]::before { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 0 0 3px color-mix(in srgb, var(--accent) 60%, transparent), 0 0 14px var(--accent); }
@@ -447,162 +346,14 @@ button.gem:disabled { opacity: 1; }
 #picker .gem { width: 30px; height: 30px; justify-self: center; }
 #picker .gem.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--c), 0 0 14px var(--c); }
 
-/* =====================================================================
-   dark: a piano-black hardware player
-   ===================================================================== */
-[data-skin="dark"] .win {
-  background: var(--grain), linear-gradient(155deg, #34383f 0%, #101114 22%, #030304 55%, #121317 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 1px 0 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.9),
-    0 0 0 1px #000, 0 0 0 2px rgba(255, 255, 255, 0.08), 0 30px 60px -12px var(--drop), 0 10px 20px -6px var(--drop);
-}
-/* a diagonal sheen on the lacquer, from the top left */
-[data-skin="dark"] .win::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(125deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.04) 28%, rgba(255, 255, 255, 0) 29%);
-  pointer-events: none;
-}
-/* the playlist and the library: carbon fibre under clear lacquer */
-[data-skin="dark"] #playlist, [data-skin="dark"] #library { background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 40%), var(--carbon); background-size: auto, 20px 20px, 20px 20px, 20px 20px, 20px 20px, 20px 20px, 20px 20px; }
-[data-skin="dark"] .title { color: #b9c6bf; letter-spacing: 0.22em; font-size: 8px; font-weight: 400; }
-/* the screen, sunk in a chrome bezel */
-[data-skin="dark"] .lcd {
-  background: radial-gradient(120% 100% at 50% 30%, #0f2810 0%, #051006 60%, #020502 100%);
-  box-shadow:
-    inset 0 4px 12px rgba(0, 0, 0, 0.95), inset 0 0 0 1px rgba(0, 0, 0, 0.9),
-    0 0 0 3px #050505, 0 0 0 4px #8a9097, 0 0 0 5px #2b2e33, 0 1px 0 5px rgba(255, 255, 255, 0.18);
-  margin: 4px 4px 0;
-}
-/* the dots of the matrix, over everything on it */
-[data-skin="dark"] .lcd .px {
-  z-index: 2;
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.45) 1px, transparent 1px) 0 0 / 3px 3px,
-    linear-gradient(90deg, rgba(0, 0, 0, 0.45) 1px, transparent 1px) 0 0 / 3px 3px;
-}
-[data-skin="dark"] .lcd::before { content: ""; position: absolute; inset: 0; z-index: 0; background: radial-gradient(80% 60% at 50% 115%, color-mix(in srgb, var(--seg) 35%, transparent), transparent 70%); }
-[data-skin="dark"] #time { letter-spacing: 0.04em; }
-[data-skin="dark"] #time .colon { font-family: "VT323", monospace; font-weight: 400; font-size: 0.9em; margin: 0 -0.04em; }
-[data-skin="dark"] #label, [data-skin="dark"] .marquee { font-family: "VT323", monospace; font-weight: 400; letter-spacing: 0.08em; }
-[data-skin="dark"] #label { font-size: clamp(22px, 6vw, 28px); }
-[data-skin="dark"] .marquee { font-size: 17px; line-height: 1.3; }
-[data-skin="dark"] .chip b { font-family: "VT323", monospace; font-weight: 400; font-size: 17px; }
-[data-skin="dark"] .chip small { font-size: 8px; }
-/* the keys: black rubber, the icons lit green */
-[data-skin="dark"] .btn::before, [data-skin="dark"] .mini::before, [data-skin="dark"] .led::before, [data-skin="dark"] .wb::before { background: linear-gradient(170deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0)); }
-[data-skin="dark"] .btn, [data-skin="dark"] .mini, [data-skin="dark"] .wb { text-shadow: 0 0 6px rgba(141, 255, 110, 0.7); }
-[data-skin="dark"] #play { box-shadow: inset 0 0 0 1px rgba(141, 255, 110, 0.45), inset 0 -3px 5px rgba(0, 0, 0, 0.3), 0 0 0 3px #0b0c0e, 0 0 0 4px #6d737a, 0 4px 8px var(--drop); }
-[data-skin="dark"] #play.down { box-shadow: inset 0 0 0 1px rgba(141, 255, 110, 0.6), inset 0 3px 8px rgba(0, 0, 0, 0.8), 0 0 0 3px #0b0c0e, 0 0 0 4px #6d737a, 0 0 18px color-mix(in srgb, var(--seg) 70%, transparent); }
-[data-skin="dark"] .led, [data-skin="dark"] .btn.sm, [data-skin="dark"] .mini.wide, [data-skin="dark"] .skins button, [data-skin="dark"] #library h3, [data-skin="dark"] .row.head { font-size: 8px; font-weight: 400; }
-[data-skin="dark"] .led.on::after { background: var(--accent); box-shadow: 0 0 9px var(--accent); }
-[data-skin="dark"] .strip { background: #020302; }
-[data-skin="dark"] #segs i { border-radius: 0; }
-[data-skin="dark"] #list, [data-skin="dark"] #library ul { font: 18px/1.1 "VT323", monospace; text-shadow: 0 0 5px rgba(141, 255, 110, 0.45); box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 0 2px #050505, 0 0 0 3px #6d737a; }
-[data-skin="dark"] .row .n, [data-skin="dark"] #library .item .n { font-size: 15px; }
-[data-skin="dark"] .row.now { color: #031003; text-shadow: none; }
-[data-skin="dark"] .pname { font: 22px/1 "VT323", monospace; color: var(--lcd-fg); background: #050806; box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 0 2px #050505, 0 0 0 3px #6d737a; text-shadow: 0 0 5px rgba(141, 255, 110, 0.5); }
-[data-skin="dark"] .tot { font-family: "Doto", monospace; font-weight: 900; background: #050806; box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 0 2px #050505, 0 0 0 3px #6d737a; }
-[data-skin="dark"] #picker .title { font-size: 8px; }
 
 /* =====================================================================
-   eco: a sidebar gadget — thick rounded glass, the screen a leaf in dew
-   ===================================================================== */
-[data-skin="eco"] .win {
-  padding: 0 9px 9px;
-  background: var(--grain), linear-gradient(165deg, rgba(255, 255, 255, 0.55), rgba(220, 250, 200, 0.22) 45%, rgba(255, 255, 255, 0.35));
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.85), inset 0 2px 0 rgba(255, 255, 255, 0.9), inset 2px 0 0 rgba(255, 255, 255, 0.4),
-    inset 0 -10px 24px rgba(90, 170, 40, 0.25), 0 0 0 1px rgba(30, 80, 10, 0.35), 0 26px 50px -12px var(--drop), 0 8px 18px -6px var(--drop);
-}
-/* the thick glass catches the light along its top edge */
-[data-skin="eco"] .win::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  left: 3px;
-  right: 3px;
-  top: 3px;
-  height: 44px;
-  border-radius: inherit;
-  background: linear-gradient(170deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.1));
-  pointer-events: none;
-}
-[data-skin="eco"] .title { height: 36px; color: #1f5a10; padding: 0 6px; }
-/* inside the frame, the gadget's face */
-[data-skin="eco"] .body {
-  padding: 12px;
-  border-radius: calc(var(--r) - 9px);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(235, 252, 222, 0.6));
-  box-shadow: inset 0 2px 4px rgba(30, 90, 10, 0.25), inset 0 0 0 1px rgba(60, 130, 25, 0.3), 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-[data-skin="eco"] .lcd {
-  --lcd-spec: 0.55;
-  background: #2c6a1a;
-  box-shadow: inset 0 3px 8px rgba(0, 30, 0, 0.6), inset 0 0 0 1px rgba(0, 40, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-/* the leaf, out of focus, inside the screen */
-[data-skin="eco"] .lcd .px {
-  z-index: -1;
-  inset: -20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 40, 0, 0.35)), url(img/eco-s.webp) 35% 45% / cover;
-  filter: blur(7px) saturate(1.3);
-}
-[data-skin="eco"] .lcd::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: radial-gradient(90% 60% at 50% 120%, color-mix(in srgb, var(--seg) 55%, transparent), transparent 70%); }
-[data-skin="eco"] #time { font-weight: 700; letter-spacing: -0.02em; }
-[data-skin="eco"] .strip { background: rgba(30, 80, 10, 0.25); }
-[data-skin="eco"] #segs i { border-radius: 3px; }
-[data-skin="eco"] .btn:not(#play) { background: radial-gradient(120% 70% at 50% 112%, rgba(210, 255, 150, 0.9), rgba(255, 255, 255, 0) 60%), linear-gradient(170deg, var(--key-top), var(--key-bot)); }
-[data-skin="eco"] .tot { background: linear-gradient(180deg, rgba(0, 40, 0, 0.2), rgba(0, 40, 0, 0.45)), url(img/eco-s.webp) 30% 40% / 400% auto; box-shadow: inset 0 2px 5px rgba(0, 30, 0, 0.55), 0 1px 0 #fff; }
-
-/* =====================================================================
-   aqua: brushed metal, an iTunes display, blue gel
-   ===================================================================== */
-[data-skin="aqua"] .win {
-  background: var(--brushed), linear-gradient(180deg, #f4f4f4 0%, #d9d9d9 35%, #c4c4c4 70%, #b5b5b5 100%);
-  box-shadow:
-    inset 0 1px 0 #fff, inset 1px 0 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(60, 64, 70, 0.55), 0 22px 46px -10px var(--drop), 0 6px 14px -4px var(--drop);
-}
-[data-skin="aqua"] .title { color: #2b3138; height: 34px; font-weight: 700; letter-spacing: 0.08em; text-transform: none; font-size: 12px; }
-[data-skin="aqua"] .title .tt::first-letter { text-transform: uppercase; }
-[data-skin="aqua"] .title .tt { display: inline-block; }
-/* the traffic light */
-[data-skin="aqua"] .title .back {
-  width: 15px; min-width: 15px; height: 15px; padding: 0; font-size: 0;
-  background: radial-gradient(circle at 50% 28%, #ffe0d8 0 18%, #ff6a5a 46%, #c8281c 100%);
-  box-shadow: inset 0 0 0 1px rgba(140, 20, 10, 0.6), 0 1px 1px rgba(0, 0, 0, 0.3);
-}
-[data-skin="aqua"] .title .back::before { left: 20%; right: 20%; height: 40%; }
-[data-skin="aqua"] .lcd {
-  --lcd-spec: 0.6;
-  border-radius: 9px;
-  background: linear-gradient(180deg, #f6f8ea 0%, #e3e8cb 50%, #d6dcbc 51%, #e4e9cf 100%);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(80, 90, 60, 0.45), 0 1px 0 rgba(255, 255, 255, 0.85);
-}
-[data-skin="aqua"] .lcd::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--seg) 70%, transparent); }
-[data-skin="aqua"] #time { font-weight: 700; letter-spacing: -0.04em; }
-[data-skin="aqua"] .strip { background: rgba(0, 0, 0, 0.18); border-radius: 5px; }
-[data-skin="aqua"] .btn:not(#play) { background: var(--brushed), radial-gradient(120% 70% at 50% 112%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 60%), linear-gradient(170deg, var(--key-top), var(--key-bot)); }
-[data-skin="aqua"] .btn.sm, [data-skin="aqua"] .mini, [data-skin="aqua"] .led { letter-spacing: 0.04em; text-transform: none; font-size: 11px; }
-[data-skin="aqua"] .row.head { text-transform: none; letter-spacing: 0.02em; font-size: 12px; }
-[data-skin="aqua"] .row.head .bt::first-letter { text-transform: uppercase; }
-[data-skin="aqua"] .row.head .bt { display: inline-block; }
-[data-skin="aqua"] .tot { background: linear-gradient(180deg, #f6f8ea, #dfe5c6); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 0 #fff; }
-[data-skin="aqua"] .row.now { color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35); background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%), color-mix(in srgb, var(--seg) 85%, #0a3c8a) !important; }
-
-/* =====================================================================
-   shapes: the shell is free, what is read and typed stays square
+   layout variants: geometry only — the skin paints them
    ===================================================================== */
 
-/* dark: a click wheel — play in the hub, the other keys on the ring */
-[data-skin="dark"] .deck { justify-content: center; gap: 30px; }
-[data-skin="dark"] .transport {
+/* deck: wheel — play in the hub, the other keys marks on a ring */
+[data-deck="wheel"] .deck { justify-content: center; gap: 30px; }
+[data-deck="wheel"] .transport {
   position: relative;
   display: grid;
   grid-template-columns: 48px 64px 48px;
@@ -612,130 +363,93 @@ button.gem:disabled { opacity: 1; }
   gap: 0;
   padding: 6px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle, transparent 0 35px, #050506 35px 37px, rgba(255, 255, 255, 0.12) 37px 38px, transparent 38px),
-    linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 38%),
-    linear-gradient(170deg, #2c3036, #08090b 60%, #15171b);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -3px 6px rgba(0, 0, 0, 0.85),
-    0 0 0 2px #050505, 0 0 0 3px #6d737a, 0 0 0 4px #1d1f23, 0 8px 16px -2px var(--drop);
+  background: var(--wheel, var(--key-bot));
+  box-shadow: var(--wheel-rim, 0 6px 12px -2px var(--drop));
 }
-[data-skin="dark"] #pause { grid-area: pause; }
-[data-skin="dark"] #prev { grid-area: prev; }
-[data-skin="dark"] #play { grid-area: play; }
-[data-skin="dark"] #next { grid-area: next; }
-[data-skin="dark"] #stop { grid-area: stop; }
-[data-skin="dark"] #eject { grid-area: eject; width: 30px; height: 30px; margin: -10px 0 0 -10px; }
-/* the keys on the ring are only marks on it; pressed, the ring glows there */
-[data-skin="dark"] .transport .btn:not(#play) { width: 42px; height: 42px; background: none; box-shadow: none; transform: none; }
-[data-skin="dark"] .transport .btn:not(#play)::before { display: none; }
-[data-skin="dark"] .transport .btn:not(#play):active:not(:disabled),
-[data-skin="dark"] .transport .btn:not(#play).press,
-[data-skin="dark"] .transport .btn:not(#play).down { background: radial-gradient(circle, rgba(141, 255, 110, 0.28), rgba(141, 255, 110, 0) 70%); box-shadow: none; }
-[data-skin="dark"] #eject svg { width: 50%; height: 50%; }
-/* a hole for the cord, and rubber grips on the sides */
-[data-skin="dark"] #player::after {
-  content: "";
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #000 0 42%, #8a9097 46%, #2b2e33 62%, #0b0c0e 72%);
-  box-shadow: inset 0 1px 2px #000, 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-[data-skin="dark"] #player > .body::before,
-[data-skin="dark"] #player > .body::after {
-  content: "";
-  position: absolute;
-  top: 40%;
-  height: 34%;
-  width: 6px;
-  border-radius: 3px;
-  background: repeating-linear-gradient(180deg, #24272c 0 3px, #050506 3px 6px);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
-[data-skin="dark"] #player > .body::before { left: -3px; }
-[data-skin="dark"] #player > .body::after { right: -3px; }
+[data-deck="wheel"] #pause { grid-area: pause; }
+[data-deck="wheel"] #prev { grid-area: prev; }
+[data-deck="wheel"] #play { grid-area: play; }
+[data-deck="wheel"] #next { grid-area: next; }
+[data-deck="wheel"] #stop { grid-area: stop; }
+[data-deck="wheel"] #eject { grid-area: eject; width: 30px; height: 30px; margin: -10px 0 0 -10px; }
+[data-deck="wheel"] .transport .btn:not(#play) { width: 42px; height: 42px; background: none; box-shadow: none; transform: none; }
+[data-deck="wheel"] .transport .btn:not(#play)::before { display: none; }
+[data-deck="wheel"] .transport .btn:not(#play):active:not(:disabled),
+[data-deck="wheel"] .transport .btn:not(#play).press,
+[data-deck="wheel"] .transport .btn:not(#play).down { background: var(--wheel-press, rgba(255, 255, 255, 0.15)); box-shadow: none; }
+[data-deck="wheel"] #eject svg { width: 50%; height: 50%; }
 
-/* eco: panes as leaves, the screen a drop of dew, the keys dew on a stem */
-[data-skin="eco"] #player, [data-skin="eco"] #library { border-radius: 64px 14px 64px 14px; }
-[data-skin="eco"] #playlist { border-radius: 14px 64px 14px 64px; }
-[data-skin="eco"] #player .body, [data-skin="eco"] #library .body { border-radius: 55px 6px 55px 6px; }
-[data-skin="eco"] #playlist .body { border-radius: 6px 55px 6px 55px; }
-[data-skin="eco"] #picker { border-radius: 30px 12px 30px 12px; }
-[data-skin="eco"] .lcd {
+/* deck: arc — keys of different sizes on a curve, play the largest */
+[data-deck="arc"] .transport { gap: 5px; }
+[data-deck="arc"] #prev { width: 42px; height: 42px; margin-top: 16px; }
+[data-deck="arc"] #play { width: 66px; height: 66px; }
+[data-deck="arc"] #pause { width: 36px; height: 36px; margin-top: -12px; }
+[data-deck="arc"] #stop { width: 30px; height: 30px; margin-top: -18px; }
+[data-deck="arc"] #next { width: 40px; height: 40px; margin-top: -4px; }
+[data-deck="arc"] #eject { width: 26px; height: 26px; margin-top: 14px; }
+
+/* deck: cluster — back, play, forward tucked together; the rest apart */
+[data-deck="cluster"] #prev { order: 1; width: 44px; height: 44px; margin-right: -14px; padding-right: 8px; }
+[data-deck="cluster"] #play { order: 2; z-index: 1; width: 62px; height: 62px; }
+[data-deck="cluster"] #next { order: 3; width: 44px; height: 44px; margin-left: -14px; padding-left: 8px; }
+[data-deck="cluster"] #pause { order: 4; margin-left: 14px; width: 34px; height: 34px; }
+[data-deck="cluster"] #stop { order: 5; width: 34px; height: 34px; }
+[data-deck="cluster"] #eject { order: 6; width: 34px; height: 34px; }
+
+/* lcd: lens — an oval, everything centred, the visualizer a reflection */
+[data-lcd="lens"] .lcd {
   border-radius: 50% 50% 46% 46% / 58% 58% 42% 42%;
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas: "read" "now" "bar" "marq" "chips";
   justify-items: center;
   padding: 30px 46px 26px;
 }
-[data-skin="eco"] #state { display: none; }
-[data-skin="eco"] #time { padding-right: 0; }
-[data-skin="eco"] .now { justify-content: center; max-width: 100%; }
-/* the visualizer, a reflection under the water */
-[data-skin="eco"] #vis { position: absolute; z-index: 0; left: 18%; width: 64%; bottom: 30%; height: 38%; opacity: 0.3; }
-[data-skin="eco"] .secbar { width: 78%; }
-[data-skin="eco"] .marquee { width: 84%; }
-[data-skin="eco"] .chips { justify-content: center; }
-[data-skin="eco"] .chip.wide { margin-left: 0; }
-[data-skin="eco"] .transport { gap: 5px; }
-[data-skin="eco"] .transport .btn:not(#play) {
-  background:
-    radial-gradient(circle at 50% 58%, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, 0.5) 70%, rgba(255, 255, 255, 0.95) 80%, rgba(255, 255, 255, 0.25) 100%),
-    radial-gradient(circle at 60% 88%, rgba(220, 255, 160, 0.75), rgba(255, 255, 255, 0) 50%),
-    rgba(225, 255, 205, 0.22);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), inset 0 -4px 6px rgba(60, 140, 20, 0.25), 0 5px 8px -3px rgba(10, 60, 0, 0.5);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-}
-[data-skin="eco"] .transport .btn:not(#play)::before { left: 20%; right: 46%; top: 12%; height: 26%; border-radius: 50%; }
-[data-skin="eco"] .transport .btn:not(#play):active:not(:disabled),
-[data-skin="eco"] .transport .btn:not(#play).press,
-[data-skin="eco"] .transport .btn:not(#play).down { background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.6) 78%), rgba(120, 200, 60, 0.35); }
-[data-skin="eco"] #prev { width: 42px; height: 42px; margin-top: 16px; }
-[data-skin="eco"] #play { width: 66px; height: 66px; }
-[data-skin="eco"] #pause { width: 36px; height: 36px; margin-top: -12px; }
-[data-skin="eco"] #stop { width: 30px; height: 30px; margin-top: -18px; }
-[data-skin="eco"] #next { width: 40px; height: 40px; margin-top: -4px; }
-[data-skin="eco"] #eject { width: 26px; height: 26px; margin-top: 14px; }
-[data-skin="eco"] #player .title, [data-skin="eco"] #library .title { padding-left: 20px; }
+[data-lcd="lens"] #state { display: none; }
+[data-lcd="lens"] #time { padding-right: 0; }
+[data-lcd="lens"] .now { justify-content: center; max-width: 100%; }
+[data-lcd="lens"] #vis { position: absolute; z-index: 0; left: 18%; width: 64%; bottom: 30%; height: 38%; opacity: 0.3; }
+[data-lcd="lens"] .secbar { width: 78%; }
+[data-lcd="lens"] .marquee { width: 84%; }
+[data-lcd="lens"] .chips { justify-content: center; }
+[data-lcd="lens"] .chip.wide { margin-left: 0; }
 
-/* aqua: the lozenge of iTunes, play between back and forward, a capsule for the skins */
-[data-skin="aqua"] .lcd { border-radius: 52px / 50%; padding: 12px 40px; }
-[data-skin="aqua"] .tot, [data-skin="aqua"] .strip { border-radius: 999px; }
-[data-skin="aqua"] #segs i:first-child { border-radius: 999px 2px 2px 999px; }
-[data-skin="aqua"] #segs i:last-child { border-radius: 2px 999px 999px 2px; }
-[data-skin="aqua"] #prev { order: 1; width: 44px; height: 44px; margin-right: -14px; padding-right: 8px; }
-[data-skin="aqua"] #play { order: 2; z-index: 1; width: 62px; height: 62px; box-shadow: inset 0 0 0 1px rgba(10, 60, 140, 0.6), inset 0 -3px 5px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(255, 255, 255, 0.55), 0 3px 8px var(--drop); }
-[data-skin="aqua"] #next { order: 3; width: 44px; height: 44px; margin-left: -14px; padding-left: 8px; }
-[data-skin="aqua"] #pause { order: 4; margin-left: 14px; width: 34px; height: 34px; }
-[data-skin="aqua"] #stop { order: 5; width: 34px; height: 34px; }
-[data-skin="aqua"] #eject { order: 6; width: 34px; height: 34px; }
-[data-skin="aqua"] .skins { gap: 0; }
-[data-skin="aqua"] .skins button::before { display: none; }
-[data-skin="aqua"] .skins button {
+/* lcd: lozenge — a long pill, and round ends for its bar and total */
+[data-lcd="lozenge"] .lcd { border-radius: 52px / 50%; padding: 12px 40px; }
+[data-lcd="lozenge"] .tot, [data-lcd="lozenge"] .strip { border-radius: 999px; }
+[data-lcd="lozenge"] #segs i:first-child { border-radius: 999px 2px 2px 999px; }
+[data-lcd="lozenge"] #segs i:last-child { border-radius: 2px 999px 999px 2px; }
+
+/* panes: leaf — two opposite corners long (--leaf), two short (--r) */
+[data-panes="leaf"] #player, [data-panes="leaf"] #library { border-radius: var(--leaf, 64px) var(--r) var(--leaf, 64px) var(--r); }
+[data-panes="leaf"] #playlist { border-radius: var(--r) var(--leaf, 64px) var(--r) var(--leaf, 64px); }
+[data-panes="leaf"] #player .body, [data-panes="leaf"] #library .body { border-radius: var(--leaf-in, 55px) 6px var(--leaf-in, 55px) 6px; }
+[data-panes="leaf"] #playlist .body { border-radius: 6px var(--leaf-in, 55px) 6px var(--leaf-in, 55px); }
+[data-panes="leaf"] #picker { border-radius: 30px 12px 30px 12px; }
+[data-panes="leaf"] #player .title, [data-panes="leaf"] #library .title { padding-left: 20px; }
+
+/* switch: capsule — the skins as one segmented control */
+[data-switch="capsule"] .skins { gap: 0; }
+[data-switch="capsule"] .skins button::before { display: none; }
+[data-switch="capsule"] .skins button {
   flex-direction: row;
-  padding: 6px 18px;
+  padding: 6px 16px;
   font: 700 11px/1 var(--ui);
   letter-spacing: 0.03em;
   text-transform: capitalize;
-  color: #222;
-  background: linear-gradient(180deg, #ffffff, #e2e2e2 50%, #cbcbcb 51%, #ececec);
-  box-shadow: inset 0 0 0 1px rgba(70, 76, 86, 0.6), inset 0 1px 0 #fff;
+  color: var(--cap-fg, var(--key-fg));
+  background: var(--cap, linear-gradient(170deg, var(--key-top), var(--key-bot)));
+  box-shadow: inset 0 0 0 1px var(--key-edge), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
-[data-skin="aqua"] .skins button + button { margin-left: -1px; }
-[data-skin="aqua"] .skins button:first-child { border-radius: 999px 0 0 999px; }
-[data-skin="aqua"] .skins button:last-child { border-radius: 0 999px 999px 0; }
-[data-skin="aqua"] .skins button[aria-checked="true"] {
-  color: #fff;
+[data-switch="capsule"] .skins button + button { margin-left: -1px; }
+[data-switch="capsule"] .skins button:first-child { border-radius: 999px 0 0 999px; }
+[data-switch="capsule"] .skins button:last-child { border-radius: 0 999px 999px 0; }
+[data-switch="capsule"] .skins button[aria-checked="true"] {
+  color: var(--cap-on-fg, var(--hot-fg));
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
-  background: linear-gradient(180deg, #b3e0ff, #4aa3f5 50%, #1f7ee8 51%, #6cc0ff);
-  box-shadow: inset 0 0 0 1px rgba(10, 60, 140, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  background: var(--cap-on, linear-gradient(170deg, var(--hot-top), var(--hot-bot)));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
-[data-skin="aqua"] .skins button:active { background: linear-gradient(180deg, #cbcbcb, #e2e2e2); }
+[data-switch="capsule"] .skins button:active { filter: brightness(0.9); }
 
 /* ---------- narrow screens: the panes stacked, the player kept in view while it runs ---------- */
 @media (max-width: 900px) {
@@ -745,7 +459,6 @@ button.gem:disabled { opacity: 1; }
 }
 @media (max-width: 420px) {
   .body { padding: 0 10px 12px; }
-  [data-skin="eco"] .body { padding: 10px; }
   .transport { gap: 4px; }
   .transport .btn { width: 34px; height: 34px; }
   #play { width: 50px; height: 50px; }

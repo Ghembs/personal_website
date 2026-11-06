@@ -1,0 +1,127 @@
+/* dark — a piano-black hardware player (Dark Aero, Y2K): lacquer and carbon
+   fibre, a green dot-matrix LCD sunk in chrome, a click wheel, pixel icons,
+   a hole for the cord. Over an aurora seen from the ISS (NASA, public domain). */
+body[data-skin="dark"] {
+  --ui: "Silkscreen", "Courier New", monospace;
+  --text: "VT323", "Courier New", monospace;
+  --lcd-font: "Doto", "VT323", monospace;
+  --photo: url(/lab/timer/img/dark.webp);
+  --photo-at: 50% 30%;
+  --veil: radial-gradient(120% 90% at 50% 40%, rgba(0, 0, 0, 0.1) 30%, rgba(0, 0, 0, 0.7) 100%);
+  --fg: #d7e4dc;
+  --dim: #7b8f84;
+  --accent: #7dff6a;
+  --engrave: none;
+  --r: 36px;
+  --drop: rgba(0, 0, 0, 0.75);
+  --wheel:
+    radial-gradient(circle, transparent 0 35px, #050506 35px 37px, rgba(255, 255, 255, 0.12) 37px 38px, transparent 38px),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(170deg, #2c3036, #08090b 60%, #15171b);
+  --wheel-rim:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -3px 6px rgba(0, 0, 0, 0.85),
+    0 0 0 2px #050505, 0 0 0 3px #6d737a, 0 0 0 4px #1d1f23, 0 8px 16px -2px var(--drop);
+  --wheel-press: radial-gradient(circle, rgba(141, 255, 110, 0.28), rgba(141, 255, 110, 0) 70%);
+  --lcd-fg: #8dff6e;
+  --lcd-dim: rgba(141, 255, 110, 0.1);
+  --lcd-glow: 0 0 4px rgba(141, 255, 110, 0.85), 0 0 14px rgba(141, 255, 110, 0.35);
+  --key-top: #3a3e45;
+  --key-bot: #070809;
+  --key-edge: rgba(255, 255, 255, 0.14);
+  --key-fg: #8dff6e;
+  --hot-top: #3a3e45;
+  --hot-bot: #070809;
+  --hot-fg: #8dff6e;
+  --list: #050806;
+  --list-fg: #8dff6e;
+  --row-alt: rgba(141, 255, 110, 0.035);
+  --row-head: rgba(141, 255, 110, 0.12);
+  --field: rgba(141, 255, 110, 0.08);
+}
+@media (max-width: 900px) {
+  body[data-skin="dark"] { --photo: url(/lab/timer/img/dark-s.webp); }
+}
+
+[data-skin="dark"] .win {
+  background: var(--grain), linear-gradient(155deg, #34383f 0%, #101114 22%, #030304 55%, #121317 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 1px 0 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.9),
+    0 0 0 1px #000, 0 0 0 2px rgba(255, 255, 255, 0.08), 0 30px 60px -12px var(--drop), 0 10px 20px -6px var(--drop);
+}
+/* a diagonal sheen on the lacquer, from the top left */
+[data-skin="dark"] .win::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.04) 28%, rgba(255, 255, 255, 0) 29%);
+  pointer-events: none;
+}
+/* the playlist and the library: carbon fibre under clear lacquer */
+[data-skin="dark"] #playlist, [data-skin="dark"] #library { background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 40%), var(--carbon); background-size: auto, 20px 20px, 20px 20px, 20px 20px, 20px 20px, 20px 20px, 20px 20px; }
+[data-skin="dark"] .title { color: #b9c6bf; letter-spacing: 0.22em; font-size: 8px; font-weight: 400; }
+/* the screen, sunk in a chrome bezel */
+[data-skin="dark"] .lcd {
+  background: radial-gradient(120% 100% at 50% 30%, #0f2810 0%, #051006 60%, #020502 100%);
+  box-shadow:
+    inset 0 4px 12px rgba(0, 0, 0, 0.95), inset 0 0 0 1px rgba(0, 0, 0, 0.9),
+    0 0 0 3px #050505, 0 0 0 4px #8a9097, 0 0 0 5px #2b2e33, 0 1px 0 5px rgba(255, 255, 255, 0.18);
+  margin: 4px 4px 0;
+}
+/* the dots of the matrix, over everything on it */
+[data-skin="dark"] .lcd .px {
+  z-index: 2;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.45) 1px, transparent 1px) 0 0 / 3px 3px,
+    linear-gradient(90deg, rgba(0, 0, 0, 0.45) 1px, transparent 1px) 0 0 / 3px 3px;
+}
+[data-skin="dark"] .lcd::before { content: ""; position: absolute; inset: 0; z-index: 0; background: radial-gradient(80% 60% at 50% 115%, color-mix(in srgb, var(--seg) 35%, transparent), transparent 70%); }
+[data-skin="dark"] #time { letter-spacing: 0.04em; }
+[data-skin="dark"] #time .colon { font-family: "VT323", monospace; font-weight: 400; font-size: 0.9em; margin: 0 -0.04em; }
+[data-skin="dark"] #label, [data-skin="dark"] .marquee { font-family: "VT323", monospace; font-weight: 400; letter-spacing: 0.08em; }
+[data-skin="dark"] #label { font-size: clamp(22px, 6vw, 28px); }
+[data-skin="dark"] .marquee { font-size: 17px; line-height: 1.3; }
+[data-skin="dark"] .chip b { font-family: "VT323", monospace; font-weight: 400; font-size: 17px; }
+[data-skin="dark"] .chip small { font-size: 8px; }
+/* the keys: black rubber, the icons lit green */
+[data-skin="dark"] .btn::before, [data-skin="dark"] .mini::before, [data-skin="dark"] .led::before, [data-skin="dark"] .wb::before { background: linear-gradient(170deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0)); }
+[data-skin="dark"] .btn, [data-skin="dark"] .mini, [data-skin="dark"] .wb { text-shadow: 0 0 6px rgba(141, 255, 110, 0.7); }
+[data-skin="dark"] #play { box-shadow: inset 0 0 0 1px rgba(141, 255, 110, 0.45), inset 0 -3px 5px rgba(0, 0, 0, 0.3), 0 0 0 3px #0b0c0e, 0 0 0 4px #6d737a, 0 4px 8px var(--drop); }
+[data-skin="dark"] #play.down { box-shadow: inset 0 0 0 1px rgba(141, 255, 110, 0.6), inset 0 3px 8px rgba(0, 0, 0, 0.8), 0 0 0 3px #0b0c0e, 0 0 0 4px #6d737a, 0 0 18px color-mix(in srgb, var(--seg) 70%, transparent); }
+[data-skin="dark"] .led, [data-skin="dark"] .btn.sm, [data-skin="dark"] .mini.wide, [data-skin="dark"] .skins button, [data-skin="dark"] #library h3, [data-skin="dark"] .row.head { font-size: 8px; font-weight: 400; }
+[data-skin="dark"] .led.on::after { background: var(--accent); box-shadow: 0 0 9px var(--accent); }
+[data-skin="dark"] .strip { background: #020302; }
+[data-skin="dark"] #segs i { border-radius: 0; }
+[data-skin="dark"] #list, [data-skin="dark"] #library ul { font: 18px/1.1 "VT323", monospace; text-shadow: 0 0 5px rgba(141, 255, 110, 0.45); box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 0 2px #050505, 0 0 0 3px #6d737a; }
+[data-skin="dark"] .row .n, [data-skin="dark"] #library .item .n { font-size: 15px; }
+[data-skin="dark"] .row.now { color: #031003; text-shadow: none; }
+[data-skin="dark"] .pname { font: 22px/1 "VT323", monospace; color: var(--lcd-fg); background: #050806; box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 0 2px #050505, 0 0 0 3px #6d737a; text-shadow: 0 0 5px rgba(141, 255, 110, 0.5); }
+[data-skin="dark"] .tot { font-family: "Doto", monospace; font-weight: 900; background: #050806; box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 0 2px #050505, 0 0 0 3px #6d737a; }
+[data-skin="dark"] #picker .title { font-size: 8px; }
+
+/* a hole for the cord, and rubber grips on the sides */
+[data-skin="dark"] #player::after {
+  content: "";
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #000 0 42%, #8a9097 46%, #2b2e33 62%, #0b0c0e 72%);
+  box-shadow: inset 0 1px 2px #000, 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+[data-skin="dark"] #player > .body::before,
+[data-skin="dark"] #player > .body::after {
+  content: "";
+  position: absolute;
+  top: 40%;
+  height: 34%;
+  width: 6px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(180deg, #24272c 0 3px, #050506 3px 6px);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+[data-skin="dark"] #player > .body::before { left: -3px; }
+[data-skin="dark"] #player > .body::after { right: -3px; }

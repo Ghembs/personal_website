@@ -84,12 +84,12 @@ const Icons = (() => {
   </defs></svg>`;
 
   return {
-    // fill every [data-icon] with the icon of the skin
-    apply(skin, root = document) {
+    // fill every [data-icon] with an icon of the set ('pixel' or 'glossy')
+    apply(set, root = document) {
       if (!document.getElementById('ic-top')) document.body.insertAdjacentHTML('afterbegin', DEFS);
       root.querySelectorAll('[data-icon]').forEach((el) => {
         const n = el.dataset.icon;
-        el.innerHTML = skin === 'dark' ? pixel(n) : el.classList.contains('ico') ? OBJ[n] : glossy(n);
+        el.innerHTML = set === 'pixel' ? pixel(n) : el.classList.contains('ico') ? OBJ[n] : glossy(n);
       });
     },
   };

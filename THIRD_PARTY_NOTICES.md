@@ -79,7 +79,7 @@ taken from the HSK syllabus; see
   `hanzi-writer-data` (Arphic Public License), loaded from jsDelivr.
 - Fonts from Google Fonts (SIL Open Font License): JetBrains Mono, Space Grotesk,
   Unbounded, Cormorant Garamond, Ma Shan Zheng, Comfortaa, Varela Round,
-  Doto, Silkscreen, VT323.
+  Doto, Silkscreen, VT323, Fredoka.
 
 ## audio-cmn
 
@@ -99,7 +99,7 @@ licences, reproduced in full in `public/cinese/data/licenses/COW.txt` and
 
 ## Interval timer backgrounds
 
-`public/lab/timer/img/` holds three photos from Wikimedia Commons, resized and
+`public/lab/timer/img/` holds four photos from Wikimedia Commons, resized and
 compressed to WebP:
 
 - `dark`: [ISS-43 Earth sunrise, aurora and sparkling cities in northern Europe](https://commons.wikimedia.org/wiki/File:ISS-43_Earth_sunrise,_aurora_and_sparling_cities_in_northern_Europe.jpg),
@@ -108,3 +108,5 @@ compressed to WebP:
   Jan (northlandscapes), CC0.
 - `aqua`: [Group Of Fish](https://commons.wikimedia.org/wiki/File:Group_Of_Fish_(Unsplash).jpg),
   Jakob Owens, CC0.
+- `chrome`: [Frozen snowflake bubble](https://commons.wikimedia.org/wiki/File:Frozen_snowflake_bubble_(Unsplash).jpg),
+  Aaron Burden, CC0.

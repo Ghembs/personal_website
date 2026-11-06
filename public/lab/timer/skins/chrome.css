@@ -1,0 +1,88 @@
+/* chrome — Y2K liquid chrome: a mirror band across every pane with a film of
+   oil-slick colour over it, a pearly holographic display, lavender and
+   bubblegum gel, a bubbly rounded type. Written with the contract alone
+   (layout: row, lozenge, leaf, capsule). Over a frozen soap bubble
+   (Aaron Burden; CC0). */
+body[data-skin="chrome"] {
+  --ui: "Fredoka", "Varela Round", sans-serif;
+  --text: "Fredoka", "Varela Round", sans-serif;
+  --lcd-font: "Fredoka", "Varela Round", sans-serif;
+  --photo: url(/lab/timer/img/chrome.webp);
+  --photo-at: 28% 50%;
+  --veil: linear-gradient(160deg, rgba(255, 200, 240, 0.18), rgba(190, 220, 255, 0.08) 45%, rgba(40, 25, 90, 0.35));
+  --fg: #24184f;
+  --dim: #6c5fa6;
+  --accent: #b04fd8;
+  --engrave: 0 1px 0 rgba(255, 255, 255, 0.85);
+  --r: 22px;
+  --leaf: 54px;
+  --leaf-in: 46px;
+  --drop: rgba(40, 20, 90, 0.5);
+  --lcd-fg: #2a1d5c;
+  --lcd-dim: rgba(42, 29, 92, 0.08);
+  --lcd-glow: 0 1px 0 rgba(255, 255, 255, 0.9);
+  --lcd-spec: 0.75;
+  --key-top: #ffffff;
+  --key-bot: #b6b9c9;
+  --key-edge: rgba(70, 60, 120, 0.45);
+  --key-fg: #6a4fc9;
+  --hot-top: #ffd6f4;
+  --hot-bot: #a84fe0;
+  --hot-fg: #ffffff;
+  --list: rgba(255, 255, 255, 0.78);
+  --list-fg: #24184f;
+  --row-alt: rgba(200, 180, 255, 0.16);
+  --row-head: linear-gradient(90deg, rgba(255, 170, 230, 0.4), rgba(170, 220, 255, 0.4));
+  --field: #ffffff;
+  --cap: linear-gradient(180deg, #ffffff, #e6e7ef 45%, #a7abbf 50%, #eceef6);
+  --cap-on: linear-gradient(180deg, #ffd6f4, #e48ce8 48%, #a84fe0 52%, #d9a6ff);
+  --cap-fg: #4b3b8f;
+  --cap-on-fg: #fff;
+  /* liquid chrome: sky above, a dark horizon, the floor below */
+  --chrome: linear-gradient(180deg, #ffffff 0%, #e4e6f0 20%, #a6abc0 44%, #5f6480 49%, #eef0f8 53%, #c9ccdc 72%, #ffffff 100%);
+  /* the oil-slick film over it */
+  --film: linear-gradient(115deg, rgba(255, 150, 220, 0.32), rgba(160, 220, 255, 0.28) 35%, rgba(200, 255, 220, 0.2) 55%, rgba(210, 160, 255, 0.32) 80%);
+}
+@media (max-width: 900px) {
+  body[data-skin="chrome"] { --photo: url(/lab/timer/img/chrome-s.webp); }
+}
+
+[data-skin="chrome"] .win {
+  background: var(--grain), var(--film), var(--chrome);
+  box-shadow:
+    inset 0 2px 0 #fff, inset 2px 0 0 rgba(255, 255, 255, 0.7), inset 0 -2px 0 rgba(60, 50, 110, 0.45),
+    0 0 0 1px rgba(60, 50, 110, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.35), 0 26px 50px -12px var(--drop), 0 8px 18px -6px var(--drop);
+}
+/* a streak of light along the top left */
+[data-skin="chrome"] .win::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 4%;
+  top: 3px;
+  width: 58%;
+  height: 26px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+  filter: blur(1px);
+  pointer-events: none;
+}
+[data-skin="chrome"] .title { color: #4b3b8f; font-weight: 700; font-size: 12px; letter-spacing: 0.16em; }
+/* the display: pearl, a holographic sheen that the section's colour warms */
+[data-skin="chrome"] .lcd {
+  background:
+    radial-gradient(70% 90% at 50% 120%, color-mix(in srgb, var(--seg) 40%, transparent), transparent 70%),
+    linear-gradient(125deg, #fbefff 0%, #dff3ff 30%, #fff0f8 55%, #e7e1ff 80%, #f5fbff 100%);
+  box-shadow: inset 0 3px 8px rgba(60, 40, 120, 0.45), inset 0 0 0 1px rgba(60, 40, 120, 0.4), 0 0 0 3px rgba(255, 255, 255, 0.7), 0 0 0 4px rgba(60, 50, 110, 0.35);
+}
+[data-skin="chrome"] .lcd::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--seg) 75%, transparent); }
+[data-skin="chrome"] #time { font-weight: 700; letter-spacing: -0.01em; }
+[data-skin="chrome"] #label { font-weight: 600; }
+[data-skin="chrome"] .strip { background: rgba(60, 40, 120, 0.3); }
+/* the keys: chrome bubbles, the icons lavender */
+[data-skin="chrome"] .btn:not(#play) { background: var(--film), radial-gradient(120% 70% at 50% 112%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 60%), var(--chrome); }
+[data-skin="chrome"] #play { box-shadow: inset 0 0 0 1px rgba(120, 40, 160, 0.55), inset 0 -3px 5px rgba(0, 0, 0, 0.15), 0 0 0 3px rgba(255, 255, 255, 0.7), 0 0 0 4px rgba(60, 50, 110, 0.35), 0 4px 10px var(--drop); }
+body.live[data-skin="chrome"] #play.down { box-shadow: inset 0 3px 8px rgba(80, 0, 120, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.7), 0 0 18px color-mix(in srgb, var(--seg) 80%, transparent); }
+[data-skin="chrome"] .btn.sm, [data-skin="chrome"] .mini, [data-skin="chrome"] .led { letter-spacing: 0.08em; }
+[data-skin="chrome"] .tot { background: linear-gradient(125deg, #fbefff, #dff3ff 40%, #ffe9f6 70%, #e7e1ff); box-shadow: inset 0 2px 4px rgba(60, 40, 120, 0.4), 0 0 0 2px rgba(255, 255, 255, 0.7); }
+[data-skin="chrome"] .row.now { color: #24184f; }

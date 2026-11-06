@@ -1,0 +1,102 @@
+/* eco — a sidebar gadget (Frutiger Eco): thick rounded glass in leaves, a
+   lens of a screen with a leaf in dew blurred inside, dew-drop keys on an arc,
+   lime gel. Over that leaf (Jan, northlandscapes; CC0). */
+body[data-skin="eco"] {
+  --ui: "Varela Round", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  --text: "Varela Round", "Arial Rounded MT Bold", sans-serif;
+  --lcd-font: "Comfortaa", "Varela Round", sans-serif;
+  --photo: url(/lab/timer/img/eco.webp);
+  --photo-at: 40% 50%;
+  --veil: linear-gradient(180deg, rgba(220, 255, 200, 0.18), rgba(0, 40, 10, 0.3));
+  --fg: #123a0e;
+  --dim: #4b7a3c;
+  --accent: #4cc21a;
+  --engrave: 0 1px 0 rgba(255, 255, 255, 0.6);
+  --r: 32px;
+  --drop: rgba(5, 40, 5, 0.5);
+  --leaf: 64px;
+  --leaf-in: 55px;
+  --lcd-fg: #ffffff;
+  --lcd-dim: rgba(255, 255, 255, 0.2);
+  --lcd-glow: 0 1px 2px rgba(0, 40, 0, 0.55), 0 0 12px rgba(0, 40, 0, 0.25);
+  --key-top: rgba(255, 255, 255, 0.95);
+  --key-bot: rgba(200, 238, 165, 0.75);
+  --key-edge: rgba(60, 130, 25, 0.45);
+  --key-fg: #2e7a12;
+  --hot-top: #d4ff7c;
+  --hot-bot: #2f9a0c;
+  --hot-fg: #ffffff;
+  --list: rgba(255, 255, 255, 0.6);
+  --list-fg: #123a0e;
+  --row-alt: rgba(150, 225, 100, 0.14);
+  --row-head: rgba(110, 200, 50, 0.24);
+  --field: rgba(255, 255, 255, 0.85);
+}
+@media (max-width: 900px) {
+  body[data-skin="eco"] { --photo: url(/lab/timer/img/eco-s.webp); }
+}
+
+[data-skin="eco"] .win {
+  padding: 0 9px 9px;
+  background: var(--grain), linear-gradient(165deg, rgba(255, 255, 255, 0.55), rgba(220, 250, 200, 0.22) 45%, rgba(255, 255, 255, 0.35));
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.85), inset 0 2px 0 rgba(255, 255, 255, 0.9), inset 2px 0 0 rgba(255, 255, 255, 0.4),
+    inset 0 -10px 24px rgba(90, 170, 40, 0.25), 0 0 0 1px rgba(30, 80, 10, 0.35), 0 26px 50px -12px var(--drop), 0 8px 18px -6px var(--drop);
+}
+/* the thick glass catches the light along its top edge */
+[data-skin="eco"] .win::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 3px;
+  right: 3px;
+  top: 3px;
+  height: 44px;
+  border-radius: inherit;
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.1));
+  pointer-events: none;
+}
+[data-skin="eco"] .title { height: 36px; color: #1f5a10; padding: 0 6px; }
+/* inside the frame, the gadget's face */
+[data-skin="eco"] .body {
+  padding: 12px;
+  border-radius: calc(var(--r) - 9px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(235, 252, 222, 0.6));
+  box-shadow: inset 0 2px 4px rgba(30, 90, 10, 0.25), inset 0 0 0 1px rgba(60, 130, 25, 0.3), 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+[data-skin="eco"] .lcd {
+  --lcd-spec: 0.55;
+  background: #2c6a1a;
+  box-shadow: inset 0 3px 8px rgba(0, 30, 0, 0.6), inset 0 0 0 1px rgba(0, 40, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+/* the leaf, out of focus, inside the screen */
+[data-skin="eco"] .lcd .px {
+  z-index: -1;
+  inset: -20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 40, 0, 0.35)), url(/lab/timer/img/eco-s.webp) 35% 45% / cover;
+  filter: blur(7px) saturate(1.3);
+}
+[data-skin="eco"] .lcd::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: radial-gradient(90% 60% at 50% 120%, color-mix(in srgb, var(--seg) 55%, transparent), transparent 70%); }
+[data-skin="eco"] #time { font-weight: 700; letter-spacing: -0.02em; }
+[data-skin="eco"] .strip { background: rgba(30, 80, 10, 0.25); }
+[data-skin="eco"] #segs i { border-radius: 3px; }
+[data-skin="eco"] .btn:not(#play) { background: radial-gradient(120% 70% at 50% 112%, rgba(210, 255, 150, 0.9), rgba(255, 255, 255, 0) 60%), linear-gradient(170deg, var(--key-top), var(--key-bot)); }
+[data-skin="eco"] .tot { background: linear-gradient(180deg, rgba(0, 40, 0, 0.2), rgba(0, 40, 0, 0.45)), url(/lab/timer/img/eco-s.webp) 30% 40% / 400% auto; box-shadow: inset 0 2px 5px rgba(0, 30, 0, 0.55), 0 1px 0 #fff; }
+
+/* the keys: drops of dew, clear, lit from the top left */
+[data-skin="eco"] .transport .btn:not(#play) {
+  background:
+    radial-gradient(circle at 50% 58%, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, 0.5) 70%, rgba(255, 255, 255, 0.95) 80%, rgba(255, 255, 255, 0.25) 100%),
+    radial-gradient(circle at 60% 88%, rgba(220, 255, 160, 0.75), rgba(255, 255, 255, 0) 50%),
+    rgba(225, 255, 205, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), inset 0 -4px 6px rgba(60, 140, 20, 0.25), 0 5px 8px -3px rgba(10, 60, 0, 0.5);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+[data-skin="eco"] .transport .btn:not(#play)::before { left: 20%; right: 46%; top: 12%; height: 26%; border-radius: 50%; }
+[data-skin="eco"] .transport .btn:not(#play):active:not(:disabled),
+[data-skin="eco"] .transport .btn:not(#play).press,
+[data-skin="eco"] .transport .btn:not(#play).down { background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.6) 78%), rgba(120, 200, 60, 0.35); }
+@media (max-width: 420px) { [data-skin="eco"] .body { padding: 10px; } }
